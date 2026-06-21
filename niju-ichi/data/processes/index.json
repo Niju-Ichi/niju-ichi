@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "titel": "",
+  "cluster": [],
+  "lose": [],
+  "landkarte": {
+    "modus": "overlay",
+    "bild": "",
+    "bildRatio": 0.5,
+    "kaesten": []
+  },
+  "organisation": {
+    "version": 1,
+    "knoten": []
+  },
+  "wissen": {
+    "version": 1,
+    "tools": [],
+    "knowledge": [],
+    "assessment": {}
+  }
+}

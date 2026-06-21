@@ -1,0 +1,536 @@
+/* ============================================================
+   NIJU ICHI — gemeinsames "Chrome" (shared)
+   Toolbar, Menü, Modul-Umschalter, Configuration-Ansicht, Launcher.
+   Im Process Builder wird diese Datei VOR dem seitenspezifischen
+   <style> geladen — dort definierte Regeln gewinnen also.
+   ============================================================ */
+:root {
+  --raci-R: #e0850f;  --raci-R-text: #ffffff;
+  --raci-A: #2e9e4f;  --raci-A-text: #ffffff;
+  --raci-C: #3479c9;  --raci-C-text: #ffffff;
+  --raci-I: #1f3a66;  --raci-I-text: #ffffff;
+  --ink: #16181d;     --paper: #ffffff;
+  --muted: #8b919b;   --akzent: #3479c9;
+  --rule: #e3e6ea;
+  /* UI-Akzent (Chrome): aktive Buttons, SATS-Menü, NIJU-ICHI-Schriftzug.
+     Entkoppelt vom RACI-„R"-Badge (--raci-R) und von der Design-Engine,
+     damit der Marken-Orangeton aus der Startgrafik überall konstant bleibt. */
+  --ui-akzent: #fd5e02;  --ui-akzent-text: #ffffff;
+  --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+
+/* Chrome-Container (Config-Panel, Strukturbaum, Karten-Inspektor, Stubs) behalten
+   ihre Standard-Textfarbe, auch wenn ein dunkles Prozess-Design --ink global auf
+   hell setzt. Das Design soll nur das Blatt/die Vorschau umfärben, nicht die
+   Bedienoberfläche auf hellem Grund. Per Variablen-Vererbung deckt EIN Eintrag
+   alle Nachfahren ab; die Live-Design-Vorschau (.cfg-prev) nutzt --ink nicht. */
+.cfg-wrap, .niju-tree-pane, .nm-inspector, .stub { --ink: #16181d; --paper: #ffffff; --rule: #e3e6ea; --muted: #8b919b; }
+
+/* ---------- Toolbar + Buttons (für Stubs/Launcher) ---------- */
+.toolbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; background: #1b1f25; color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+.toolbar .spacer { flex: 1; }
+.btn {
+  appearance: none; border: 1px solid #3a4250; background: #2a313b; color: #fff;
+  padding: 6px 11px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+  white-space: nowrap;
+}
+.btn:hover { background: #353d48; }
+.btn.primary { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.icon { padding: 5px 9px; line-height: 0; color: var(--ui-akzent); }
+.btn.seg { background: #22272f; }
+.btn.seg.aktiv { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+.toolbar .tb-seg { display: flex; gap: 6px; }
+.toolbar .tb-trenner { width: 1px; align-self: stretch; background: #3a4250; margin: 2px 4px; }
+.sats-icon { display: block; }
+
+/* ---------- Hamburger-Menü ---------- */
+.menu-wrap { position: relative; display: flex; }
+.menu-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+  background: #2a313b; border: 1px solid #3a4250; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4); padding: 6px; min-width: 180px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.menu-dropdown[hidden] { display: none; }
+.menu-item {
+  appearance: none; text-align: left; background: transparent; border: 0; color: #fff;
+  padding: 8px 11px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+}
+.menu-item:hover { background: #353d48; }
+.menu-sub { position: relative; display: flex; flex-direction: column; }
+.menu-item.has-sub { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.menu-item.has-sub::after { content: "\25B8"; font-size: 11px; color: #9aa1ad; }
+.submenu {
+  position: absolute; left: 100%; top: -6px; z-index: 70;
+  background: #2a313b; border: 1px solid #3a4250; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4); padding: 6px; min-width: 150px;
+  display: none; flex-direction: column; gap: 3px;
+}
+.menu-sub:hover > .submenu, .menu-sub.auf > .submenu { display: flex; }
+
+/* ---------- Modul-Umschalter (oben rechts) ---------- */
+.nav-wrap { position: relative; display: flex; }
+.nav-marke {
+  appearance: none; background: transparent; border: 1px solid transparent; color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: .04em;
+  cursor: pointer; padding: 6px 10px; border-radius: 6px; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+}
+.nav-marke:hover { background: #2a313b; border-color: #3a4250; }
+.nav-marke .marke-akz { color: var(--ui-akzent); }
+.nav-caret { font-size: 10px; color: #9aa1ad; }
+.nav-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+  background: #2a313b; border: 1px solid #3a4250; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4); padding: 6px; min-width: 210px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.nav-dropdown[hidden] { display: none; }
+.nav-item {
+  appearance: none; text-align: left; background: transparent; border: 0; color: #fff;
+  padding: 9px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+}
+.nav-item:hover:not(.disabled) { background: #353d48; }
+.nav-item.aktiv { color: var(--ui-akzent); font-weight: 700; }
+.nav-item.disabled { opacity: .38; cursor: default; }
+
+/* ---------- Configuration-Ansicht (in der Bühne) ---------- */
+.cfg-wrap {
+  background: #fff; color: var(--ink); border-radius: 10px;
+  width: min(1000px, 96%); margin: 0 auto; box-shadow: 0 8px 30px rgba(15,23,42,.18);
+  display: flex; flex-direction: column; overflow: hidden; max-height: 100%;
+}
+.cfg-kopf {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--rule);
+}
+.cfg-titel { margin: 0; font-size: 17px; font-weight: 800; }
+.cfg-close {
+  appearance: none; border: 1px solid #c7ccd3; background: #f5f7f9; color: var(--ink);
+  padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+}
+.cfg-close:hover { background: #e7ebef; }
+.cfg-body { display: flex; min-height: 320px; }
+.cfg-nav {
+  flex: 0 0 210px; border-right: 1px solid var(--rule); padding: 12px;
+  display: flex; flex-direction: column; gap: 4px; background: #f7f9fb;
+}
+.cfg-cat {
+  appearance: none; text-align: left; background: transparent; border: 0; color: var(--ink);
+  padding: 10px 12px; border-radius: 7px; cursor: pointer; font-size: 13.5px; font-family: inherit;
+}
+.cfg-cat:hover { background: #eceff3; }
+.cfg-cat.aktiv { background: var(--ink); color: #fff; font-weight: 700; }
+.cfg-nav-sep { border: 0; border-top: 1px solid var(--rule); margin: 6px 0; }
+.menu-sep { border: 0; border-top: 1px solid var(--rule); margin: 4px 0; }
+.cfg-pane { flex: 1; padding: 20px 24px; overflow: auto; }
+.cfg-h { margin: 0 0 8px; font-size: 14px; font-weight: 800; }
+.cfg-text { margin: 0 0 14px; font-size: 13px; color: #51585f; line-height: 1.45; }
+
+/* ---------- About / manifesto pane ---------- */
+.about { max-width: 660px; color: var(--ink); font-size: 13.5px; line-height: 1.6; }
+.about-lead {
+  margin: 2px 0 24px; padding-left: 16px;
+  border-left: 3px solid var(--ui-akzent);
+  font-size: 19px; line-height: 1.4; font-weight: 800; letter-spacing: -.01em;
+  color: var(--ink);
+}
+.about-h {
+  margin: 24px 0 8px; font-size: 11.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .13em; color: var(--ui-akzent);
+}
+.about-p { margin: 0 0 14px; color: #41474f; line-height: 1.62; }
+.about-values { list-style: none; margin: 2px 0 16px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.about-value {
+  position: relative; padding: 10px 14px 10px 34px;
+  background: #f7f9fb; border: 1px solid var(--rule); border-radius: 9px;
+  color: #41474f; line-height: 1.5;
+}
+.about-value::before {
+  content: ""; position: absolute; left: 15px; top: 16px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--ui-akzent);
+}
+.about-value-lead { color: var(--ink); font-weight: 800; }
+.about-mail {
+  display: inline-block; margin: 2px 0 4px;
+  font-family: var(--mono); font-size: 14px; font-weight: 700;
+  color: var(--ui-akzent); text-decoration: none;
+  padding: 8px 14px; background: #f7f9fb; border: 1px solid var(--rule); border-radius: 8px;
+}
+.about-mail:hover { border-color: var(--ui-akzent); }
+.about-closing {
+  margin: 26px 0 2px; padding-top: 16px; border-top: 1px solid var(--rule);
+  font-size: 15px; font-weight: 800; font-style: italic; letter-spacing: .01em;
+  color: var(--ink);
+}
+.cfg-trenner { border: 0; border-top: 1px solid var(--rule); margin: 22px 0; }
+.cfg-langs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+.cfg-lang {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border: 1px solid var(--rule); border-radius: 8px; cursor: pointer;
+}
+.cfg-lang:hover { background: #f7f9fb; }
+.cfg-lang-name { font-size: 13.5px; font-weight: 600; }
+.cfg-lang-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 6px;
+}
+.cfg-lang .cfg-mini { margin-left: auto; }
+.cfg-mini {
+  appearance: none; border: 1px solid #c7ccd3; background: #f5f7f9; color: var(--ink);
+  border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; padding: 5px 9px;
+}
+.cfg-mini.del { color: #b3261e; border-color: #e3b9b5; background: #fbeeed; }
+.cfg-btnrow { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Process Manager option-list editor */
+.cfg-h4 { font-size: 12.5px; font-weight: 700; color: var(--ink); margin: 12px 0 6px; letter-spacing: .01em; }
+.cfg-opt-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.cfg-opt-row, .cfg-opt-add { display: flex; gap: 6px; align-items: center; }
+.cfg-opt-label { flex: 1; border: 1px solid var(--rule); border-radius: 6px; padding: 6px 9px; font-size: 13px; font-family: var(--sans); color: var(--ink); background: var(--paper); }
+.cfg-opt-label:focus { border-color: var(--akzent); outline: none; }
+.cfg-mini.add { color: #2e9e4f; border-color: #a8d5b5; background: #edf7f1; }
+/* Backup & Restore info box */
+.cfg-info-box { background: #f0f4fa; border: 1px solid #c7d8ef; border-radius: 8px; padding: 10px 14px; margin: 10px 0 6px; }
+.cfg-info-box p { margin: 0 0 6px; font-size: 13px; }
+.cfg-path-hint { display: block; font-family: var(--mono); font-size: 12px; background: var(--paper); border: 1px solid var(--rule); border-radius: 5px; padding: 5px 10px; color: var(--ink); }
+.cfg-btn {
+  appearance: none; border: 1px solid #c7ccd3; background: #f5f7f9; color: var(--ink);
+  padding: 9px 15px; border-radius: 7px; cursor: pointer; font-size: 13px; font-family: inherit;
+}
+.cfg-btn:hover { background: #e7ebef; }
+.cfg-btn.primary { background: var(--ui-akzent); border-color: var(--ui-akzent); color: #fff; }
+.cfg-btn.primary:hover { filter: brightness(1.08); }
+
+/* ---------- Launcher (niju-ichi.html) ---------- */
+/* Komplett schwarzer Startbildschirm: Startgrafik oben, Sprachen frei in der
+   oberen Ecke, die drei Module im unteren Drittel. Look an die Grafik angelehnt
+   (Schwarz + Marken-Orange, scharfe Kanten). */
+.launch-body {
+  margin: 0; min-height: 100vh; background: #000;
+  font-family: var(--sans); color: #fff; display: flex; flex-direction: column;
+}
+
+/* Startgrafik — oben, mit Luft nach oben für die Sprach-Buttons.
+   padding-bottom 0, damit der erste Flow-Pfeil gleich weit von Grafik
+   und Brain entfernt sitzt (space-evenly in .launch-mid). */
+.launch-banner {
+  flex: 0 0 auto; padding: 64px 28px 0; display: flex; justify-content: center;
+}
+.launch-banner img {
+  display: block; width: 100%; max-width: 1180px; height: auto; max-height: 42vh; object-fit: contain;
+  border-radius: 6px; box-shadow: 0 14px 50px rgba(0,0,0,.6);
+}
+
+/* Sprachwahl oben rechts */
+.launch-lang { position: absolute; top: 22px; right: 26px; display: flex; gap: 8px; z-index: 5; }
+.launch-lang button {
+  appearance: none; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.22);
+  color: #e8eaed; border-radius: 4px; padding: 6px 14px; cursor: pointer;
+  font-size: 12.5px; font-weight: 600; letter-spacing: .02em; font-family: inherit;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.launch-lang button:hover { border-color: var(--ui-akzent); color: #fff; }
+.launch-lang button.aktiv {
+  background: var(--ui-akzent); border-color: var(--ui-akzent); color: #fff;
+  box-shadow: 0 0 0 1px var(--ui-akzent), 0 4px 14px rgba(253,94,2,.35);
+}
+
+/* Brain mittig zwischen Grafik und Modul-Reihe. Fester, gleicher Abstand
+   (--flow-gap) oben angedockt → der ganze Block sitzt nahe der Grafik
+   (Module weiter oben). Grafik↕Pfeil↕Brain↕Pfeil↕Reihe sind alle gleich:
+   Banner padding-bottom 0 + .launch-mid padding-top = gap = mid-gap =
+   row margin-top. */
+:root { --flow-gap: 20px; }
+.launch-mid {
+  flex: 0 0 auto; display: flex; flex-direction: column;
+  align-items: center; gap: var(--flow-gap);
+  width: 100%; padding: var(--flow-gap) 28px 0; box-sizing: border-box;
+}
+.launch-mid .launch-card { width: 300px; max-width: 80vw; }
+
+/* Module — untere Reihe, alle drei nebeneinander, direkt unter Brain */
+.launch-row {
+  flex: 0 0 auto; display: flex; align-items: stretch; justify-content: center;
+  gap: 22px; width: 100%; max-width: 1100px; margin: var(--flow-gap) auto 0;
+  padding: 0 28px 44px; box-sizing: border-box;
+}
+.launch-row .launch-card { flex: 1 1 0; min-width: 200px; max-width: 300px; }
+
+/* Flow-Pfeile (Marken-Orange) */
+.lc-arrow { color: var(--ui-akzent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.lc-arrow svg { width: 22px; height: 22px; display: block; }
+.lc-arrow.up svg { width: 20px; height: 20px; }
+
+.launch-card {
+  position: relative; background: #121317; color: #fff;
+  border: 1px solid #26282f; border-top: 2px solid #3a3d46; border-radius: 8px;
+  /* gleiche horizontale + vertikale Polsterung → Text-zu-Kante == Button-zu-Kante */
+  padding: 16px 18px; display: flex; flex-direction: row; align-items: flex-end;
+  justify-content: space-between; gap: 14px;
+  text-decoration: none; overflow: visible;
+  transition: transform .16s ease, border-color .16s, box-shadow .16s, background .16s;
+}
+.launch-card .lc-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.launch-card:not(.disabled):hover {
+  transform: translateY(-4px); background: #16181d;
+  border-color: #3a3d46; border-top-color: var(--ui-akzent);
+  box-shadow: 0 12px 34px rgba(0,0,0,.55), 0 0 0 1px rgba(253,94,2,.25);
+}
+.launch-card.disabled { opacity: .42; }
+.launch-card .lc-eyebrow {
+  font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ui-akzent);
+}
+.launch-card .lc-name { font-size: 19px; font-weight: 800; letter-spacing: .01em; color: #fff; }
+.launch-card .lc-go {
+  margin: 0; align-self: flex-end; flex: none; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ui-akzent); color: #fff; border: 0; border-radius: 5px;
+  padding: 8px 16px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.launch-card:not(.disabled):hover .lc-go { filter: brightness(1.08); }
+.launch-card .lc-soon {
+  margin: 0; align-self: flex-end; flex: none; font-family: var(--mono); font-size: 9px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  border: 1px solid #2c2f37; border-radius: 4px; padding: 4px 8px;
+}
+/* Beschreibung als Mouse-over-Tooltip (statt fester Text im Kasten) */
+.launch-card .lc-tip {
+  position: absolute; left: 18px; right: 18px; bottom: calc(100% + 10px); z-index: 10;
+  background: #1c1f26; color: #d9dde3; border: 1px solid var(--ui-akzent); border-radius: 7px;
+  padding: 10px 13px; font-size: 12.5px; line-height: 1.5; font-weight: 400;
+  box-shadow: 0 12px 30px rgba(0,0,0,.6);
+  opacity: 0; visibility: hidden; transform: translateY(4px);
+  transition: opacity .16s ease, transform .16s ease, visibility .16s;
+  pointer-events: none;
+}
+.launch-card .lc-tip::after {
+  content: ""; position: absolute; top: 100%; left: 26px; width: 10px; height: 10px;
+  background: #1c1f26; border-right: 1px solid var(--ui-akzent); border-bottom: 1px solid var(--ui-akzent);
+  transform: translateY(-5px) rotate(45deg);
+}
+.launch-card:hover .lc-tip { opacity: 1; visibility: visible; transform: translateY(0); }
+
+@media (max-width: 760px) {
+  .launch-row { flex-direction: column; max-width: 420px; }
+  .launch-row .launch-card, .launch-mid .launch-card { width: 100%; max-width: none; }
+  /* im einspaltigen Layout zeigen die Reihen-Pfeile nach unten (Flow von oben) */
+  .lc-arrow.right, .lc-arrow.left { transform: rotate(90deg); }
+  .launch-banner { padding-top: 72px; }
+}
+
+/* ---------- Bühne / Platzhalter (Stubs) ---------- */
+.stage {
+  flex: 1; min-width: 0; padding: 22px; overflow: auto;
+  background: linear-gradient(180deg,#586272 0%,#4c5562 100%);
+}
+.stub {
+  background: #fff; color: var(--ink); border-radius: 10px;
+  width: min(720px, 94%); margin: 6vh auto 0; padding: 34px 32px;
+  box-shadow: 0 8px 30px rgba(15,23,42,.18); text-align: center;
+}
+.stub h1 { margin: 0 0 10px; font-size: 22px; font-weight: 800; }
+.stub p { margin: 0 auto 16px; font-size: 14px; color: #51585f; line-height: 1.5; max-width: 48ch; }
+.stub .stub-soon {
+  display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 4px 9px; margin-bottom: 18px;
+}
+.stub .btn { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+
+/* ---------- Zwei-Spalten-Layout (Management / Hub): Baum links, Vorschau rechts ---------- */
+.mod-app { flex: 1; display: flex; min-height: 0; }
+.mod-app[hidden] { display: none; }
+.niju-tree-pane {
+  flex: 0 0 320px; width: 320px; overflow-y: auto;
+  background: #eef1f4; border-right: 1px solid #cfd5dc; color: var(--ink);
+}
+.niju-tree-titel {
+  padding: 12px 14px 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  font-weight: 700; color: var(--muted);
+}
+.mod-hint { padding: 0 14px 10px; font-size: 11.5px; color: #6b727b; line-height: 1.4; }
+
+/* ---------- Strukturbaum ---------- */
+.niju-tree { padding: 6px 10px 30px; font-size: 13px; }
+.nt-toolbar { padding: 4px 4px 8px; }
+.nt-btn {
+  appearance: none; border: 1px solid #c7ccd3; background: #f5f7f9; color: var(--ink);
+  border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit; padding: 3px 7px; line-height: 1;
+}
+.nt-btn:hover { background: #e7ebef; }
+.nt-btn.add { color: var(--akzent); border-color: #b8d0ec; background: #eef5fc; font-weight: 600; }
+.nt-btn.del { color: #b3261e; border-color: #e3b9b5; background: #fbeeed; }
+.nt-cluster { margin: 2px 0; }
+.nt-cluster-head {
+  display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+}
+.nt-cluster-head:hover { background: #e3e8ee; }
+.nt-folder-ic { font-size: 10px; color: var(--muted); transition: transform .12s; }
+.nt-cluster.zu > .nt-cluster-head .nt-folder-ic { transform: rotate(0deg); }
+.nt-cluster:not(.zu) > .nt-cluster-head .nt-folder-ic { transform: rotate(90deg); }
+.nt-folder-name { font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nt-count { font-family: var(--mono); font-size: 10px; color: var(--muted); background: #dde2e8; border-radius: 9px; padding: 1px 7px; }
+.nt-cluster-body { margin-left: 14px; border-left: 1px solid #d6dbe1; padding-left: 8px; }
+.nt-cluster.zu > .nt-cluster-body { display: none; }
+.nt-lose > .nt-cluster-head .nt-folder-name { color: var(--muted); font-style: italic; }
+.nt-empty { font-size: 11px; color: #aab0b8; padding: 4px 8px; }
+.nt-proc {
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+}
+.nt-proc:hover { background: #e3e8ee; }
+.nt-proc.sel { background: var(--ink); color: #fff; }
+.nt-proc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nt-proc-name.nt-fehler { color: #b3261e; }
+.nt-proc.sel .nt-proc-name { color: #fff; }
+.nt-tools { display: none; align-items: center; gap: 3px; }
+.nt-cluster-head:hover .nt-tools, .nt-proc:hover .nt-tools { display: flex; }
+.nt-move { font-family: inherit; font-size: 11px; border: 1px solid #c7ccd3; border-radius: 5px; padding: 2px 4px; max-width: 96px; }
+
+/* Map-Nodes im Strukturbaum */
+.nt-master-map { margin: 0 0 8px; }
+.nt-master-map-head {
+  display: flex; align-items: center; gap: 6px; padding: 5px 8px;
+  border-radius: 5px; cursor: pointer; background: #eef5fc; border: 1px dashed #b8d0ec;
+}
+.nt-master-map-head:hover { background: #ddeaf8; }
+.nt-master-map-head .nt-map-ic { font-size: 14px; color: var(--akzent); }
+.nt-master-map-head .nt-map-name { font-weight: 700; color: var(--akzent); flex: 1; font-size: 13px; }
+.nt-map-node > .nt-cluster-head { background: #f5f8ff; }
+.nt-map-node > .nt-cluster-head:hover { background: #e8eefb; }
+.nt-map-node > .nt-cluster-head .nt-folder-ic { color: var(--akzent); transform: none !important; }
+.nt-map-node > .nt-cluster-head .nt-folder-name { color: var(--akzent); }
+/* DnD */
+.nt-proc.nt-drag { opacity: .35; }
+.nt-drop-active { background: #ddeaf8 !important; border-radius: 5px; outline: 2px dashed #3479c9; outline-offset: -2px; min-height: 28px; }
+/* Inspector: Karten-Auswahl */
+.nm-map-sel { padding: 0 0 10px; border-bottom: 1px solid var(--rule); margin-bottom: 10px; }
+.nm-map-sel label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.nm-map-sel select { width: 100%; font-family: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
+
+/* ---------- Vorschau-Kopf (Übersicht/Detail-Umschalter) ---------- */
+.mod-view-head {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: #1b1f25; color: #fff; flex-wrap: wrap;
+}
+.mod-view-head .tb-lab { font-size: 12px; color: #9aa1ad; }
+.mod-view-head .btn.seg { background: #22272f; }
+.mod-view-head .btn.seg.aktiv { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+.mod-view-head select {
+  appearance: none; background: #2a313b; color: #fff; border: 1px solid #3a4250;
+  border-radius: 6px; padding: 5px 9px; font-size: 13px; font-family: inherit; max-width: 260px;
+}
+.mod-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mod-right .leer-hinweis { text-align: center; color: #cfd6df; padding: 60px 20px; font-size: 14px; margin: auto; }
+
+/* ---------- Prozesslandkarte ---------- */
+.niju-map-stage {
+  flex: 1; min-width: 0; padding: 22px; overflow: auto;
+  background: linear-gradient(180deg,#586272 0%,#4c5562 100%);
+  display: flex; align-items: flex-start; justify-content: center;
+}
+.niju-map {
+  position: relative; width: 100%; max-width: 1100px; max-height: 100%;
+  background: #fff; box-shadow: 0 10px 30px rgba(15,23,42,.28); border-radius: 4px;
+  overflow: hidden;
+}
+.nm-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; background: #fff; }
+.nm-box {
+  position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+}
+/* Form-Ebene: traegt das Aussehen (Fuellung/Rahmen) + die Form, damit Label
+   und Resize-Griff NICHT beschnitten werden. form-rect|circle|chevron. */
+.nm-shape { position: absolute; inset: 0; z-index: 0; border-radius: 6px; }
+.nm-box.form-circle .nm-shape { border-radius: 50%; }
+.nm-box.form-chevron .nm-shape { border-radius: 0; clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%, 22% 50%); }
+.nm-box .nm-label {
+  position: relative; z-index: 1;
+  font-family: var(--sans); font-size: 12px; font-weight: 700; line-height: 1.15; text-align: center;
+  padding: 2px 6px; max-width: 100%; max-height: 100%; overflow: hidden;
+}
+/* overlay = sichtbare Chips */
+.nm-box.overlay .nm-shape { box-shadow: 0 2px 6px rgba(15,23,42,.25); }
+.nm-box.overlay .nm-label { color: #fff; }
+/* hotspot = transparente Klickflächen (im Hub) */
+.nm-box.hotspot .nm-shape { background: transparent; border: 0; }
+.nm-box.hotspot .nm-label { display: none; }
+/* Editor-Sicht: Kästen immer sichtbar machen */
+.niju-map-stage.editor .nm-box { cursor: move; }
+.niju-map-stage.editor .nm-box.hotspot .nm-shape { border: 1.5px dashed #3479c9; background: rgba(52,121,201,.12); }
+.niju-map-stage.editor .nm-box.hotspot .nm-label { display: block; color: #1f3a66; }
+.niju-map-stage:not(.editor) .nm-box { cursor: pointer; }
+.nm-box.sel { outline: 2px solid var(--ui-akzent); outline-offset: 1px; }
+.nm-handle {
+  position: absolute; right: -1px; bottom: -1px; width: 14px; height: 14px;
+  background: var(--ui-akzent); border: 2px solid #fff; border-radius: 3px; cursor: nwse-resize; z-index: 5;
+}
+
+/* Inspector-Panel (Management, Landkarte-Modus) */
+.nm-inspector { padding: 12px 14px 30px; font-size: 13px; color: var(--ink); }
+.nm-insp-h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--muted); margin: 14px 0 6px; }
+.nm-insp-h:first-child { margin-top: 0; }
+.nm-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.nm-field { display: block; margin-bottom: 8px; }
+.nm-field > label { display: block; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.nm-field input[type=text], .nm-field select { width: 100%; padding: 6px 8px; border: 1px solid #c7ccd3; border-radius: 5px; font-family: inherit; font-size: 13px; background: #fff; color: var(--ink); }
+.nm-field input[type=color] { width: 44px; height: 30px; border: 1px solid #c7ccd3; border-radius: 5px; background: #fff; cursor: pointer; padding: 2px; }
+.nm-none { font-size: 12px; color: var(--muted); }
+.nm-seg { display: flex; gap: 4px; }
+.nm-seg .btn { flex: 1; }
+.nm-seg .btn.aktiv { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+
+/* Image-Style: Form-Auswahl (Icons in Objektform) */
+.nm-shape-seg { display: flex; gap: 6px; margin: 2px 0 6px; }
+.nm-shape-btn {
+  flex: 1; height: 40px; display: flex; align-items: center; justify-content: center;
+  background: #f5f7f9; border: 1px solid #c7ccd3; border-radius: 6px; cursor: pointer; color: #5a6472; padding: 7px 8px;
+}
+.nm-shape-btn:hover { background: #eef1f4; }
+.nm-shape-btn svg { display: block; width: 100%; height: 100%; max-height: 22px; fill: currentColor; }
+.nm-shape-btn.aktiv { background: var(--ui-akzent); border-color: var(--ui-akzent); color: #fff; }
+
+/* ============================================================
+   Design-Optionen (Phase 7) — als Body-Klassen, von NIJU.DESIGN
+   gesetzt. Wirken uniform in Builder, Hub, Management-Vorschau und
+   im Druck; Farben/Schriften laufen über die CSS-Variablen.
+   ============================================================ */
+body.opt-no-connectors #verbinder { display: none !important; }
+body.opt-badge-round .badge,
+body.opt-badge-round .bb-badge,
+body.opt-badge-round .raci-menu .rm-btn { border-radius: 50%; }
+body.opt-no-zebra .rrow-1 .raci-zelle,
+body.opt-no-zebra .raci-zelle.rrow-1,
+body.opt-no-zebra .rrow-1.raci-rolle,
+body.opt-no-zebra .rm-rolle.stripe,
+body.opt-no-zebra .rm-zelle.stripe { background: transparent !important; }
+
+/* ---------- Configuration → Kategorie „Design" ---------- */
+.cfg-design-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
+.cfg-design-grid .cfg-h { grid-column: 1 / -1; }
+.cfg-color { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+.cfg-color > label { flex: 1; font-size: 13px; color: var(--ink); }
+.cfg-color input[type=color] { width: 40px; height: 28px; border: 1px solid #c7ccd3; border-radius: 5px; background: #fff; cursor: pointer; padding: 2px; }
+.cfg-color .cfg-hex { width: 86px; font-family: var(--mono); font-size: 12px; padding: 5px 7px; border: 1px solid #c7ccd3; border-radius: 5px; color: var(--ink); }
+.cfg-toggle { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; color: var(--ink); }
+.cfg-toggle input { width: 16px; height: 16px; }
+.cfg-seg { display: inline-flex; gap: 6px; margin: 4px 0 2px; }
+.cfg-design-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.cfg-design-row .cfg-design-name { flex: 1; font-weight: 700; color: var(--ink); }
+
+/* Live-Vorschau in der Design-Pane (reagiert über CSS-Variablen + Body-Klassen) */
+.cfg-prev { margin-top: 8px; padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.cfg-prev .cfg-prev-badges { display: flex; align-items: center; gap: 14px; }
+.cfg-prev .badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 2px; font-size: 13px; font-weight: 700; }
+.cfg-prev .cfg-prev-conn { flex: 1; height: 0; border-top: 1.6px solid var(--verbinder); min-width: 40px; }
+body.opt-no-connectors .cfg-prev .cfg-prev-conn { visibility: hidden; }
+.cfg-prev .cfg-prev-zebra { display: flex; gap: 0; margin-top: 12px; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.cfg-prev .cfg-prev-zebra > div { flex: 1; height: 22px; font-family: var(--mono); font-size: 9px; color: var(--muted); display: flex; align-items: center; padding-left: 8px; letter-spacing: .1em; text-transform: uppercase; }
+.cfg-prev .cfg-prev-zebra > div.z { background: var(--zebra); }
+body.opt-no-zebra .cfg-prev .cfg-prev-zebra > div.z { background: transparent; }

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIJU ICHI Brain</title>
+<link rel="stylesheet" href="../../shared/css/base.css">
+<link rel="stylesheet" href="../../shared/css/brain.css">
+<script src="../../shared/js/i18n.js"></script>
+<script src="../../shared/lang/en.js"></script>
+<script src="../../shared/lang/de.js"></script>
+<script src="../../shared/lang/ja.js"></script>
+<script src="../../shared/js/modules.js"></script>
+<script src="../../shared/js/nav.js"></script>
+<script src="../../shared/js/design.js"></script>
+<script src="../../shared/design/swiss-modular.js"></script>
+<script src="../../shared/design/teal-soft.js"></script>
+<script src="../../shared/design/mono-slate.js"></script>
+<script src="../../shared/design/strategy-editorial.js"></script>
+<script src="../../shared/design/executive-dark.js"></script>
+<script src="../../shared/js/config.js"></script>
+<script src="../../shared/js/library.js"></script>
+<script src="../../shared/js/org.js"></script>
+<script src="../../shared/js/wissen.js"></script>
+<script src="../../shared/lib/d3.min.js"></script>
+<script src="../../shared/js/brain.js"></script>
+<script src="../../shared/js/demo-library.js"></script>
+<style>
+  html, body { margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-family: var(--sans); color: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="menu-wrap">
+      <button class="btn icon" id="btnMenu" data-i18n-aria="menu.aria" aria-label="Menu" aria-expanded="false">
+        <svg class="sats-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <g stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <line x1="9.5" y1="3.5" x2="14.5" y2="3.5"/><line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9.5" y1="20.5" x2="14.5" y2="20.5"/>
+          </g>
+        </svg>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown" hidden>
+        <button class="menu-item" id="btnAbout" data-i18n="menu.about">About</button>
+        <hr class="menu-sep">
+        <button class="menu-item" id="btnDir" data-i18n="hub.chooseDir">Choose process directory…</button>
+        <button class="menu-item" id="btnReport" data-i18n="brain.reportMenu">Export brain report (HTML)</button>
+        <button class="menu-item" id="btnConfig" data-i18n="menu.config">Configuration</button>
+      </div>
+    </div>
+    <input type="file" id="dirInput" webkitdirectory directory multiple style="display:none">
+    <span class="tb-trenner"></span>
+    <span class="tb-lab" id="brHint" data-i18n="brain.hint" style="max-width:560px"></span>
+    <span class="spacer"></span>
+    <div class="nav-wrap" id="navWrap"></div>
+  </div>
+
+  <div class="mod-app" id="brainApp">
+    <div class="brain-host" id="brainHost"></div>
+  </div>
+
+  <div class="stage" id="cfgHost" hidden></div>
+
+<script>
+function t(k, v) { return NIJU.I18N.t(k, v); }
+var ST = { model: { index: null, prozesse: {} }, api: null, brainMode: "force" };
+
+/* ☰-menu */
+var btnMenu = document.getElementById("btnMenu"), menuDropdown = document.getElementById("menuDropdown");
+function closeMenu() { menuDropdown.hidden = true; btnMenu.setAttribute("aria-expanded", "false"); document.removeEventListener("click", outside); }
+function outside(e) { if (!menuDropdown.contains(e.target) && e.target !== btnMenu) closeMenu(); }
+btnMenu.addEventListener("click", function (e) { e.stopPropagation(); if (!menuDropdown.hidden) { closeMenu(); return; } menuDropdown.hidden = false; btnMenu.setAttribute("aria-expanded", "true"); setTimeout(function () { document.addEventListener("click", outside); }, 0); });
+
+var brainApp = document.getElementById("brainApp");
+var brainHost = document.getElementById("brainHost");
+var cfgHost = document.getElementById("cfgHost");
+
+function loadModel(prozesse, index) {
+  var names = Object.keys(prozesse);
+  ST.model.prozesse = prozesse;
+  ST.model.index = NIJU.LIB.normalize(index, names);
+  ST.model.index.organisation = NIJU.ORG.normalize(ST.model.index.organisation || {});
+  ST.model.index.wissen = NIJU.WISSEN.normalize(ST.model.index.wissen || {});
+  drawBrain();
+}
+function drawBrain() {
+  ST.api = NIJU.BRAIN.render(brainHost, { index: ST.model.index, prozesse: ST.model.prozesse }, {
+    mode: ST.brainMode,
+    onMode: function (m) { ST.brainMode = m; }
+  });
+}
+
+/* choose directory */
+var dirInput = document.getElementById("dirInput");
+document.getElementById("btnDir").addEventListener("click", function () { closeMenu(); dirInput.click(); });
+dirInput.addEventListener("change", function (ev) {
+  if (!ev.target.files || !ev.target.files.length) return;
+  NIJU.LIB.fromFileList(ev.target.files).then(function (m) {
+    if (!Object.keys(m.prozesse).length) { alert(t("msg.noTextFields")); return; }
+    loadModel(m.prozesse, m.index);
+    document.getElementById("brHint").textContent = t("lib.loaded", { n: Object.keys(m.prozesse).length });
+  });
+  ev.target.value = "";
+});
+
+/* export report */
+document.getElementById("btnReport").addEventListener("click", function () {
+  closeMenu();
+  var g = NIJU.BRAIN.build(ST.model.index, ST.model.prozesse);
+  NIJU.BRAIN.exportReport(g, NIJU.BRAIN.insights(g), ST.model.index);
+});
+
+/* About */
+document.getElementById("btnAbout").addEventListener("click", function () {
+  closeMenu();
+  brainApp.hidden = true; cfgHost.hidden = false;
+  NIJU.CONFIG.open(cfgHost, { aboutOnly: true, onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; brainApp.hidden = false; } });
+});
+
+/* configuration (Brain consumes design, does not edit it) */
+document.getElementById("btnConfig").addEventListener("click", function () {
+  closeMenu();
+  brainApp.hidden = true; cfgHost.hidden = false;
+  NIJU.CONFIG.open(cfgHost, { onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; brainApp.hidden = false; drawBrain(); } });
+});
+
+/* start */
+NIJU.I18N.init();
+NIJU.DESIGN.init();
+NIJU.NAV.mount("navWrap", "brain");
+(function () {
+  var demo = JSON.parse(JSON.stringify(NIJU.DEMO));
+  loadModel(demo.prozesse, demo.index);
+  document.getElementById("brHint").textContent = t("brain.hint") + " — " + t("lib.noDir");
+})();
+
+NIJU.I18N.onChange(function () { drawBrain(); document.getElementById("brHint").textContent = t("brain.hint"); });
+NIJU.DESIGN.onChange(function () { /* CSS vars update automatically; node fills use them on next render */ drawBrain(); });
+</script>
+</body>
+</html>

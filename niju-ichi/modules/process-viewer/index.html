@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIJU ICHI Process Viewer</title>
+<link rel="stylesheet" href="../../shared/css/base.css">
+<link rel="stylesheet" href="../../shared/css/viewer.css">
+<script src="../../shared/js/i18n.js"></script>
+<script src="../../shared/lang/en.js"></script>
+<script src="../../shared/lang/de.js"></script>
+<script src="../../shared/lang/ja.js"></script>
+<script src="../../shared/js/modules.js"></script>
+<script src="../../shared/js/nav.js"></script>
+<script src="../../shared/js/design.js"></script>
+<script src="../../shared/design/swiss-modular.js"></script>
+<script src="../../shared/design/teal-soft.js"></script>
+<script src="../../shared/design/mono-slate.js"></script>
+<script src="../../shared/design/strategy-editorial.js"></script>
+<script src="../../shared/design/executive-dark.js"></script>
+<script src="../../shared/js/config.js"></script>
+<script src="../../shared/js/library.js"></script>
+<script src="../../shared/js/viewer.js"></script>
+<script src="../../shared/js/tree.js"></script>
+<script src="../../shared/js/map.js"></script>
+<script src="../../shared/js/demo-library.js"></script>
+<style>
+  html, body { margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-family: var(--sans); color: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="menu-wrap">
+      <button class="btn icon" id="btnMenu" data-i18n-aria="menu.aria" aria-label="Menu" aria-expanded="false">
+        <svg class="sats-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <g stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <line x1="9.5" y1="3.5" x2="14.5" y2="3.5"/><line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9.5" y1="20.5" x2="14.5" y2="20.5"/>
+          </g>
+        </svg>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown" hidden>
+        <button class="menu-item" id="btnAbout" data-i18n="menu.about">About</button>
+        <hr class="menu-sep">
+        <button class="menu-item" id="btnDir" data-i18n="hub.chooseDir">Choose process directory…</button>
+        <button class="menu-item" id="btnConfig" data-i18n="menu.config">Configuration</button>
+      </div>
+    </div>
+    <input type="file" id="dirInput" webkitdirectory directory multiple style="display:none">
+    <span class="tb-trenner"></span>
+    <div class="tb-seg">
+      <button class="btn seg aktiv" id="modeLandkarte" data-i18n="map.mapView">Map</button>
+      <button class="btn seg" id="modeBrowse" data-i18n="map.browse">Browse</button>
+    </div>
+    <span class="spacer"></span>
+    <div class="nav-wrap" id="navWrap"></div>
+  </div>
+
+  <div class="mod-app" id="mapApp">
+    <div class="niju-map-stage" id="mapHost"></div>
+  </div>
+
+  <div class="mod-app" id="modApp" hidden>
+    <aside class="niju-tree-pane">
+      <div class="niju-tree-titel" data-i18n="tree.paneTitle">Structure</div>
+      <div class="mod-hint" id="modHint" data-i18n="hub.dirHint"></div>
+      <div id="treeHost"></div>
+    </aside>
+    <div class="mod-right">
+      <div class="mod-view-head">
+        <span class="tb-lab" data-i18n="toolbar.view">View</span>
+        <button class="btn seg aktiv" id="btnUebersicht" data-i18n="toolbar.overview">Overview</button>
+        <button class="btn seg" id="btnDetail" data-i18n="toolbar.stepDetail">Process step detail</button>
+        <label class="tb-lab" id="stepLab" for="stepSel" data-i18n="toolbar.step" style="display:none">Step:</label>
+        <select id="stepSel" style="display:none"></select>
+      </div>
+      <div class="viewer-buehne" id="viewerHost"><div class="leer-hinweis" data-i18n="hub.selectHint"></div></div>
+    </div>
+  </div>
+  <div class="stage" id="cfgHost" hidden></div>
+
+<script>
+function t(k, v) { return NIJU.I18N.t(k, v); }
+var ST = { model: { index: null, prozesse: {} }, selected: null, ansicht: "uebersicht", detailIndex: 0, view: "landkarte", currentMapId: null };
+
+var btnMenu = document.getElementById("btnMenu"), menuDropdown = document.getElementById("menuDropdown");
+function schliesseMenu() { menuDropdown.hidden = true; btnMenu.setAttribute("aria-expanded", "false"); document.removeEventListener("click", aussen); }
+function aussen(e) { if (!menuDropdown.contains(e.target) && e.target !== btnMenu) schliesseMenu(); }
+btnMenu.addEventListener("click", function (e) { e.stopPropagation(); if (!menuDropdown.hidden) { schliesseMenu(); return; } menuDropdown.hidden = false; btnMenu.setAttribute("aria-expanded", "true"); setTimeout(function () { document.addEventListener("click", aussen); }, 0); });
+
+var treeHost = document.getElementById("treeHost"), viewerHost = document.getElementById("viewerHost");
+var stepSel = document.getElementById("stepSel"), stepLab = document.getElementById("stepLab");
+var btnU = document.getElementById("btnUebersicht"), btnD = document.getElementById("btnDetail");
+
+function normalizeMapClusters(list) {
+  (list || []).forEach(function (c) {
+    if (c.typ === "map") { if (!c.landkarte) c.landkarte = {}; NIJU.MAP.normalize(c.landkarte); }
+    normalizeMapClusters(c.cluster);
+  });
+}
+function getCurrentLandkarte() {
+  if (!ST.currentMapId) return ST.model.index.landkarte;
+  var found = null;
+  (function walk(list) { (list || []).forEach(function (c) { if (!found && c.id === ST.currentMapId && c.typ === "map") found = c; if (!found) walk(c.cluster); }); })(ST.model.index.cluster || []);
+  return found ? found.landkarte : ST.model.index.landkarte;
+}
+function ladeModel(prozesse, index) {
+  var names = Object.keys(prozesse);
+  ST.model.prozesse = prozesse;
+  ST.model.index = NIJU.LIB.normalize(index, names);
+  ST.model.index.landkarte = NIJU.MAP.normalize(ST.model.index.landkarte || {});
+  normalizeMapClusters(ST.model.index.cluster);
+  ST.currentMapId = null;
+  if (!ST.selected || names.indexOf(ST.selected) < 0) ST.selected = null;
+  zeichneTree();
+  zeichneViewer();
+  if (ST.view === "landkarte") zeichneMap();
+}
+function zeichneTree() {
+  NIJU.TREE.render(treeHost, { index: ST.model.index, prozesse: ST.model.prozesse, selected: ST.selected }, {
+    editable: false,
+    onSelect: function (name) { ST.selected = name; ST.ansicht = "uebersicht"; ST.detailIndex = 0; aktualisiereKopf(); zeichneTree(); zeichneViewer(); setView("browse"); },
+    onSelectMap: function (id) { ST.currentMapId = id; setView("landkarte"); }
+  });
+}
+function aktualisiereKopf() {
+  btnU.classList.toggle("aktiv", ST.ansicht === "uebersicht");
+  btnD.classList.toggle("aktiv", ST.ansicht === "detail");
+  var sichtbar = (ST.ansicht === "detail");
+  stepLab.style.display = sichtbar ? "" : "none";
+  stepSel.style.display = sichtbar ? "" : "none";
+}
+function fuelleStep(data) {
+  stepSel.innerHTML = "";
+  (data.schritte || []).forEach(function (s, i) {
+    var o = document.createElement("option"); o.value = String(i);
+    o.textContent = String(i).padStart(2, "0") + " — " + (s.untertitel || s.titel || t("render.stepFallback", { n: i }));
+    stepSel.appendChild(o);
+  });
+  stepSel.value = String(ST.detailIndex);
+}
+function zeichneViewer() {
+  var p = ST.selected ? ST.model.prozesse[ST.selected] : null;
+  if (!p || !p.data) { viewerHost.className = "viewer-buehne"; viewerHost.innerHTML = '<div class="leer-hinweis"></div>'; viewerHost.firstChild.textContent = t("hub.selectHint"); return; }
+  NIJU.VIEWER.render(viewerHost, p.data, { ansicht: ST.ansicht, detailIndex: ST.detailIndex });
+  if (ST.ansicht === "detail") fuelleStep(p.data);
+}
+btnU.addEventListener("click", function () { ST.ansicht = "uebersicht"; aktualisiereKopf(); zeichneViewer(); });
+btnD.addEventListener("click", function () { ST.ansicht = "detail"; aktualisiereKopf(); zeichneViewer(); });
+stepSel.addEventListener("change", function () { ST.detailIndex = parseInt(stepSel.value, 10) || 0; zeichneViewer(); });
+
+var dirInput = document.getElementById("dirInput");
+document.getElementById("btnDir").addEventListener("click", function () { schliesseMenu(); dirInput.click(); });
+dirInput.addEventListener("change", function (ev) {
+  if (!ev.target.files || !ev.target.files.length) return;
+  NIJU.LIB.fromFileList(ev.target.files).then(function (m) {
+    if (!Object.keys(m.prozesse).length) { alert(t("msg.noTextFields")); return; }
+    ST.selected = null;
+    ladeModel(m.prozesse, m.index);
+    document.getElementById("modHint").textContent = t("lib.loaded", { n: Object.keys(m.prozesse).length }) + (m.index ? "" : " — " + t("lib.indexMissing"));
+  });
+  ev.target.value = "";
+});
+
+/* ===== Landkarte (read-only Startansicht) ===== */
+var modApp = document.getElementById("modApp"), mapApp = document.getElementById("mapApp"), cfgHost = document.getElementById("cfgHost");
+var mapHost = document.getElementById("mapHost");
+var modeLandkarte = document.getElementById("modeLandkarte"), modeBrowse = document.getElementById("modeBrowse");
+
+function ersterProzessImCluster(id) {
+  var found = null;
+  (function walk(list) { (list || []).forEach(function (c) { if (found) return; if (c.id === id) { found = sucheErsten(c); } else walk(c.cluster); }); })(ST.model.index.cluster);
+  function sucheErsten(c) { if ((c.prozesse || []).length) return c.prozesse[0]; var r = null; (c.cluster || []).forEach(function (cc) { if (!r) r = sucheErsten(cc); }); return r; }
+  return found;
+}
+function setView(v) {
+  ST.view = v;
+  modeLandkarte.classList.toggle("aktiv", v === "landkarte");
+  modeBrowse.classList.toggle("aktiv", v === "browse");
+  mapApp.hidden = (v !== "landkarte");
+  modApp.hidden = (v !== "browse");
+  if (v === "landkarte") zeichneMap();
+  else zeichneViewer();
+}
+modeLandkarte.addEventListener("click", function () { setView("landkarte"); });
+modeBrowse.addEventListener("click", function () { setView("browse"); });
+
+function zeichneMap() {
+  NIJU.MAP.render(mapHost, getCurrentLandkarte(), {
+    editable: false,
+    onOpen: function (ziel) {
+      if (!ziel || !ziel.typ) return;
+      var name = null;
+      if (ziel.typ === "prozess") name = ziel.ref;
+      else if (ziel.typ === "cluster") name = ersterProzessImCluster(ziel.ref);
+      if (name && ST.model.prozesse[name]) { ST.selected = name; ST.ansicht = "uebersicht"; ST.detailIndex = 0; aktualisiereKopf(); zeichneTree(); zeichneViewer(); setView("browse"); }
+      else setView("browse");
+    }
+  });
+}
+
+/* About */
+document.getElementById("btnAbout").addEventListener("click", function () {
+  schliesseMenu();
+  modApp.hidden = true; mapApp.hidden = true; cfgHost.hidden = false;
+  NIJU.CONFIG.open(cfgHost, { aboutOnly: true, onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; setView(ST.view); } });
+});
+
+/* Configuration */
+document.getElementById("btnConfig").addEventListener("click", function () {
+  schliesseMenu();
+  modApp.hidden = true; mapApp.hidden = true; cfgHost.hidden = false;
+  NIJU.CONFIG.open(cfgHost, { onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; setView(ST.view); } });
+});
+
+NIJU.I18N.init();
+NIJU.DESIGN.init();
+NIJU.NAV.mount("navWrap", "hub");
+(function () {
+  var demo = JSON.parse(JSON.stringify(NIJU.DEMO));
+  ladeModel(demo.prozesse, demo.index);
+  document.getElementById("modHint").textContent = t("hub.dirHint") + " — " + t("lib.noDir");
+  setView("landkarte");
+})();
+
+NIJU.I18N.onChange(function () { aktualisiereKopf(); zeichneTree(); zeichneViewer(); if (ST.view === "landkarte") zeichneMap(); document.getElementById("modHint").textContent = t("hub.dirHint"); });
+var _rt = null;
+window.addEventListener("resize", function () { clearTimeout(_rt); _rt = setTimeout(function () { if (!modApp.hidden) NIJU.VIEWER.fit(viewerHost); }, 120); });
+</script>
+</body>
+</html>

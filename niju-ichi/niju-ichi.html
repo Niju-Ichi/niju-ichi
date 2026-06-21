@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIJU ICHI</title>
+<link rel="stylesheet" href="shared/css/base.css">
+<script src="shared/js/i18n.js"></script>
+<script src="shared/lang/en.js"></script>
+<script src="shared/lang/de.js"></script>
+<script src="shared/lang/ja.js"></script>
+<script src="shared/js/modules.js"></script>
+</head>
+<body class="launch-body">
+  <div class="launch-lang" id="langWrap"></div>
+  <div class="launch-banner">
+    <img src="shared/img/start-banner.jpg" alt="NIJU ICHI — Company Brain · Sovereign Processes">
+  </div>
+  <!-- Brain centred between the graphic and the module row, with flow arrows -->
+  <div class="launch-mid" id="flowMid"></div>
+  <!-- Builder · Manager · Viewer side by side at the bottom -->
+  <div class="launch-row" id="flowRow"></div>
+
+<script>
+var DESC = { builder: "launcher.builderDesc", management: "launcher.managementDesc", hub: "launcher.hubDesc", brain: "launcher.brainDesc" };
+
+/* Anzeigereihenfolge der Sprachen im Launcher: Japanisch, Deutsch, English. */
+var LANG_ORDER = ["ja", "de", "en"];
+
+function modById(id) { return NIJU.MODS.list().filter(function (m) { return m.id === id; })[0] || null; }
+
+function makeCard(m) {
+  if (!m) return null;
+  var card = document.createElement(m.enabled ? "a" : "div");
+  card.className = "launch-card" + (m.enabled ? "" : " disabled");
+  if (m.enabled) card.href = NIJU.MODS.href(m, "root");
+
+  var text = document.createElement("span");
+  text.className = "lc-text";
+  var eyebrow = document.createElement("span");
+  eyebrow.className = "lc-eyebrow"; eyebrow.textContent = "NIJU ICHI";
+  text.appendChild(eyebrow);
+  var name = document.createElement("span");
+  name.className = "lc-name"; name.textContent = NIJU.I18N.t(m.key);
+  text.appendChild(name);
+  card.appendChild(text);
+
+  if (m.enabled) {
+    var go = document.createElement("span"); go.className = "lc-go";
+    go.textContent = NIJU.I18N.t("launcher.open") + " →";
+    card.appendChild(go);
+  } else {
+    var soon = document.createElement("span"); soon.className = "lc-soon";
+    soon.textContent = NIJU.I18N.t("launcher.comingSoon");
+    card.appendChild(soon);
+  }
+
+  /* Beschreibung nur als Mouse-over-Tooltip */
+  var tip = document.createElement("span");
+  tip.className = "lc-tip"; tip.textContent = NIJU.I18N.t(DESC[m.id] || "");
+  card.appendChild(tip);
+  return card;
+}
+
+/* kleine Orange-Pfeile, die den Logik-Flow andeuten */
+function arrow(dir) {
+  var a = document.createElement("div");
+  a.className = "lc-arrow " + dir;
+  a.setAttribute("aria-hidden", "true");
+  /* Schaft unverändert, Pfeilspitze um 40% kleiner (Barben *0.6 um die Spitze) */
+  var d = (dir === "up") ? "M12 19 V5 M8.4 8.6 L12 5 L15.6 8.6"
+        : (dir === "right") ? "M5 12 H19 M15.4 8.4 L19 12 L15.4 15.6"
+        : "M19 12 H5 M8.6 8.4 L5 12 L8.6 15.6";
+  a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></svg>';
+  return a;
+}
+
+function zeichneModule() {
+  var mid = document.getElementById("flowMid");
+  var row = document.getElementById("flowRow");
+  mid.innerHTML = ""; row.innerHTML = "";
+
+  var brain = modById("brain"), builder = modById("builder"), manager = modById("management"), viewer = modById("hub");
+
+  /* obere Spalte: Grafik ↑ Brain ↑ (Brain mittig über Manager) */
+  mid.appendChild(arrow("up"));            /* zwischen Brain und Grafik */
+  var bCard = makeCard(brain); if (bCard) mid.appendChild(bCard);
+  mid.appendChild(arrow("up"));            /* zwischen Manager und Brain */
+
+  /* untere Reihe: Builder ← Manager ← Viewer */
+  var c1 = makeCard(builder); if (c1) row.appendChild(c1);
+  row.appendChild(arrow("right"));         /* zwischen Builder und Manager */
+  var c2 = makeCard(manager); if (c2) row.appendChild(c2);
+  row.appendChild(arrow("right"));         /* zwischen Manager und Viewer */
+  var c3 = makeCard(viewer); if (c3) row.appendChild(c3);
+}
+
+function zeichneSprachen() {
+  var w = document.getElementById("langWrap");
+  w.innerHTML = "";
+  var verfuegbar = NIJU.I18N.langs();
+  var sortiert = verfuegbar.slice().sort(function (a, b) {
+    var ia = LANG_ORDER.indexOf(a.code), ib = LANG_ORDER.indexOf(b.code);
+    if (ia < 0) ia = 99; if (ib < 0) ib = 99;
+    return ia - ib;
+  });
+  sortiert.forEach(function (L) {
+    var b = document.createElement("button");
+    b.textContent = L.name;
+    if (L.code === NIJU.I18N.get()) b.className = "aktiv";
+    b.addEventListener("click", function () { NIJU.I18N.setLang(L.code); });
+    w.appendChild(b);
+  });
+}
+
+NIJU.I18N.init();
+NIJU.I18N.onChange(function () { zeichneModule(); zeichneSprachen(); });
+zeichneModule();
+zeichneSprachen();
+</script>
+</body>
+</html>

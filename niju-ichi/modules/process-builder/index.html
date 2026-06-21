@@ -1,0 +1,2976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIJU ICHI Process Builder — RACI Process Overview</title>
+<link rel="stylesheet" href="../../shared/css/base.css">
+<script src="../../shared/js/i18n.js"></script>
+<script src="../../shared/lang/en.js"></script>
+<script src="../../shared/lang/de.js"></script>
+<script src="../../shared/lang/ja.js"></script>
+<script src="../../shared/js/modules.js"></script>
+<script src="../../shared/js/nav.js"></script>
+<script src="../../shared/js/design.js"></script>
+<script src="../../shared/design/swiss-modular.js"></script>
+<script src="../../shared/design/teal-soft.js"></script>
+<script src="../../shared/design/mono-slate.js"></script>
+<script src="../../shared/design/strategy-editorial.js"></script>
+<script src="../../shared/design/executive-dark.js"></script>
+<script src="../../shared/js/config.js"></script>
+<script src="../../shared/js/backup.js"></script>
+<script src="../../shared/js/org.js"></script>
+<style>
+  /* ============================================================
+     NIJU ICHI Process Builder — Layout "Swiss Modular"
+     Komplett offline, kein Build-Schritt, keine externen Quellen.
+     ============================================================ */
+
+  :root {
+    /* RACI-Badge-Farben (gemäß Vorlage) */
+    --raci-R: #e0850f;   --raci-R-text: #ffffff;  /* orange  = Responsible */
+    --raci-A: #2e9e4f;   --raci-A-text: #ffffff;  /* grün    = Accountable */
+    --raci-C: #3479c9;   --raci-C-text: #ffffff;  /* blau    = Consulted   */
+    --raci-I: #1f3a66;   --raci-I-text: #ffffff;  /* navy    = Informed    */
+
+    --ink:        #16181d;   /* Headlines, Regeln, Chip, dunkle Seitenleiste */
+    --paper:      #ffffff;
+    --sidebar:    #16181d;   /* dunkle Meta-Seitenleiste */
+    --muted:      #8b919b;   /* Mikro-Labels auf Weiß */
+    --muted-dark: #9aa3b1;   /* Mikro-Labels auf Dunkel */
+    --body:       #3a3f47;   /* Fließtext */
+    --akzent:     #3479c9;   /* Akzentblau (Chip-Wort, Output-Owner, Bullets) */
+
+    --rule:        #e3e6ea;  /* feine Linien (Spalten/Zeilen) */
+    --rule-mid:    #c7ccd3;  /* Rollen-/Meta-Trenner */
+    --rule-strong: #16181d;  /* schwere schwarze Trennregeln */
+    --zebra:       #f1f3f5;
+    --num-soft:    #c4c9d0;  /* große, dezente Schrittnummer (Prozessbereich) */
+    --verbinder:   #b3bbc5;  /* RACI-Verbinderlinien */
+
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+
+    /* UI-Akzent (Chrome): aktive Buttons, SATS-Menü, NIJU-ICHI-Schriftzug.
+       Marken-Orange aus der Startgrafik — getrennt vom RACI-„R"-Badge. */
+    --ui-akzent: #fd5e02;  --ui-akzent-text: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  /* Arbeitsbereich: optionales Editor-Panel links, Vorschau rechts */
+  .app { flex: 1; display: flex; min-height: 0; }
+
+  /* ---------- Werkzeugleiste (nur Bildschirm) ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 16px; background: #1b1f25; color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  }
+  .toolbar .spacer { flex: 1; }
+  .btn {
+    appearance: none; border: 1px solid #3a4250; background: #2a313b; color: #fff;
+    padding: 6px 11px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #353d48; }
+  /* Aktiver/hervorgehobener Button = Marken-Orange (UI-Akzent) */
+  .btn.primary { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .toolbar .marke { font-size: 14px; font-weight: 700; letter-spacing: .04em; color: #fff; white-space: nowrap; }
+  .toolbar .marke-akz { color: var(--ui-akzent); }
+
+  /* Hamburger-Menü oben links */
+  .menu-wrap { position: relative; display: flex; }
+  .btn.icon { padding: 5px 9px; line-height: 0; color: var(--ui-akzent); }
+  .sats-icon { display: block; }
+  .menu-dropdown {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+    background: #2a313b; border: 1px solid #3a4250; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); padding: 6px; min-width: 170px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .menu-dropdown[hidden] { display: none; }
+  .menu-item {
+    appearance: none; text-align: left; background: transparent; border: 0; color: #fff;
+    padding: 8px 11px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .menu-item:hover { background: #353d48; }
+  /* Untermenüs (Flyout nach rechts) */
+  .menu-sub { position: relative; display: flex; flex-direction: column; }
+  .menu-item.has-sub { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .menu-item.has-sub::after { content: "▸"; font-size: 11px; color: #9aa1ad; }
+  .submenu {
+    position: absolute; left: 100%; top: -6px; z-index: 70;
+    background: #2a313b; border: 1px solid #3a4250; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); padding: 6px; min-width: 150px;
+    display: none; flex-direction: column; gap: 3px;
+  }
+  .menu-sub:hover > .submenu, .menu-sub.auf > .submenu { display: flex; }
+
+  /* Ansichts-Navigation + Schritt-Dropdown */
+  .tb-trenner { width: 1px; align-self: stretch; background: #3a4250; margin: 2px 4px; }
+  .tb-nav { display: flex; align-items: center; gap: 7px; }
+  .tb-lab { font-size: 12px; color: #9aa1ad; white-space: nowrap; }
+  .btn.seg { background: #22272f; }
+  .btn.seg.aktiv { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+  .toolbar select {
+    appearance: none; background: #2a313b; color: #fff; border: 1px solid #3a4250;
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit; max-width: 230px;
+  }
+  .toolbar select:disabled { opacity: .4; cursor: default; }
+
+  /* ---------- Bühne / Blatt ---------- */
+  .buehne {
+    flex: 1; min-width: 0;
+    padding: 22px; overflow: auto;
+    background: linear-gradient(180deg,#586272 0%,#4c5562 100%);
+  }
+
+  /* Skalierungs-Hülle: nimmt die *skalierte* Größe ein (per JS gesetzt),
+     zentriert das Blatt und vermeidet Layout-Überlauf. */
+  .blatt-wrap { position: relative; margin: 0 auto; }
+
+  /* A3 quer; Inhalt oben ausgerichtet, viel Weißraum (Swiss-Stil).
+     Bildschirm-Skalierung über transform:scale (browserstabil, skaliert
+     das SVG der Verbinder 1:1 mit) statt des nicht-standardisierten zoom. */
+  .blatt {
+    background: var(--paper);
+    width: 392mm;
+    min-height: 120mm;
+    position: absolute; top: 0; left: 0;
+    padding: 12mm 13mm 10mm;
+    box-shadow: 0 10px 30px rgba(15,23,42,.28), 0 2px 6px rgba(15,23,42,.18);
+    display: flex; flex-direction: column;
+    transform-origin: top left;
+  }
+
+  /* SVG-Ebene mit den RACI-Verbindern (über den Feldern, unter den Badges). */
+  #verbinder {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    z-index: 1; pointer-events: none; overflow: visible;
+  }
+  #verbinder line {
+    stroke: var(--verbinder); stroke-width: 1.4; stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* ---------- Eyebrow / Top-Strip ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 7px;
+    position: relative;  /* Anker für absolut positioniertes Firma-Logo */
+  }
+  .topbar .ak { color: var(--akzent); }
+  .topbar .tb-r { display: flex; align-items: center; gap: 14px; }
+  .topbar .vinfo b { color: var(--ink); font-weight: 700; }
+  .topbar .chip {
+    background: var(--sidebar); color: #fff; font-weight: 700;
+    letter-spacing: .12em; padding: 4px 9px; border-radius: 2px;
+  }
+
+  /* ---------- Titel ---------- */
+  .titel { border-bottom: 2.5px solid var(--ink); padding-bottom: 10px; margin-bottom: 0; }
+  .titel h1 { margin: 0; font-size: 33px; font-weight: 800; letter-spacing: -.015em; line-height: 1.04; }
+  .titel .t1 { color: var(--ink); }
+  .titel .t2 { color: #aab0b8; font-weight: 700; }
+
+  /* ============================================================
+     Haupt-Raster
+     ============================================================ */
+  .raster { display: grid; }  /* Spalten per JS */
+
+  .zelle { padding: 9px 11px; overflow-wrap: anywhere; }
+
+  /* ----- dunkle Meta-Seitenleiste -----
+     Ein durchgehendes Panel über beide Bänder (grid-row 1/3).
+     Die vier Gruppen (ID, Owner, Input, Output) werden über die volle
+     Höhe verteilt -> kein Leerraum am unteren Ende, gleichmäßiger Rhythmus. */
+  .meta {
+    background: var(--sidebar); color: #fff;
+    padding: 17px 18px;
+    display: flex; flex-direction: column;
+    justify-content: space-between; gap: 16px;
+  }
+  .mgroup { display: block; }
+  .mlabel {
+    font-family: var(--mono);
+    font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--muted-dark); margin: 0 0 5px;
+  }
+  .mval-id { font-family: var(--mono); font-size: 12.5px; color: #fff; line-height: 1.4; }
+  .mval { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.35; }
+  .mval.akzent { color: #5fa0e6; margin-bottom: 6px; }
+
+  ul.mliste { list-style: none; margin: 0; padding: 0; }
+  ul.mliste > li { position: relative; padding-left: 14px; margin-bottom: 9px; }
+  ul.mliste > li:last-child { margin-bottom: 0; }
+  ul.mliste > li::before {
+    content: ""; position: absolute; left: 0; top: .46em;
+    width: 5px; height: 5px; background: var(--akzent);
+  }
+  ul.mliste .mtext { font-size: 12px; color: #eef1f5; line-height: 1.4; }
+  ul.mliste .mtag {
+    display: block; font-family: var(--mono); font-size: 8.5px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted-dark); margin-top: 3px;
+  }
+
+  /* ----- Schritt-Kopf ----- */
+  .schritt-kopf {
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 9px;
+  }
+  .sk-top { display: flex; align-items: baseline; gap: 9px; }
+  .sk-num { font-size: 26px; font-weight: 800; color: var(--num-soft); line-height: 1; letter-spacing: -.02em; }
+  .sk-lab { font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .sk-sub { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--ink); line-height: 1.22; }
+
+  /* ----- Schritt-Inhalt ----- */
+  .schritt-inhalt { border-right: 1px solid var(--rule); }
+  .si-lab {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  ul.liste { list-style: none; margin: 0; padding: 0; }
+  ul.liste > li { position: relative; padding-left: 13px; margin-bottom: 5px; }
+  ul.liste > li::before {
+    content: ""; position: absolute; left: 0; top: .42em;
+    width: 5px; height: 5px; background: var(--ink);
+  }
+  ul.liste > li > .txt { font-size: 11px; color: var(--body); line-height: 1.32; }
+  ul.liste ul { list-style: none; margin: 3px 0 0; padding: 0; }
+  ul.liste ul li { position: relative; padding-left: 13px; margin-bottom: 2px; }
+  ul.liste ul li::before {
+    content: ""; position: absolute; left: 0; top: .5em;
+    width: 5px; height: 1.5px; background: var(--muted);
+  }
+  ul.liste ul li { font-size: 10px; color: var(--muted); line-height: 1.3; }
+
+  /* ============================================================
+     RACI-Bereich
+     ============================================================ */
+  .raci-head {
+    grid-column: 1 / -1;
+    border-top: 2.5px solid var(--ink);
+    padding: 12px 0 10px;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+  }
+  .rh-titel { font-size: 16px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
+  .rh-sub {
+    display: block; margin-top: 3px;
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted); font-weight: 400;
+  }
+  .legende { display: flex; gap: 22px; flex-wrap: wrap; }
+  .legende .leg-item { display: flex; align-items: center; gap: 8px; }
+  .legende .leg-txt { display: flex; flex-direction: column; line-height: 1.15; }
+  .legende .leg-txt b { font-size: 10.5px; font-weight: 700; color: var(--ink); }
+  .legende .leg-txt i {
+    font-family: var(--mono); font-style: normal; font-size: 8px;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  }
+
+  /* RACI-Spaltenkopf (00–04 schwarz) */
+  .raci-num {
+    text-align: center; padding: 6px 4px 7px;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .rn-num { display: block; font-size: 19px; font-weight: 800; color: var(--ink); line-height: 1; letter-spacing: -.02em; }
+  .rn-lab { display: block; margin-top: 3px; font-family: var(--mono); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .raci-corner { border-bottom: 1.5px solid var(--ink); border-right: 1px solid var(--rule-mid); }
+
+  /* Rollen-Spalte + Matrix-Zellen */
+  .raci-rolle {
+    display: flex; align-items: center; justify-content: flex-end; text-align: right;
+    font-size: 11px; font-weight: 700; color: var(--ink);
+    padding: 0 12px; border-right: 1px solid var(--rule-mid);
+  }
+  .raci-zelle { position: relative; min-height: 30px; padding: 0; }
+  .rrow-1 .raci-zelle, .raci-zelle.rrow-1 { background: var(--zebra); }
+  .rrow-1.raci-rolle { background: var(--zebra); }
+
+  /* Badges (quadratisch, flach) */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 2px;
+    font-size: 11px; font-weight: 700; line-height: 1;
+  }
+  .raci-zelle .badge { position: absolute; top: 50%; transform: translate(-50%, -50%); z-index: 3; }
+  .raci-zelle .slot-C { left: 26%; }
+  .raci-zelle .slot-R { left: 42%; }
+  .raci-zelle .slot-A { left: 58%; }
+  .raci-zelle .slot-I { left: 74%; }
+  .badge-R { background: var(--raci-R); color: var(--raci-R-text); }
+  .badge-A { background: var(--raci-A); color: var(--raci-A-text); }
+  .badge-C { background: var(--raci-C); color: var(--raci-C-text); }
+  .badge-I { background: var(--raci-I); color: var(--raci-I-text); }
+
+  /* ---------- Fuß ---------- */
+  .footer {
+    margin-top: 14px; padding-top: 8px; border-top: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .footer b { color: var(--ink); font-weight: 700; }
+
+  .leer-hinweis { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 15px; }
+
+  /* ============================================================
+     Editor-Panel (nur Bildschirm)
+     ============================================================ */
+  .editor {
+    flex: 0 0 440px; width: 440px; overflow-y: auto;
+    background: #eef1f4; border-right: 1px solid #cfd5dc;
+    color: var(--ink); font-size: 13px;
+    /* Editor-Formular ist Bedienoberfläche auf hellem Grund: Standard-Ink
+       beibehalten, auch wenn ein dunkles Design --ink global auf hell setzt
+       (das Blatt #blatt liegt außerhalb von .editor und folgt dem Design). */
+    --ink: #16181d;
+  }
+  .editor[hidden] { display: none; }
+  body.bearbeiten .btn#btnBearbeiten { background: var(--ui-akzent); border-color: var(--ui-akzent); }
+
+  .ed-inner { padding: 14px 16px 60px; }
+  .ed-section { margin-bottom: 18px; border: 1px solid #d6dbe1; border-radius: 8px; background: #fff; overflow: hidden; }
+  .ed-h {
+    margin: 0; padding: 9px 12px; cursor: pointer;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+    color: #fff; background: var(--sidebar);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ed-h .pfeil { transition: transform .15s; font-size: 10px; }
+  .ed-section.zu .pfeil { transform: rotate(-90deg); }
+  .ed-section.zu .ed-body { display: none; }
+  .ed-body { padding: 12px; }
+
+  .ed-field { margin-bottom: 10px; }
+  .ed-field:last-child { margin-bottom: 0; }
+  .ed-field > label {
+    display: block; margin-bottom: 3px;
+    font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  }
+  .ed-field input[type=text], .ed-field textarea {
+    width: 100%; padding: 6px 8px; border: 1px solid #c7ccd3; border-radius: 5px;
+    font-family: inherit; font-size: 13px; color: var(--ink); background: #fff;
+  }
+  .ed-field input:focus, .ed-field textarea:focus, .ed-select:focus { outline: none; border-color: var(--akzent); }
+  .ed-field textarea { resize: vertical; min-height: 34px; line-height: 1.35; }
+  .ed-select {
+    width: 100%; padding: 6px 8px; border: 1px solid #c7ccd3; border-radius: 5px;
+    font-family: inherit; font-size: 13px; color: var(--ink); background: #fff;
+  }
+  .ed-check { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); margin: 4px 0 8px; cursor: pointer; }
+  .ed-file { width: 100%; font-size: 12px; }
+  .logo-vorschau { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .logo-vorschau img { max-height: 44px; max-width: 150px; border: 1px solid #d6dbe1; border-radius: 4px; background: #fff; padding: 3px; object-fit: contain; }
+
+  /* Firma-Logo oben rechts in der Kopfzeile (Blatt)
+     Absolut positioniert → nimmt keinen Platz im Flex-Flow ein, das Seiten-Layout
+     (Titel, Raster usw.) wird nicht verschoben.
+     - right:0 → bündig mit der rechten Inhaltskante.
+     - Höhe bewusst kleiner als die Kopfzeile; per top-Offset so platziert, dass die
+       UNTERKANTE des Logos mit der Unterkante des Titels (h1) fluchtet, ohne darüber
+       hinauszuragen. Übersicht: Titelunterkante liegt 60 px unter der Topbar-Oberkante
+       → top:16 + height:44 = 60. Detail: 55 px → top:15 + height:40 = 55.
+     - object-fit:contain + object-position:right top → nicht-quadratische Logos werden
+       ohne Verzerrung oben/rechts ausgerichtet (Rest-Weißraum fällt nach unten/links). */
+  .topbar .firma-logo {
+    position: absolute; right: 0; top: 16px;
+    height: 44px; width: 44px;
+    display: block; object-fit: contain; object-position: right top;
+  }
+  .blatt.detail .topbar .firma-logo { top: 15px; height: 40px; width: 40px; }
+
+  /* ============================================================
+     draw.io-Import — Bestätigungs-Dialog (nur Bildschirm)
+     ============================================================ */
+  .import-overlay {
+    position: fixed; inset: 0; z-index: 300; background: rgba(20,24,30,.55);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .import-overlay[hidden] { display: none; }
+  .import-dialog {
+    background: #fff; border-radius: 12px; width: min(960px, 94vw); max-height: 88vh;
+    display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.4); color: var(--ink);
+  }
+  .import-kopf { padding: 16px 22px; border-bottom: 1px solid var(--rule); }
+  .import-kopf h2 { margin: 0; font-size: 18px; font-weight: 800; }
+  .import-kopf p { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+  .import-body { padding: 6px 22px 12px; overflow: auto; }
+  .import-tabelle { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .import-tabelle th {
+    text-align: left; position: sticky; top: 0; background: #fff; z-index: 1;
+    font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    padding: 8px 8px; border-bottom: 1.5px solid var(--ink);
+  }
+  .import-tabelle td { border-bottom: 1px solid var(--rule); padding: 6px 8px; vertical-align: middle; }
+  .import-tabelle td.pos { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .import-tabelle td.txt { max-width: 360px; overflow-wrap: anywhere; }
+  .import-tabelle tr.ist-raci td.txt { font-weight: 700; }
+  .import-fuss { padding: 14px 22px; border-top: 1px solid var(--rule); display: flex; align-items: center; gap: 10px; }
+  .import-fuss .summe { flex: 1; font-size: 12px; color: var(--muted); }
+  .import-fuss .btn-akt {
+    appearance: none; border: 1px solid var(--ui-akzent); background: var(--ui-akzent); color: #fff;
+    padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit;
+  }
+  .import-fuss .btn-akt:hover { filter: brightness(1.08); }
+  .import-fuss .btn-sek {
+    appearance: none; border: 1px solid #c7ccd3; background: #f5f7f9; color: var(--ink);
+    padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .import-fuss .btn-sek:hover { background: #e7ebef; }
+
+  /* HTML-Stapel-Auswahl (Liste mit Checkboxen) */
+  .batch-liste { max-height: 46vh; overflow: auto; border: 1px solid var(--rule); border-radius: 7px; }
+  .batch-row {
+    display: flex; align-items: center; gap: 11px; padding: 9px 12px; cursor: pointer;
+    border-bottom: 1px solid var(--rule);
+  }
+  .batch-row:last-child { border-bottom: 0; }
+  .batch-row:hover { background: #f5f7f9; }
+  .batch-row input[type=checkbox] { width: 16px; height: 16px; flex: none; }
+  .batch-txt { min-width: 0; }
+  .batch-titel { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .batch-datei { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .ed-row { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 6px; }
+  .ed-row .grow { flex: 1; min-width: 0; }
+  .ed-2col { display: flex; gap: 8px; }
+  .ed-2col > * { flex: 1; }
+
+  .mini {
+    appearance: none; border: 1px solid #c7ccd3; background: #f5f7f9; color: var(--ink);
+    border-radius: 5px; cursor: pointer; font-size: 12px; font-family: inherit;
+    padding: 5px 9px; line-height: 1; white-space: nowrap;
+  }
+  .mini:hover { background: #e7ebef; }
+  .mini.del { color: #b3261e; border-color: #e3b9b5; background: #fbeeed; }
+  .mini.del:hover { background: #f6dedb; }
+  .mini.add { color: var(--akzent); border-color: #b8d0ec; background: #eef5fc; font-weight: 600; }
+  .mini.add:hover { background: #e0edfa; }
+  .mini:disabled { opacity: .35; cursor: default; }
+
+  .ed-item { border: 1px solid #dfe3e8; border-radius: 7px; padding: 10px; margin-bottom: 10px; background: #fafbfc; }
+  .ed-item-kopf { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .ed-item-kopf .titel { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--akzent); }
+  .ed-item-kopf .werkz { display: flex; gap: 4px; }
+
+  .ed-punkt { border-left: 2px solid #d6dbe1; padding-left: 8px; margin-bottom: 8px; }
+  .ed-unter { margin: 4px 0 0 10px; }
+  .ed-unter .ed-row input { font-size: 12px; }
+  .ed-hint { font-size: 11px; color: var(--muted); margin: 2px 0 8px; }
+
+  /* RACI im Blatt anklickbar machen */
+  .blatt.bearbeiten .raci-zelle.editierbar {
+    cursor: pointer; box-shadow: inset 0 0 0 1px transparent;
+  }
+  .blatt.bearbeiten .raci-zelle.editierbar:hover { background: #eaf2fc; box-shadow: inset 0 0 0 1px var(--akzent); }
+
+  /* RACI-Popover */
+  .raci-menu {
+    position: fixed; z-index: 200; background: #fff; border: 1px solid #c7ccd3;
+    border-radius: 8px; box-shadow: 0 8px 24px rgba(15,23,42,.22); padding: 8px;
+    display: flex; gap: 6px;
+  }
+  .raci-menu .rm-btn {
+    width: 34px; height: 34px; border-radius: 6px; border: 2px solid transparent;
+    cursor: pointer; font-weight: 700; font-size: 13px; color: #fff; opacity: .32;
+    font-family: inherit; transition: opacity .1s;
+  }
+  .raci-menu .rm-btn:hover { opacity: .7; }
+  .raci-menu .rm-btn.an { opacity: 1; border-color: var(--ink); }
+  .raci-menu .rm-R { background: var(--raci-R); }
+  .raci-menu .rm-A { background: var(--raci-A); }
+  .raci-menu .rm-C { background: var(--raci-C); }
+  .raci-menu .rm-I { background: var(--raci-I); }
+
+  /* ============================================================
+     Detailseite (A4 quer) — alles unter .blatt.detail gescoped,
+     damit es nicht mit dem Übersichts-Layout kollidiert.
+     ============================================================ */
+  .blatt.detail {
+    width: 281mm; min-height: 188mm; padding: 9mm 13mm 7mm;
+  }
+  .blatt.detail .titel { padding-bottom: 8px; }
+  .blatt.detail .titel h1 {
+    font-size: 28px; font-weight: 800; letter-spacing: -.015em; line-height: 1.05; color: var(--ink);
+  }
+  .blatt.detail .badge { width: 22px; height: 22px; font-size: 12px; }
+
+  .koerper {
+    flex: 1; display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    margin-top: 11px;
+  }
+  .spalte-links  { padding-right: 26px; display: flex; flex-direction: column; }
+  .spalte-rechts { padding-left: 28px; border-left: 1.5px solid var(--ink); }
+
+  .abschnitt-lab {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--akzent); margin-bottom: 11px;
+  }
+  .abschnitt-lab .dim { color: var(--muted); }
+
+  .raci-matrix { position: relative; display: grid; grid-template-columns: minmax(110px, 1fr) minmax(150px, 1.15fr); }
+  .rm-corner { border-bottom: 1.5px solid var(--ink); }
+  .rm-kopf { text-align: center; padding: 2px 4px 7px; border-bottom: 1.5px solid var(--ink); }
+  .rm-rolle {
+    display: flex; align-items: center; justify-content: flex-end; text-align: right;
+    font-size: 11.5px; font-weight: 700; color: var(--ink);
+    padding: 0 14px; border-right: 1px solid var(--rule-mid);
+  }
+  .rm-zelle { position: relative; min-height: 38px; }
+  .rm-rolle.stripe, .rm-zelle.stripe { background: var(--zebra); }
+  .rm-zelle .badge { position: absolute; top: 50%; transform: translate(-50%, -50%); z-index: 3; }
+  .rm-zelle .slot-C { left: 26%; }
+  .rm-zelle .slot-R { left: 42%; }
+  .rm-zelle .slot-A { left: 58%; }
+  .rm-zelle .slot-I { left: 74%; }
+
+  .blatt.detail.bearbeiten .rm-zelle.editierbar { cursor: pointer; box-shadow: inset 0 0 0 1px transparent; }
+  .blatt.detail.bearbeiten .rm-zelle.editierbar:hover { background: #eaf2fc; box-shadow: inset 0 0 0 1px var(--akzent); }
+
+  .leg-trenner { border: 0; border-top: 1px solid var(--rule); margin: auto 0 14px; }
+  .blatt.detail .legende { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; }
+  .blatt.detail .legende .leg-item { align-items: flex-start; gap: 9px; }
+  .blatt.detail .legende .leg-txt b { font-size: 11px; }
+  .blatt.detail .legende .leg-txt i { font-size: 8.5px; letter-spacing: .04em; text-transform: none; }
+
+  .beschr-block { display: grid; grid-template-columns: 46px 1fr; gap: 16px; padding: 11px 0; }
+  .beschr-block:first-of-type { padding-top: 0; }
+  .beschr-block + .beschr-block { border-top: 1px solid var(--rule); }
+  .bb-badge {
+    width: 38px; height: 38px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 21px; font-weight: 800; line-height: 1;
+  }
+  .bb-badge.R { background: var(--raci-R); color: var(--raci-R-text); }
+  .bb-badge.A { background: var(--raci-A); color: var(--raci-A-text); }
+  .bb-badge.C { background: var(--raci-C); color: var(--raci-C-text); }
+  .bb-badge.I { background: var(--raci-I); color: var(--raci-I-text); }
+  .bb-eyebrow { font-family: var(--mono); font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; }
+  .bb-eyebrow.R { color: var(--raci-R); } .bb-eyebrow.A { color: var(--raci-A); }
+  .bb-eyebrow.C { color: var(--raci-C); } .bb-eyebrow.I { color: var(--raci-I); }
+  .bb-eyebrow .dim { color: var(--muted); }
+  .bb-titel { font-size: 15.5px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; line-height: 1.12; margin-bottom: 5px; }
+  .bb-p { font-size: 11px; color: var(--body); line-height: 1.4; margin: 0 0 5px; }
+  .bb-p:last-child { margin-bottom: 0; }
+  .bb-p strong { color: var(--ink); font-weight: 700; }
+  ul.bb-liste { list-style: none; margin: 4px 0 7px; padding: 0; }
+  ul.bb-liste.spalten2 { column-count: 2; column-gap: 26px; }
+  ul.bb-liste > li { position: relative; padding-left: 14px; margin-bottom: 4px; break-inside: avoid; font-size: 11px; color: var(--body); line-height: 1.34; }
+  ul.bb-liste > li::before { content: ""; position: absolute; left: 0; top: .42em; width: 5px; height: 5px; background: var(--ink); }
+
+  /* ============================================================
+     Druck / PDF — Seitengröße wird per JS gesetzt (#druckGroesse):
+     Übersicht = A3 quer, Detail = A4 quer.
+     ============================================================ */
+  @media print {
+    html, body { background: #fff; height: auto; overflow: visible; display: block; }
+    .toolbar, .editor, .raci-menu { display: none !important; }
+    .app { display: block; min-height: 0; }
+    .buehne { padding: 0; overflow: visible; background: #fff; }
+    /* Im Druck: natürliche Größe, kein transform/keine Hüllen-Maße. */
+    .blatt-wrap { width: auto !important; height: auto !important; overflow: visible; }
+    .blatt {
+      position: static !important; transform: none !important;
+      box-shadow: none; min-height: auto;
+    }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .raster, .beschr-block { break-inside: avoid; }
+  }
+</style>
+<style id="druckGroesse">@page { size: A3 landscape; margin: 8mm; }</style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div class="menu-wrap">
+      <button class="btn icon" id="btnMenu" data-i18n-aria="menu.aria" aria-label="Menu" aria-expanded="false">
+        <svg class="sats-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <g stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <line x1="9.5" y1="3.5" x2="14.5" y2="3.5"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9.5" y1="20.5" x2="14.5" y2="20.5"/>
+          </g>
+        </svg>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown" hidden>
+        <button class="menu-item" id="btnAbout" data-i18n="menu.about">About</button>
+        <hr class="menu-sep">
+        <button class="menu-item" id="btnNeu" data-i18n="menu.new">New process</button>
+        <button class="menu-item" id="btnLaden" data-i18n="menu.open">Open</button>
+        <button class="menu-item" id="btnSave" data-i18n="menu.download">Download</button>
+        <button class="menu-item" id="btnSaveAs" data-i18n="menu.saveAs">Save as…</button>
+        <div class="menu-sub">
+          <button class="menu-item has-sub" type="button" data-i18n="menu.template">Template</button>
+          <div class="submenu">
+            <button class="menu-item" id="btnTemplateLaden" data-i18n="menu.templateLoad">Load template…</button>
+            <button class="menu-item" id="btnTemplateSpeichern" data-i18n="menu.templateSave">Save as template…</button>
+          </div>
+        </div>
+        <div class="menu-sub">
+          <button class="menu-item has-sub" type="button" data-i18n="menu.import">Import</button>
+          <div class="submenu">
+            <button class="menu-item" id="btnImport" data-i18n="menu.importDrawio">Draw.io</button>
+            <button class="menu-item" id="btnLadeOrg" data-i18n="org.menuLoadOrg">Load organisation…</button>
+          </div>
+        </div>
+        <div class="menu-sub">
+          <button class="menu-item has-sub" type="button" data-i18n="menu.export">Export</button>
+          <div class="submenu">
+            <button class="menu-item" id="btnDrucken" data-i18n="menu.exportPdf">PDF / Print</button>
+            <button class="menu-item" id="btnSpeichern" data-i18n="menu.exportJson">JSON</button>
+            <button class="menu-item" id="btnJpeg" data-i18n="menu.exportJpeg">JPEG</button>
+            <div class="menu-sub">
+              <button class="menu-item has-sub" type="button" data-i18n="menu.exportHtml">HTML</button>
+              <div class="submenu">
+                <button class="menu-item" id="btnHtml" data-i18n="menu.exportHtmlPage">HTML page</button>
+                <button class="menu-item" id="btnHtmlBatch" data-i18n="menu.exportHtmlBatch">HTML batch</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="menu-item" id="btnConfig" data-i18n="menu.config">Configuration</button>
+      </div>
+    </div>
+    <button class="btn" id="btnBearbeiten" data-i18n="toolbar.edit">Edit</button>
+    <input type="file" id="dateiInput" accept=".json,application/json" style="display:none">
+    <input type="file" id="templateInput" accept=".json,application/json" style="display:none">
+    <input type="file" id="drawioInput" accept=".drawio,.xml,application/xml,text/xml" style="display:none">
+    <input type="file" id="orgInput" accept=".json,application/json" style="display:none">
+    <input type="file" id="htmlBatchInput" multiple accept=".json,application/json" style="display:none">
+    <datalist id="orgNamen"></datalist>
+
+    <span class="tb-trenner"></span>
+    <div class="tb-nav">
+      <span class="tb-lab" data-i18n="toolbar.view">View</span>
+      <button class="btn seg" id="btnAnsichtUebersicht" data-i18n="toolbar.overview">Overview</button>
+      <button class="btn seg" id="btnAnsichtDetail" data-i18n="toolbar.stepDetail">Process step detail</button>
+      <label class="tb-lab" for="schrittWahl" id="schrittLab" data-i18n="toolbar.step">Step:</label>
+      <select id="schrittWahl"></select>
+    </div>
+
+    <span class="spacer"></span>
+    <div class="nav-wrap" id="navWrap"></div>
+  </div>
+
+  <div class="app">
+    <aside class="editor" id="editor" hidden></aside>
+    <div class="buehne">
+      <div class="blatt-wrap" id="blattWrap">
+        <div class="blatt" id="blatt">
+          <div class="leer-hinweis" data-i18n="empty.loadHint">Load a process JSON…</div>
+        </div>
+      </div>
+    </div>
+    <div class="stage cfg-stage" id="cfgHost" hidden></div>
+  </div>
+
+<script>
+/* Kurzform für Übersetzungen (UI-Texte); Inhalte des Nutzers werden NIE übersetzt. */
+const t = (k, vars) => NIJU.I18N.t(k, vars);
+
+/* Eingebettetes Standard-Template (inhaltsgleich zu data/templates/standard.json),
+   damit "Neuer Prozess" auch per Doppelklick ohne Server offline funktioniert.
+   Bei Änderungen beide synchron halten. */
+const TEMPLATE_LEER = {
+  "meta": { "titel": "", "firma": "", "firmaModus": "text", "logo": "", "prozessId": "", "version": "1.0", "datum": "", "processOwner": "", "fusstext": "" },
+  "input": { "label": "", "punkte": [""] },
+  "output": { "label": "", "verantwortlich": "", "punkte": [""] },
+  "schritte": [
+    { "id": "standards", "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt1",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt2",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt3",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt4",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] }
+  ],
+  "rollen": [],
+  "raci": { "standards": {}, "schritt1": {}, "schritt2": {}, "schritt3": {}, "schritt4": {} },
+  "legende": { "R": "", "A": "", "C": "", "I": "" }
+};
+
+const RACI_REIHENFOLGE = ["R", "A", "C", "I"];   /* Legende-Reihenfolge */
+const SLOT_REIHENFOLGE = ["C", "R", "A", "I"];   /* feste Plätze im RACI-Feld */
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/* Zentraler Zustand: die aktuell bearbeiteten Daten + Editor-Modus + Ansicht.
+   ansicht: "uebersicht" | "detail"; detailIndex = angezeigter Schritt im Detail. */
+const STATE = { daten: null, bearbeiten: false, zuKlappen: {}, ansicht: "uebersicht", detailIndex: 0 };
+
+function tiefKopie(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+/* Daten setzen = Vorschau rendern und (falls offen) Editor neu aufbauen. */
+function setDaten(daten) {
+  STATE.daten = daten;
+  render(STATE.daten);
+  if (STATE.bearbeiten) baueEditor();
+}
+
+/* ---------- kleine Helfer ---------- */
+function el(tag, klasse, text) {
+  const e = document.createElement(tag);
+  if (klasse) e.className = klasse;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+/* Im Badge angezeigter Text je RACI-Buchstabe (aus dem aktiven/Prozess-Design;
+   Fallback = Buchstabe selbst). So lassen sich die Badges im Design umbenennen. */
+function raciLabel(b) { return (window.NIJU && NIJU.DESIGN && NIJU.DESIGN.labelFor) ? NIJU.DESIGN.labelFor(b) : b; }
+function badge(buchstabe) { return el("span", "badge badge-" + buchstabe, raciLabel(buchstabe)); }
+
+/* "Input [Verantwortlich]" -> "INPUT / VERANTWORTLICH" */
+function labelFormat(text) {
+  return (text || "").toUpperCase().replace(/\s*\[/, " / ").replace(/\]/g, "");
+}
+/* "Unternehmensstrategie [CEO]" -> {text, tag} */
+function tagSplit(s) {
+  const m = String(s).match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+  if (m) return { text: m[1], tag: m[2] };
+  return { text: String(s), tag: null };
+}
+/* "Konzeptverantwortung (Responsible)" -> {titel:"Responsible", sub:"Konzeptverantwortung"} */
+function legendeTeile(text) {
+  const m = String(text).match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if (m) return { sub: m[1], titel: m[2] };
+  return { sub: text, titel: "" };
+}
+/* "1.4.3 Organisationsentwicklung" -> {num:"1.4.3", name:"Organisationsentwicklung"} */
+function prozessIdTeile(text) {
+  const m = String(text || "").match(/^\s*([\d.]+)\s+(.*)$/);
+  if (m) return { num: m[1], name: m[2] };
+  return { num: "", name: String(text || "") };
+}
+/* Sichere Rich-Text-Ausgabe (Detailseite): HTML escapen, **fett** zulassen */
+function richHTML(s) {
+  const esc = String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+/* Firma oben rechts in der Kopfzeile: als Text-Chip oder als Logo-Bild.
+   meta.firmaModus = "text" | "logo"; meta.logo = Data-URL (PNG/JPEG). */
+function firmaElement(m) {
+  if (m.firmaModus === "logo" && m.logo) {
+    const img = el("img", "firma-logo");
+    img.src = m.logo;
+    img.alt = m.firma || "Logo";
+    return img;
+  }
+  if (m.firma) return el("span", "chip", m.firma);
+  return null;
+}
+
+/* Aufzählung für die dunkle Meta-Seitenleiste (mit [Tag]-Unterzeile) */
+function metaListe(punkte) {
+  const ul = el("ul", "mliste");
+  (punkte || []).forEach(p => {
+    const { text, tag } = tagSplit(typeof p === "string" ? p : (p.text || ""));
+    const li = el("li");
+    li.appendChild(el("span", "mtext", text));
+    if (tag) li.appendChild(el("span", "mtag", tag));
+    ul.appendChild(li);
+  });
+  return ul;
+}
+
+/* Aufzählung für Schritt-Inhalt (mit optionalen Unterpunkten) */
+function punkteListe(punkte) {
+  const ul = el("ul", "liste");
+  (punkte || []).forEach(p => {
+    const li = el("li");
+    const text = (typeof p === "string") ? p : (p.text || "");
+    li.appendChild(el("span", "txt", text));
+    const unter = (typeof p === "object" && p.unterpunkte) ? p.unterpunkte : null;
+    if (unter && unter.length) {
+      const subUl = el("ul");
+      unter.forEach(u => subUl.appendChild(el("li", null, u)));
+      li.appendChild(subUl);
+    }
+    ul.appendChild(li);
+  });
+  return ul;
+}
+
+/* ============================================================
+   Render-Dispatcher: wählt Übersicht oder Detailseite
+   ============================================================ */
+function render(daten) {
+  const blatt = document.getElementById("blatt");
+  if (window.NIJU.DESIGN) window.NIJU.DESIGN.applyForProcess(daten);
+  blatt.classList.toggle("detail", STATE.ansicht === "detail");
+  if (STATE.ansicht === "detail") renderDetail(daten);
+  else renderUebersicht(daten);
+  aktualisiereSchrittWahl();
+}
+
+/* ============================================================
+   Render-Funktion: Prozessübersicht (A3 quer)
+   ============================================================ */
+function renderUebersicht(daten) {
+  const blatt = document.getElementById("blatt");
+  blatt.innerHTML = "";
+  blatt.classList.toggle("bearbeiten", STATE.bearbeiten);
+  if (!daten || !daten.meta) {
+    blatt.innerHTML = '<div class="leer-hinweis"></div>'; blatt.firstChild.textContent = t("msg.invalidData");
+    return;
+  }
+
+  const m = daten.meta;
+  const schritte = daten.schritte || [];
+  const rollen = daten.rollen || [];
+  const n = schritte.length;
+  const versStand = "VERSION " + " "; // Platzhalter (wird unten zusammengebaut)
+
+  /* ----- Eyebrow / Top-Strip ----- */
+  const topbar = el("div", "topbar");
+  const tbl = el("div", "tb-l");
+  tbl.appendChild(document.createTextNode(t("render.processMap") + " "));
+  if (m.firma) { tbl.appendChild(document.createTextNode("/ ")); tbl.appendChild(el("span", "ak", m.firma)); }
+  topbar.appendChild(tbl);
+  const tbr = el("div", "tb-r");
+  const firmaEl = firmaElement(m);   /* Firma oben rechts: Text-Chip oder Logo */
+  if (firmaEl) tbr.appendChild(firmaEl);
+  topbar.appendChild(tbr);
+  blatt.appendChild(topbar);
+
+  /* ----- Titel (zweifarbig: vor "-" fett, danach hell) ----- */
+  const titelWrap = el("div", "titel");
+  const h1 = el("h1");
+  const teile = (m.titel || "").split(/\s[-–]\s/);
+  h1.appendChild(el("span", "t1", teile[0] || ""));
+  if (teile.length > 1) { h1.appendChild(document.createTextNode(" ")); h1.appendChild(el("span", "t2", teile.slice(1).join(" – "))); }
+  titelWrap.appendChild(h1);
+  blatt.appendChild(titelWrap);
+
+  /* ----- Raster ----- */
+  const raster = el("div", "raster");
+  raster.style.gridTemplateColumns = "minmax(205px, 1.12fr) repeat(" + n + ", 1fr)";
+
+  /* Dunkles Meta-Panel: ein Block über Band 1 + 2 (grid-row 1/3).
+     Vier Gruppen werden über die volle Höhe gleichmäßig verteilt. */
+  const meta = el("div", "zelle meta");
+  meta.style.gridColumn = "1";
+  meta.style.gridRow = "1 / span 2";
+  const mgruppe = (bauen) => { const g = el("div", "mgroup"); bauen(g); meta.appendChild(g); };
+  mgruppe(g => {
+    g.appendChild(el("div", "mlabel", t("field.processId")));
+    g.appendChild(el("div", "mval-id", m.prozessId || "—"));
+  });
+  mgruppe(g => {
+    g.appendChild(el("div", "mlabel", t("field.processOwner")));
+    g.appendChild(el("div", "mval", m.processOwner || "—"));
+  });
+  if (daten.input) mgruppe(g => {
+    g.appendChild(el("div", "mlabel", labelFormat(daten.input.label || t("field.input"))));
+    g.appendChild(metaListe(daten.input.punkte));
+  });
+  if (daten.output) mgruppe(g => {
+    g.appendChild(el("div", "mlabel", labelFormat(daten.output.label || t("field.output"))));
+    if (daten.output.verantwortlich) g.appendChild(el("div", "mval akzent", daten.output.verantwortlich));
+    g.appendChild(metaListe(daten.output.punkte));
+  });
+  raster.appendChild(meta);
+
+  /* Band 1: Schritt-Köpfe (Zeile 1) */
+  schritte.forEach((s, i) => {
+    const k = el("div", "zelle schritt-kopf");
+    k.style.gridColumn = String(i + 2);
+    k.style.gridRow = "1";
+    const top = el("div", "sk-top");
+    /* Spaltenkopf-ID (frei wählbar). Ohne ID beginnt der Titel linksbündig. */
+    if (s.kopfId) top.appendChild(el("span", "sk-num", s.kopfId));
+    top.appendChild(el("span", "sk-lab", (s.titel || "").toUpperCase()));
+    k.appendChild(top);
+    if (s.untertitel) k.appendChild(el("div", "sk-sub", s.untertitel));
+    raster.appendChild(k);
+  });
+
+  /* Band 2: Schritt-Inhalte (Zeile 2) */
+  schritte.forEach((s, i) => {
+    const c = el("div", "zelle schritt-inhalt");
+    c.style.gridColumn = String(i + 2);
+    c.style.gridRow = "2";
+    if (s.punkteUeberschrift) c.appendChild(el("div", "si-lab", s.punkteUeberschrift));
+    c.appendChild(punkteListe(s.punkte));
+    raster.appendChild(c);
+  });
+
+  /* ----- RACI: Kopf mit Titel + Legende (volle Breite) ----- */
+  const rhead = el("div", "raci-head");
+  const rht = el("div");
+  rht.appendChild(el("div", "rh-titel", t("render.raciTitle")));
+  rht.appendChild(el("span", "rh-sub", t("render.raciSub")));
+  rhead.appendChild(rht);
+  const legende = el("div", "legende");
+  const leg = daten.legende || {};
+  RACI_REIHENFOLGE.forEach(b => {
+    if (!leg[b]) return;
+    const t = legendeTeile(leg[b]);
+    const item = el("div", "leg-item");
+    item.appendChild(badge(b));
+    const txt = el("div", "leg-txt");
+    txt.appendChild(el("b", null, t.titel || raciLabel(b)));
+    if (t.sub) txt.appendChild(el("i", null, t.sub));
+    item.appendChild(txt);
+    legende.appendChild(item);
+  });
+  rhead.appendChild(legende);
+  raster.appendChild(rhead);
+
+  /* ----- RACI: Spaltenkopf (00–04) ----- */
+  raster.appendChild(el("div", "raci-corner"));
+  schritte.forEach((s, i) => {
+    const c = el("div", "raci-num");
+    if (s.kopfId) c.appendChild(el("span", "rn-num", s.kopfId));
+    c.appendChild(el("span", "rn-lab", (s.titel || "").toUpperCase()));
+    raster.appendChild(c);
+  });
+
+  /* ----- RACI: Matrix-Zeilen ----- */
+  rollen.forEach((rolle, ri) => {
+    const stripe = "rrow-" + (ri % 2);
+    raster.appendChild(el("div", "raci-rolle " + stripe, rolle));
+    schritte.forEach(s => {
+      const zelle = el("div", "raci-zelle " + stripe);
+      const eintrag = (daten.raci && daten.raci[s.id]) ? daten.raci[s.id][rolle] : null;
+      if (eintrag && eintrag.length) {
+        SLOT_REIHENFOLGE.forEach(b => {
+          if (eintrag.includes(b)) {
+            const bel = badge(b);
+            bel.classList.add("slot-" + b);
+            bel.dataset.step = s.id;
+            bel.dataset.letter = b;
+            zelle.appendChild(bel);
+          }
+        });
+      }
+      if (STATE.bearbeiten) {
+        zelle.classList.add("editierbar");
+        zelle.title = t("raci.clickHint");
+        zelle.addEventListener("click", (ev) => { ev.stopPropagation(); oeffneRaciMenu(zelle, s.id, rolle); });
+      }
+      raster.appendChild(zelle);
+    });
+  });
+
+  blatt.appendChild(raster);
+
+  /* ----- Fuß ----- */
+  const footer = el("div", "footer");
+  footer.appendChild(el("div", "f-l", m.fusstext || ""));
+  const fr = el("div", "f-r");
+  if (m.version) { fr.appendChild(document.createTextNode(t("render.version") + " ")); fr.appendChild(el("b", null, m.version)); }
+  if (m.datum)   fr.appendChild(document.createTextNode("  /  " + t("render.asOf") + " " + m.datum));
+  if (m.firma)   fr.appendChild(document.createTextNode("  /  " + m.firma));
+  footer.appendChild(fr);
+  blatt.appendChild(footer);
+
+  requestAnimationFrame(() => { zeichneVerbinder(); passeBildschirmEin(); });
+}
+
+/* ============================================================
+   RACI-Verbinder zeichnen — Dispatcher je Ansicht
+   ============================================================ */
+function zeichneVerbinder() {
+  if (STATE.ansicht === "detail") zeichneVerbinderDetail();
+  else zeichneVerbinderUebersicht();
+}
+
+/* ----- Verbinder für die Übersicht (alle Schritt-Spalten) ----- */
+function zeichneVerbinderUebersicht() {
+  const blatt = document.getElementById("blatt");
+  if (!blatt) return;
+  /* Während der Messung das transform:scale neutralisieren, damit
+     getBoundingClientRect natürliche (unskalierte) Koordinaten liefert. */
+  const altTransform = blatt.style.transform;
+  blatt.style.transform = "none";
+
+  let svg = document.getElementById("verbinder");
+  if (!svg) { svg = document.createElementNS(SVG_NS, "svg"); svg.id = "verbinder"; blatt.appendChild(svg); }
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const bRect = blatt.getBoundingClientRect();
+  const w = blatt.clientWidth, h = blatt.clientHeight;
+  svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+  svg.setAttribute("preserveAspectRatio", "none");
+
+  function linie(x1, y1, x2, y2) {
+    const l = document.createElementNS(SVG_NS, "line");
+    l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+    l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+    svg.appendChild(l);
+  }
+  function elbow(x1, y1, x2, y2) {
+    if (Math.abs(y1 - y2) < 0.5) { linie(x1, y1, x2, y2); return; }
+    const xm = (x1 + x2) / 2;
+    linie(x1, y1, xm, y1); linie(xm, y1, xm, y2); linie(xm, y2, x2, y2);
+  }
+  const zentrum = (b) => {
+    const r = b.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - bRect.left, y: r.top + r.height / 2 - bRect.top };
+  };
+
+  const proSchritt = {};
+  Array.from(blatt.querySelectorAll(".raci-zelle .badge")).forEach(b => {
+    (proSchritt[b.dataset.step] = proSchritt[b.dataset.step] || []).push(b);
+  });
+
+  Object.keys(proSchritt).forEach(stepId => {
+    const cs = [], is = []; let R = null, A = null;
+    proSchritt[stepId].forEach(b => {
+      const p = zentrum(b), L = b.dataset.letter;
+      if (L === "C") cs.push(p); else if (L === "I") is.push(p);
+      else if (L === "R") R = p; else if (L === "A") A = p;
+    });
+    cs.sort((a, b) => a.y - b.y); is.sort((a, b) => a.y - b.y);
+    const xC = cs.length ? cs[0].x : null;
+    const xI = is.length ? is[0].x : null;
+    const cExtra = [], iExtra = [];
+
+    let prev = null;
+    if (xC != null) prev = { kind: "col", x: xC, extra: cExtra };
+    if (R) {
+      if (prev && prev.kind === "col") { linie(prev.x, R.y, R.x, R.y); prev.extra.push(R.y); }
+      prev = { kind: "pt", x: R.x, y: R.y };
+    }
+    if (A) {
+      if (prev && prev.kind === "pt") elbow(prev.x, prev.y, A.x, A.y);
+      else if (prev && prev.kind === "col") { linie(prev.x, A.y, A.x, A.y); prev.extra.push(A.y); }
+      prev = { kind: "pt", x: A.x, y: A.y };
+    }
+    if (xI != null) {
+      if (prev && prev.kind === "pt") { linie(prev.x, prev.y, xI, prev.y); iExtra.push(prev.y); }
+      else if (prev && prev.kind === "col") { const y = cs[0].y; linie(prev.x, y, xI, y); iExtra.push(y); prev.extra.push(y); }
+    }
+
+    function vert(items, x, extra) {
+      if (x == null) return;
+      const ys = items.map(p => p.y).concat(extra);
+      if (ys.length < 2) return;
+      const y1 = Math.min.apply(null, ys), y2 = Math.max.apply(null, ys);
+      if (y2 - y1 > 0.5) linie(x, y1, x, y2);
+    }
+    vert(cs, xC, cExtra);
+    vert(is, xI, iExtra);
+  });
+
+  blatt.style.transform = altTransform;
+}
+
+/* ============================================================
+   Render-Funktion: Prozessschritt-Detailseite (A4 quer)
+   Liest dieselben Daten wie die Übersicht; die RACI-Matrix zeigt
+   die Spalte dieses Schritts und ist damit 1:1 gespiegelt.
+   ============================================================ */
+function renderDetail(daten) {
+  const blatt = document.getElementById("blatt");
+  blatt.innerHTML = "";
+  blatt.classList.toggle("bearbeiten", STATE.bearbeiten);
+  if (!daten || !daten.meta || !daten.schritte || !daten.schritte.length) {
+    blatt.innerHTML = '<div class="leer-hinweis"></div>'; blatt.firstChild.textContent = t("msg.invalidData");
+    return;
+  }
+  const index = Math.max(0, Math.min(STATE.detailIndex || 0, daten.schritte.length - 1));
+  STATE.detailIndex = index;
+
+  const m = daten.meta;
+  const schritt = daten.schritte[index];
+  const rollen = daten.rollen || [];
+  const leg = daten.legende || {};
+  const pid = prozessIdTeile(m.prozessId);
+  const nr = String(index).padStart(2, "0");
+
+  /* ----- Eyebrow / Top-Strip ----- */
+  const topbar = el("div", "topbar");
+  const tbl = el("div", "tb-l");
+  tbl.appendChild(document.createTextNode((pid.name || "").toUpperCase() + (pid.num ? "  ·  " + pid.num + "  /  " : "  /  ")));
+  tbl.appendChild(el("span", "ak", t("render.processStep") + " " + nr));
+  topbar.appendChild(tbl);
+  const tbr = el("div", "tb-r");
+  const firmaEl = firmaElement(m);   /* Firma oben rechts: Text-Chip oder Logo */
+  if (firmaEl) tbr.appendChild(firmaEl);
+  topbar.appendChild(tbr);
+  blatt.appendChild(topbar);
+
+  /* ----- Titel = Untertitel des Schritts ----- */
+  const titelWrap = el("div", "titel");
+  titelWrap.appendChild(el("h1", null, schritt.untertitel || schritt.titel || t("render.stepFallback", { n: index })));
+  blatt.appendChild(titelWrap);
+
+  /* ----- Körper: zwei Spalten ----- */
+  const koerper = el("div", "koerper");
+  koerper.appendChild(baueDetailLinks(daten, schritt, rollen, leg));
+  koerper.appendChild(baueDetailRechts(schritt, leg));
+  blatt.appendChild(koerper);
+
+  /* ----- Fuß ----- */
+  const footer = el("div", "footer");
+  footer.appendChild(el("div", "f-l", m.fusstext || ""));
+  const fr = el("div", "f-r");
+  if (m.version) { fr.appendChild(document.createTextNode(t("render.version") + " ")); fr.appendChild(el("b", null, m.version)); }
+  if (m.datum)   fr.appendChild(document.createTextNode("  /  " + t("render.asOf") + " " + m.datum));
+  if (m.firma)   fr.appendChild(document.createTextNode("  /  " + m.firma));
+  footer.appendChild(fr);
+  blatt.appendChild(footer);
+
+  requestAnimationFrame(() => { zeichneVerbinder(); passeBildschirmEin(); });
+}
+
+/* ---------- Detail: linke Spalte — RACI-Mini-Matrix + Legende ---------- */
+function baueDetailLinks(daten, schritt, rollen, leg) {
+  const sp = el("div", "spalte-links");
+  const lab = el("div", "abschnitt-lab");
+  lab.appendChild(document.createTextNode(t("detail.responsibilities") + " "));
+  lab.appendChild(el("span", "dim", t("detail.raciThisStep")));
+  sp.appendChild(lab);
+
+  const matrix = el("div", "raci-matrix");
+  matrix.appendChild(el("div", "rm-corner"));
+  matrix.appendChild(el("div", "rm-kopf"));
+
+  const eintragProRolle = (daten.raci && daten.raci[schritt.id]) ? daten.raci[schritt.id] : {};
+  rollen.forEach((rolle, ri) => {
+    const stripe = (ri % 2 === 0) ? " stripe" : "";
+    matrix.appendChild(el("div", "rm-rolle" + stripe, rolle));
+    const zelle = el("div", "rm-zelle" + stripe);
+    const eintrag = eintragProRolle[rolle];
+    if (eintrag && eintrag.length) {
+      SLOT_REIHENFOLGE.forEach(b => {
+        if (eintrag.includes(b)) {
+          const bel = badge(b);
+          bel.classList.add("slot-" + b);
+          bel.dataset.letter = b;
+          zelle.appendChild(bel);
+        }
+      });
+    }
+    if (STATE.bearbeiten) {
+      zelle.classList.add("editierbar");
+      zelle.title = t("raci.clickHint");
+      zelle.addEventListener("click", (ev) => { ev.stopPropagation(); oeffneRaciMenu(zelle, schritt.id, rolle); });
+    }
+    matrix.appendChild(zelle);
+  });
+  sp.appendChild(matrix);
+
+  sp.appendChild(el("hr", "leg-trenner"));
+  const legende = el("div", "legende");
+  RACI_REIHENFOLGE.forEach(b => {
+    if (!leg[b]) return;
+    const t = legendeTeile(leg[b]);
+    const item = el("div", "leg-item");
+    item.appendChild(badge(b));
+    const txt = el("div", "leg-txt");
+    txt.appendChild(el("b", null, t.titel || raciLabel(b)));
+    if (t.sub) txt.appendChild(el("i", null, t.sub));
+    item.appendChild(txt);
+    legende.appendChild(item);
+  });
+  sp.appendChild(legende);
+  return sp;
+}
+
+/* ---------- Detail: rechte Spalte — Beschreibungs-Blöcke je RACI-Buchstabe ---------- */
+function baueDetailRechts(schritt, leg) {
+  const sp = el("div", "spalte-rechts");
+  const lab = el("div", "abschnitt-lab");
+  lab.appendChild(document.createTextNode(t("detail.description") + " "));
+  lab.appendChild(el("span", "dim", t("detail.assignmentRaci")));
+  sp.appendChild(lab);
+
+  const bloecke = schritt.beschreibung || [];
+  if (!bloecke.length) {
+    sp.appendChild(el("div", "leer-hinweis", t("detail.noDescription")));
+    return sp;
+  }
+
+  bloecke.forEach(block => {
+    const b = (block.raci || "").toUpperCase();
+    const wrap = el("div", "beschr-block");
+    wrap.appendChild(el("div", "bb-badge " + b, raciLabel(b)));
+    const inhalt = el("div", "bb-inhalt");
+    const t = legendeTeile(leg[b] || "");
+    const eyebrow = el("div", "bb-eyebrow " + b);
+    eyebrow.appendChild(document.createTextNode((t.titel || raciLabel(b)).toUpperCase() + " "));
+    if (t.sub) eyebrow.appendChild(el("span", "dim", "· " + t.sub.toUpperCase()));
+    inhalt.appendChild(eyebrow);
+    if (block.titel) inhalt.appendChild(el("div", "bb-titel", block.titel));
+    (block.inhalt || []).forEach(teil => {
+      if (typeof teil === "string") {
+        const p = el("p", "bb-p");
+        p.innerHTML = richHTML(teil);
+        inhalt.appendChild(p);
+      } else if (teil && teil.liste) {
+        const ul = el("ul", "bb-liste" + (teil.spalten === 2 ? " spalten2" : ""));
+        teil.liste.forEach(li => {
+          const item = el("li");
+          item.innerHTML = richHTML(li);
+          ul.appendChild(item);
+        });
+        inhalt.appendChild(ul);
+      }
+    });
+    wrap.appendChild(inhalt);
+    sp.appendChild(wrap);
+  });
+  return sp;
+}
+
+/* ----- Verbinder für die Detail-Mini-Matrix (eine Schritt-Spalte) ----- */
+function zeichneVerbinderDetail() {
+  const matrix = document.querySelector(".raci-matrix");
+  const blatt = document.getElementById("blatt");
+  if (!matrix || !blatt) return;
+  const altTransform = blatt.style.transform;
+  blatt.style.transform = "none";
+
+  let svg = document.getElementById("verbinder");
+  if (!svg) { svg = document.createElementNS(SVG_NS, "svg"); svg.id = "verbinder"; matrix.appendChild(svg); }
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const mRect = matrix.getBoundingClientRect();
+  const w = matrix.clientWidth, h = matrix.clientHeight;
+  svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+  svg.setAttribute("preserveAspectRatio", "none");
+
+  function linie(x1, y1, x2, y2) {
+    const l = document.createElementNS(SVG_NS, "line");
+    l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+    l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+    svg.appendChild(l);
+  }
+  function elbow(x1, y1, x2, y2) {
+    if (Math.abs(y1 - y2) < 0.5) { linie(x1, y1, x2, y2); return; }
+    const xm = (x1 + x2) / 2;
+    linie(x1, y1, xm, y1); linie(xm, y1, xm, y2); linie(xm, y2, x2, y2);
+  }
+  const zentrum = (b) => {
+    const r = b.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - mRect.left, y: r.top + r.height / 2 - mRect.top };
+  };
+
+  const badges = Array.from(matrix.querySelectorAll(".rm-zelle .badge"));
+  const cs = [], is = []; let R = null, A = null;
+  badges.forEach(b => {
+    const p = zentrum(b), L = b.dataset.letter;
+    if (L === "C") cs.push(p); else if (L === "I") is.push(p);
+    else if (L === "R") R = p; else if (L === "A") A = p;
+  });
+  cs.sort((a, b) => a.y - b.y); is.sort((a, b) => a.y - b.y);
+  const xC = cs.length ? cs[0].x : null;
+  const xI = is.length ? is[0].x : null;
+  const cExtra = [], iExtra = [];
+
+  let prev = null;
+  if (xC != null) prev = { kind: "col", x: xC, extra: cExtra };
+  if (R) {
+    if (prev && prev.kind === "col") { linie(prev.x, R.y, R.x, R.y); prev.extra.push(R.y); }
+    prev = { kind: "pt", x: R.x, y: R.y };
+  }
+  if (A) {
+    if (prev && prev.kind === "pt") elbow(prev.x, prev.y, A.x, A.y);
+    else if (prev && prev.kind === "col") { linie(prev.x, A.y, A.x, A.y); prev.extra.push(A.y); }
+    prev = { kind: "pt", x: A.x, y: A.y };
+  }
+  if (xI != null) {
+    if (prev && prev.kind === "pt") { linie(prev.x, prev.y, xI, prev.y); iExtra.push(prev.y); }
+    else if (prev && prev.kind === "col") { const y = cs[0].y; linie(prev.x, y, xI, y); iExtra.push(y); prev.extra.push(y); }
+  }
+
+  function vert(items, x, extra) {
+    if (x == null) return;
+    const ys = items.map(p => p.y).concat(extra);
+    if (ys.length < 2) return;
+    const y1 = Math.min.apply(null, ys), y2 = Math.max.apply(null, ys);
+    if (y2 - y1 > 0.5) linie(x, y1, x, y2);
+  }
+  vert(cs, xC, cExtra);
+  vert(is, xI, iExtra);
+
+  blatt.style.transform = altTransform;
+}
+
+/* ----- Schritt-Dropdown (Detail-Navigation) füllen/aktualisieren ----- */
+function aktualisiereSchrittWahl() {
+  const sel = document.getElementById("schrittWahl");
+  if (!sel) return;
+  const schritte = (STATE.daten && STATE.daten.schritte) || [];
+  sel.innerHTML = "";
+  schritte.forEach((s, i) => {
+    const o = el("option", null, String(i).padStart(2, "0") + " — " + (s.untertitel || s.titel || t("render.stepFallback", { n: i })));
+    o.value = String(i);
+    sel.appendChild(o);
+  });
+  sel.value = String(STATE.detailIndex);
+  sel.disabled = (STATE.ansicht !== "detail");
+}
+
+/* ============================================================
+   Bildschirm-Einpassung (komplett sichtbar, kein Scrollen)
+   Skalierung über transform:scale + Hülle, die die skalierte
+   Größe einnimmt. Das SVG der Verbinder skaliert 1:1 mit.
+   ============================================================ */
+function passeBildschirmEin() {
+  const blatt = document.getElementById("blatt");
+  const wrap  = document.getElementById("blattWrap");
+  if (!blatt || !wrap) return;
+  const buehne = document.querySelector(".buehne");
+  const stil = getComputedStyle(buehne);
+  const padX = parseFloat(stil.paddingLeft) + parseFloat(stil.paddingRight);
+  const padY = parseFloat(stil.paddingTop) + parseFloat(stil.paddingBottom);
+  /* Verfügbarer Platz = innere Maße der Bühne (berücksichtigt das Editor-Panel
+     automatisch, da die Bühne der Flex-Rest ist). */
+  const verfBreite = buehne.clientWidth - padX;
+  const verfHoehe  = buehne.clientHeight - padY;
+
+  blatt.style.transform = "none";              // natürliche Maße messen
+  const w = blatt.offsetWidth, h = blatt.offsetHeight;
+  let skala = Math.min(verfBreite / w, verfHoehe / h, 1);
+  if (!(skala > 0)) skala = 1;
+
+  blatt.style.transform = "scale(" + skala + ")";
+  wrap.style.width  = (w * skala) + "px";
+  wrap.style.height = (h * skala) + "px";
+}
+
+let _einpassTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(_einpassTimer);
+  _einpassTimer = setTimeout(passeBildschirmEin, 120);
+});
+
+/* ============================================================
+   Editor (Phase 2) — Formular, RACI-Klick, Neu, Speichern
+   ============================================================ */
+
+/* Nach einer Struktur-Änderung (hinzufügen/entfernen/umsortieren):
+   Vorschau neu rendern UND das Formular neu aufbauen. */
+function nachStruktur() { render(STATE.daten); baueEditor(); }
+
+/* ----- DOM-Helfer für Formularfelder ----- */
+function feld(label, wert, onChange, opts) {
+  opts = opts || {};
+  const f = el("div", "ed-field");
+  if (label) f.appendChild(el("label", null, label));
+  const inp = opts.mehrzeilig ? document.createElement("textarea") : document.createElement("input");
+  if (!opts.mehrzeilig) inp.type = "text";
+  inp.value = (wert == null) ? "" : wert;
+  if (opts.platzhalter) inp.placeholder = opts.platzhalter;
+  inp.addEventListener("input", () => onChange(inp.value));
+  f.appendChild(inp);
+  return f;
+}
+function knopf(text, klasse, onClick, titel) {
+  const b = el("button", "mini " + (klasse || ""), text);
+  if (titel) b.title = titel;
+  b.addEventListener("click", (e) => { e.preventDefault(); onClick(); });
+  return b;
+}
+function pfeilWerkzeuge(arr, i, struktur) {
+  const w = el("div"); w.style.display = "flex"; w.style.gap = "4px";
+  const up = knopf("↑", "", () => { if (i > 0) { [arr[i-1], arr[i]] = [arr[i], arr[i-1]]; struktur(); } }, t("editor.moveUpLeft"));
+  const dn = knopf("↓", "", () => { if (i < arr.length-1) { [arr[i+1], arr[i]] = [arr[i], arr[i+1]]; struktur(); } }, t("editor.moveDownRight"));
+  if (i === 0) up.disabled = true;
+  if (i === arr.length-1) dn.disabled = true;
+  w.appendChild(up); w.appendChild(dn);
+  return w;
+}
+
+/* aufklappbarer Abschnitt */
+function abschnitt(titel, key, bauen) {
+  const sec = el("div", "ed-section");
+  if (STATE.zuKlappen[key]) sec.classList.add("zu");
+  const h = el("h3", "ed-h");
+  h.appendChild(el("span", null, titel));
+  h.appendChild(el("span", "pfeil", "▾"));
+  h.addEventListener("click", () => {
+    sec.classList.toggle("zu");
+    STATE.zuKlappen[key] = sec.classList.contains("zu");
+  });
+  const body = el("div", "ed-body");
+  bauen(body);
+  sec.appendChild(h); sec.appendChild(body);
+  return sec;
+}
+
+/* ----- Gemeinsame Editor-Abschnitte (Kopf-/Fußzeile) für beide Ansichten ----- */
+
+/* Kopfzeile: Firma oben rechts als Text oder Logo wählen */
+function firmaAnzeigeEditor(m) {
+  const box = el("div");
+  box.appendChild(auswahl(t("editor.companyDisplayAs"),
+    [["text", t("editor.companyText")], ["logo", t("editor.companyLogo")]],
+    m.firmaModus || "text",
+    v => { m.firmaModus = v; render(STATE.daten); baueEditor(); }));
+
+  if ((m.firmaModus || "text") === "logo") {
+    const f = el("div", "ed-field");
+    f.appendChild(el("label", null, t("editor.logoUpload")));
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/png,image/jpeg,image/jpg"; inp.className = "ed-file";
+    inp.addEventListener("change", () => {
+      const datei = inp.files[0];
+      if (!datei) return;
+      const r = new FileReader();
+      r.onload = e => { m.logo = e.target.result; render(STATE.daten); baueEditor(); };
+      r.readAsDataURL(datei);
+    });
+    f.appendChild(inp);
+    box.appendChild(f);
+
+    if (m.logo) {
+      const prev = el("div", "logo-vorschau");
+      const img = document.createElement("img"); img.src = m.logo; img.alt = t("editor.logoPreview");
+      prev.appendChild(img);
+      prev.appendChild(knopf(t("editor.logoRemove"), "del", () => { m.logo = ""; render(STATE.daten); baueEditor(); }));
+      box.appendChild(prev);
+    } else {
+      box.appendChild(el("div", "ed-hint", t("editor.logoNone")));
+    }
+  }
+  return box;
+}
+
+function abschnittKopfzeile() {
+  return abschnitt(t("editor.secHeader"), "kopf", body => {
+    body.appendChild(el("div", "ed-hint", t("editor.headerHint")));
+    body.appendChild(firmaAnzeigeEditor(STATE.daten.meta));
+  });
+}
+
+function abschnittFusszeile() {
+  return abschnitt(t("editor.secFooter"), "fuss", body => {
+    body.appendChild(el("div", "ed-hint", t("editor.footerHint")));
+    body.appendChild(feld(t("editor.footerText"), STATE.daten.meta.fusstext, v => { STATE.daten.meta.fusstext = v; render(STATE.daten); }));
+  });
+}
+
+/* Editor für eine einfache String-Liste (Input-/Output-Punkte) */
+function stringListe(arr, addLabel) {
+  const wrap = el("div");
+  arr.forEach((s, i) => {
+    const row = el("div", "ed-row");
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.className = "grow"; inp.value = s || "";
+    inp.addEventListener("input", () => { arr[i] = inp.value; render(STATE.daten); });
+    row.appendChild(inp);
+    row.appendChild(knopf("✕", "del", () => { arr.splice(i, 1); nachStruktur(); }, t("editor.remove")));
+    wrap.appendChild(row);
+  });
+  wrap.appendChild(knopf("+ " + addLabel, "add", () => { arr.push(""); nachStruktur(); }));
+  return wrap;
+}
+
+/* Editor für die Aufzählungspunkte (inkl. Unterpunkten) eines Schritts */
+function punkteEditor(schritt) {
+  const wrap = el("div");
+  (schritt.punkte || []).forEach((p, pi) => {
+    const pbox = el("div", "ed-punkt");
+    const row = el("div", "ed-row");
+    const ta = document.createElement("textarea");
+    ta.className = "grow"; ta.value = p.text || ""; ta.rows = 2;
+    ta.addEventListener("input", () => { p.text = ta.value; render(STATE.daten); });
+    row.appendChild(ta);
+    const w = el("div"); w.style.display = "flex"; w.style.flexDirection = "column"; w.style.gap = "4px";
+    const up = knopf("↑", "", () => { if (pi > 0) { [schritt.punkte[pi-1], schritt.punkte[pi]] = [schritt.punkte[pi], schritt.punkte[pi-1]]; nachStruktur(); } }, t("editor.moveUp"));
+    const dn = knopf("↓", "", () => { if (pi < schritt.punkte.length-1) { [schritt.punkte[pi+1], schritt.punkte[pi]] = [schritt.punkte[pi], schritt.punkte[pi+1]]; nachStruktur(); } }, t("editor.moveDown"));
+    if (pi === 0) up.disabled = true;
+    if (pi === schritt.punkte.length-1) dn.disabled = true;
+    w.appendChild(up); w.appendChild(dn);
+    w.appendChild(knopf("✕", "del", () => { schritt.punkte.splice(pi, 1); nachStruktur(); }, t("editor.removePoint")));
+    row.appendChild(w);
+    pbox.appendChild(row);
+
+    const ubox = el("div", "ed-unter");
+    const unter = p.unterpunkte || [];
+    unter.forEach((u, ui) => {
+      const urow = el("div", "ed-row");
+      const uin = document.createElement("input");
+      uin.type = "text"; uin.className = "grow"; uin.value = u;
+      uin.addEventListener("input", () => { p.unterpunkte[ui] = uin.value; render(STATE.daten); });
+      urow.appendChild(uin);
+      urow.appendChild(knopf("✕", "del", () => {
+        p.unterpunkte.splice(ui, 1);
+        if (!p.unterpunkte.length) delete p.unterpunkte;
+        nachStruktur();
+      }, t("editor.removeSubpoint")));
+      ubox.appendChild(urow);
+    });
+    ubox.appendChild(knopf(t("editor.addSubpoint"), "add", () => {
+      if (!p.unterpunkte) p.unterpunkte = [];
+      p.unterpunkte.push(""); nachStruktur();
+    }));
+    pbox.appendChild(ubox);
+    wrap.appendChild(pbox);
+  });
+  wrap.appendChild(knopf(t("editor.addPoint"), "add", () => { schritt.punkte.push({ text: "" }); nachStruktur(); }));
+  return wrap;
+}
+
+/* neue, eindeutige Schritt-ID */
+function neueSchrittId(d) {
+  const vorhanden = new Set((d.schritte || []).map(s => s.id));
+  let i = 1, id;
+  do { id = "schritt_" + Date.now().toString(36) + "_" + (i++); } while (vorhanden.has(id));
+  return id;
+}
+
+/* ----- Editor-Dispatcher: Übersicht oder Detailseite ----- */
+function baueEditor() {
+  const ed = document.getElementById("editor");
+  ed.innerHTML = "";
+  if (!STATE.daten || !STATE.daten.meta) {
+    ed.innerHTML = '<div class="ed-inner"></div>'; ed.firstChild.textContent = t("editor.noEditData");
+    return;
+  }
+  if (STATE.ansicht === "detail") baueEditorDetail();
+  else baueEditorUebersicht();
+  if (typeof aktualisiereOrgNamen === "function") aktualisiereOrgNamen();
+}
+
+/* ----- Editor: Prozessübersicht ----- */
+function baueEditorUebersicht() {
+  const ed = document.getElementById("editor");
+  ed.innerHTML = "";
+  const d = STATE.daten;
+  const m = d.meta;
+  const inner = el("div", "ed-inner");
+
+  /* Allgemein / Metadaten */
+  inner.appendChild(abschnitt(t("editor.secGeneral"), "meta", body => {
+    body.appendChild(feld(t("editor.title"), m.titel, v => { m.titel = v; render(d); }, { platzhalter: t("editor.titlePh") }));
+    body.appendChild(el("div", "ed-hint", t("editor.titleHint")));
+    const z1 = el("div", "ed-2col");
+    z1.appendChild(feld(t("editor.company"), m.firma, v => { m.firma = v; render(d); }));
+    z1.appendChild(feld(t("editor.version"), m.version, v => { m.version = v; render(d); }));
+    body.appendChild(z1);
+    const z2 = el("div", "ed-2col");
+    z2.appendChild(feld(t("field.processId"), m.prozessId, v => { m.prozessId = v; render(d); }));
+    z2.appendChild(feld(t("editor.date"), m.datum, v => { m.datum = v; render(d); }));
+    body.appendChild(z2);
+    body.appendChild(feld(t("field.processOwner"), m.processOwner, v => { m.processOwner = v; render(d); }));
+  }));
+
+  /* Kopfzeile (Firma als Text/Logo) */
+  inner.appendChild(abschnittKopfzeile());
+
+  /* Input */
+  inner.appendChild(abschnitt(t("editor.secInput"), "input", body => {
+    if (!d.input) d.input = { label: "Input [Responsible]", punkte: [] };
+    body.appendChild(feld(t("editor.label"), d.input.label, v => { d.input.label = v; render(d); }));
+    body.appendChild(el("div", "ed-hint", t("editor.inputHint")));
+    if (!d.input.punkte) d.input.punkte = [];
+    body.appendChild(stringListe(d.input.punkte, t("editor.inputPoint")));
+  }));
+
+  /* Output */
+  inner.appendChild(abschnitt(t("editor.secOutput"), "output", body => {
+    if (!d.output) d.output = { label: "Output [Responsible]", verantwortlich: "", punkte: [] };
+    body.appendChild(feld(t("editor.label"), d.output.label, v => { d.output.label = v; render(d); }));
+    body.appendChild(feld(t("editor.responsible"), d.output.verantwortlich, v => { d.output.verantwortlich = v; render(d); }));
+    if (!d.output.punkte) d.output.punkte = [];
+    body.appendChild(stringListe(d.output.punkte, t("editor.outputPoint")));
+  }));
+
+  /* Prozessschritte (Spalten) */
+  inner.appendChild(abschnitt(t("editor.secSteps", { n: d.schritte.length }), "schritte", body => {
+    d.schritte.forEach((s, si) => {
+      const it = el("div", "ed-item");
+      const kopf = el("div", "ed-item-kopf");
+      kopf.appendChild(el("span", "titel", t("editor.stepSection", { n: si + 1 })));
+      const werkz = el("div", "werkz");
+      const pf = pfeilWerkzeuge(d.schritte, si, nachStruktur);
+      Array.from(pf.children).forEach(c => werkz.appendChild(c));
+      werkz.appendChild(knopf("✕", "del", () => {
+        if (confirm(t("msg.confirmDeleteStep", { titel: s.titel || "" }))) {
+          const id = s.id;
+          d.schritte.splice(si, 1);
+          if (d.raci) delete d.raci[id];
+          nachStruktur();
+        }
+      }, t("editor.deleteStep")));
+      kopf.appendChild(werkz);
+      it.appendChild(kopf);
+      it.appendChild(feld(t("editor.colId"), s.kopfId || "", v => { s.kopfId = v; render(d); }, { platzhalter: t("editor.colIdPh") }));
+      it.appendChild(feld(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
+      it.appendChild(feld(t("editor.subtitle"), s.untertitel, v => { s.untertitel = v; render(d); }));
+      it.appendChild(feld(t("editor.listHeading"), s.punkteUeberschrift, v => { s.punkteUeberschrift = v; render(d); }));
+      it.appendChild(el("div", "ed-hint", t("editor.bulletPoints")));
+      it.appendChild(punkteEditor(s));
+      body.appendChild(it);
+    });
+    body.appendChild(knopf(t("editor.addStep"), "add", () => {
+      const id = neueSchrittId(d);
+      /* beschreibung[] = automatische Detailseite für den neuen Schritt */
+      d.schritte.push({ id: id, kopfId: "", titel: t("content.newStep"), untertitel: "", punkteUeberschrift: t("content.thisIncludes"), punkte: [{ text: "" }], beschreibung: [] });
+      if (!d.raci) d.raci = {};
+      d.raci[id] = {};
+      nachStruktur();
+    }));
+  }));
+
+  /* Rollen (Zeilen) */
+  inner.appendChild(abschnitt(t("editor.secRoles", { n: d.rollen.length }), "rollen", body => {
+    body.appendChild(el("div", "ed-hint", t("editor.rolesHint")));
+    d.rollen.forEach((r, ri) => {
+      const row = el("div", "ed-row");
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "grow"; inp.value = r;
+      inp.setAttribute("list", "orgNamen");   /* Vorschläge aus Organisation + Prozess */
+      inp.addEventListener("input", () => {
+        const alt = d.rollen[ri], neu = inp.value;
+        d.rollen[ri] = neu;
+        if (alt !== neu && d.raci) {
+          Object.keys(d.raci).forEach(sid => {
+            const zeile = d.raci[sid];
+            if (zeile && Object.prototype.hasOwnProperty.call(zeile, alt)) { zeile[neu] = zeile[alt]; delete zeile[alt]; }
+          });
+        }
+        render(d);
+      });
+      row.appendChild(inp);
+      const pf = pfeilWerkzeuge(d.rollen, ri, nachStruktur);
+      Array.from(pf.children).forEach(c => row.appendChild(c));
+      row.appendChild(knopf("✕", "del", () => {
+        const name = d.rollen[ri];
+        d.rollen.splice(ri, 1);
+        if (d.raci) Object.keys(d.raci).forEach(sid => { if (d.raci[sid]) delete d.raci[sid][name]; });
+        nachStruktur();
+      }, t("editor.removeRole")));
+      body.appendChild(row);
+    });
+    body.appendChild(knopf(t("editor.addRole"), "add", () => { d.rollen.push(t("content.newRole")); nachStruktur(); }));
+  }));
+
+  /* RACI-Hinweis (Bearbeitung erfolgt direkt in der Vorschau) */
+  inner.appendChild(abschnitt(t("editor.secRaci"), "raci", body => {
+    body.appendChild(el("div", "ed-hint", t("editor.raciHintOverview")));
+  }));
+
+  /* Legende */
+  inner.appendChild(abschnitt(t("editor.secLegend"), "legende", body => {
+    if (!d.legende) d.legende = {};
+    RACI_REIHENFOLGE.forEach(b => {
+      body.appendChild(feld(t("editor.legendMeaning", { b: b }), d.legende[b] || "", v => { d.legende[b] = v; render(d); }, { platzhalter: t("editor.legendPh") }));
+    });
+  }));
+
+  /* Fußzeile (Freitext unten links) */
+  inner.appendChild(abschnittFusszeile());
+
+  ed.appendChild(inner);
+}
+
+/* Auswahl-Feld (Dropdown) für den Editor */
+function auswahl(label, optionen, wert, onChange) {
+  const f = el("div", "ed-field");
+  if (label) f.appendChild(el("label", null, label));
+  const sel = document.createElement("select");
+  sel.className = "ed-select";
+  optionen.forEach(o => { const op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
+  sel.value = (wert == null) ? "" : wert;
+  sel.addEventListener("change", () => onChange(sel.value));
+  f.appendChild(sel);
+  return f;
+}
+
+/* ----- Editor: Prozessschritt-Detailseite ----- */
+function baueEditorDetail() {
+  const ed = document.getElementById("editor");
+  ed.innerHTML = "";
+  const d = STATE.daten;
+  const schritte = d.schritte || [];
+  if (!schritte.length) { ed.innerHTML = '<div class="ed-inner"></div>'; ed.firstChild.textContent = t("editor.noSteps"); return; }
+  const index = Math.max(0, Math.min(STATE.detailIndex || 0, schritte.length - 1));
+  const s = schritte[index];
+  const inner = el("div", "ed-inner");
+
+  /* Schritt-Kopf */
+  inner.appendChild(abschnitt(t("editor.stepSection", { n: index + 1 }), "d-schritt", body => {
+    body.appendChild(el("div", "ed-hint", t("editor.detailHint")));
+    body.appendChild(feld(t("editor.colId"), s.kopfId || "", v => { s.kopfId = v; render(d); }, { platzhalter: t("editor.colIdPh") }));
+    body.appendChild(feld(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
+    body.appendChild(feld(t("editor.subtitlePage"), s.untertitel, v => { s.untertitel = v; render(d); }));
+  }));
+
+  /* Kopfzeile (Firma als Text/Logo) */
+  inner.appendChild(abschnittKopfzeile());
+
+  /* RACI-Hinweis (Bearbeitung in der Vorschau, gespiegelt zur Übersicht) */
+  inner.appendChild(abschnitt(t("editor.secRaci"), "d-raci", body => {
+    body.appendChild(el("div", "ed-hint", t("editor.raciHintDetail")));
+  }));
+
+  /* Beschreibungs-Blöcke (eine Detailseite) */
+  inner.appendChild(abschnitt(t("editor.secDescription", { n: (s.beschreibung || []).length }), "d-beschr", body => {
+    if (!s.beschreibung) s.beschreibung = [];
+    body.appendChild(el("div", "ed-hint", t("editor.descHint")));
+    s.beschreibung.forEach((block, bi) => body.appendChild(beschreibungBlockEditor(s, block, bi)));
+    body.appendChild(knopf(t("editor.addDescBlock"), "add", () => {
+      s.beschreibung.push({ raci: "R", titel: "", inhalt: [""] });
+      nachStruktur();
+    }));
+  }));
+
+  /* Fußzeile (Freitext unten links) */
+  inner.appendChild(abschnittFusszeile());
+
+  ed.appendChild(inner);
+}
+
+/* Editor für einen Beschreibungs-Block (RACI-Buchstabe, Titel, Inhalt) */
+function beschreibungBlockEditor(schritt, block, bi) {
+  const d = STATE.daten;
+  const liste = schritt.beschreibung;
+  const it = el("div", "ed-item");
+  const kopf = el("div", "ed-item-kopf");
+  kopf.appendChild(el("span", "titel", t("editor.block", { n: bi + 1, raci: block.raci || "?" })));
+  const werkz = el("div", "werkz");
+  const pf = pfeilWerkzeuge(liste, bi, nachStruktur);
+  Array.from(pf.children).forEach(c => werkz.appendChild(c));
+  werkz.appendChild(knopf("✕", "del", () => { liste.splice(bi, 1); nachStruktur(); }, t("editor.removeBlock")));
+  kopf.appendChild(werkz);
+  it.appendChild(kopf);
+
+  const opt = RACI_REIHENFOLGE.map(b => {
+    const teile = legendeTeile((d.legende && d.legende[b]) || "");
+    return [b, b + " — " + (teile.titel || b)];
+  });
+  it.appendChild(auswahl(t("editor.responsibilityRaci"), opt, block.raci, v => { block.raci = v; render(d); }));
+  it.appendChild(feld(t("editor.heading"), block.titel, v => { block.titel = v; render(d); }));
+  it.appendChild(el("div", "ed-hint", t("editor.contentHint")));
+  it.appendChild(inhaltEditor(block));
+  return it;
+}
+
+/* Editor für den gemischten Inhalt eines Blocks (String=Absatz | {liste,spalten}) */
+function inhaltEditor(block) {
+  const wrap = el("div");
+  if (!block.inhalt) block.inhalt = [];
+  block.inhalt.forEach((teil, ti) => {
+    const istListe = (typeof teil === "object" && teil && teil.liste);
+    const box = el("div", "ed-punkt");
+    const kopf = el("div", "ed-row");
+    kopf.appendChild(el("span", "ed-hint", istListe ? t("editor.list") : t("editor.paragraph")));
+    const sp = el("div"); sp.style.flex = "1"; kopf.appendChild(sp);
+    const pf = pfeilWerkzeuge(block.inhalt, ti, nachStruktur);
+    Array.from(pf.children).forEach(c => kopf.appendChild(c));
+    kopf.appendChild(knopf("✕", "del", () => { block.inhalt.splice(ti, 1); nachStruktur(); }, t("editor.remove")));
+    box.appendChild(kopf);
+
+    if (istListe) {
+      const optRow = el("label", "ed-check");
+      const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = (teil.spalten === 2);
+      chk.addEventListener("change", () => { teil.spalten = chk.checked ? 2 : 1; render(STATE.daten); });
+      optRow.appendChild(chk); optRow.appendChild(document.createTextNode(t("editor.twoColumns")));
+      box.appendChild(optRow);
+      if (!teil.liste) teil.liste = [];
+      teil.liste.forEach((li, lii) => {
+        const row = el("div", "ed-row");
+        const inp = document.createElement("input"); inp.type = "text"; inp.className = "grow"; inp.value = li;
+        inp.addEventListener("input", () => { teil.liste[lii] = inp.value; render(STATE.daten); });
+        row.appendChild(inp);
+        row.appendChild(knopf("✕", "del", () => { teil.liste.splice(lii, 1); nachStruktur(); }, t("editor.removeListItem")));
+        box.appendChild(row);
+      });
+      box.appendChild(knopf(t("editor.addListItem"), "add", () => { teil.liste.push(""); nachStruktur(); }));
+    } else {
+      const ta = document.createElement("textarea");
+      ta.className = "grow"; ta.value = (typeof teil === "string" ? teil : ""); ta.rows = 3; ta.style.width = "100%";
+      ta.addEventListener("input", () => { block.inhalt[ti] = ta.value; render(STATE.daten); });
+      box.appendChild(ta);
+    }
+    wrap.appendChild(box);
+  });
+  const addRow = el("div", "ed-row");
+  addRow.appendChild(knopf(t("editor.addParagraph"), "add", () => { block.inhalt.push(""); nachStruktur(); }));
+  addRow.appendChild(knopf(t("editor.addList"), "add", () => { block.inhalt.push({ liste: [""], spalten: 1 }); nachStruktur(); }));
+  wrap.appendChild(addRow);
+  return wrap;
+}
+
+/* ----- RACI-Popover (Vorschau) ----- */
+function schliesseRaciMenu() {
+  const m = document.querySelector(".raci-menu");
+  if (m) m.remove();
+  document.removeEventListener("click", schliesseRaciMenu);
+}
+function toggleRaci(stepId, rolle, letter) {
+  const d = STATE.daten;
+  if (!d.raci) d.raci = {};
+  const zeile = d.raci[stepId] || (d.raci[stepId] = {});
+  let arr = zeile[rolle] ? zeile[rolle].slice() : [];
+  if (arr.includes(letter)) arr = arr.filter(x => x !== letter);
+  else arr.push(letter);
+  arr.sort((a, b) => RACI_REIHENFOLGE.indexOf(a) - RACI_REIHENFOLGE.indexOf(b));
+  if (arr.length) zeile[rolle] = arr; else delete zeile[rolle];
+  render(d);
+}
+function oeffneRaciMenu(zelle, stepId, rolle) {
+  schliesseRaciMenu();
+  const d = STATE.daten;
+  const menu = el("div", "raci-menu");
+  RACI_REIHENFOLGE.forEach(b => {
+    const btn = el("button", "rm-btn rm-" + b, raciLabel(b));
+    const aktiv = d.raci && d.raci[stepId] && d.raci[stepId][rolle] && d.raci[stepId][rolle].includes(b);
+    if (aktiv) btn.classList.add("an");
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleRaci(stepId, rolle, b);
+      btn.classList.toggle("an");
+    });
+    menu.appendChild(btn);
+  });
+  menu.addEventListener("click", (e) => e.stopPropagation());
+  document.body.appendChild(menu);
+  const r = zelle.getBoundingClientRect();
+  let left = r.left, top = r.bottom + 6;
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  if (left + mw > window.innerWidth - 8) left = window.innerWidth - 8 - mw;
+  if (top + mh > window.innerHeight - 8) top = r.top - 6 - mh;
+  menu.style.left = Math.max(8, left) + "px";
+  menu.style.top = Math.max(8, top) + "px";
+  setTimeout(() => document.addEventListener("click", schliesseRaciMenu), 0);
+}
+
+/* ----- Bearbeiten-Modus an/aus ----- */
+function setzeBearbeiten(an) {
+  STATE.bearbeiten = an;
+  document.body.classList.toggle("bearbeiten", an);
+  const ed = document.getElementById("editor");
+  ed.hidden = !an;
+  if (an) baueEditor();
+  else { ed.innerHTML = ""; schliesseRaciMenu(); }
+  render(STATE.daten);
+  requestAnimationFrame(passeBildschirmEin);
+}
+
+/* ----- Speichern (JSON-Download) ----- */
+function dateiName() {
+  const m = (STATE.daten && STATE.daten.meta) || {};
+  let basis = m.prozessId || m.titel || "prozess";
+  basis = basis.toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-+|-+$/g, "");
+  return (basis || "prozess") + ".json";
+}
+function dateiNameTemplate() {
+  const m = (STATE.daten && STATE.daten.meta) || {};
+  let basis = m.titel || "template";
+  basis = basis.toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-+|-+$/g, "");
+  return (basis || "template") + ".json";
+}
+
+/* JSON-Text der aktuellen Daten + Design-Snapshot (reist mit der Datei, Hub). */
+function baueJsonText() {
+  if (window.NIJU.DESIGN) STATE.daten.design = STATE.daten.design || window.NIJU.DESIGN.effektiv();
+  return JSON.stringify(STATE.daten, null, 2);
+}
+
+/* ---- Zuletzt benutzte Speicherorte merken (FileSystem-Handle in IndexedDB) ----
+   Separate Schlüssel für Prozesse ("proc") und Templates ("tpl"), damit der
+   Speichern-Dialog beim nächsten Mal wieder im passenden Ordner aufgeht.
+   Alles defensiv: schlägt etwas fehl (z. B. file://-IndexedDB), läuft die
+   Funktion ohne Merken weiter. */
+function idbHandleLaden(key) {
+  return new Promise(res => {
+    try {
+      const r = indexedDB.open("niju", 1);
+      r.onupgradeneeded = () => { try { r.result.createObjectStore("handles"); } catch (e) {} };
+      r.onsuccess = () => {
+        try {
+          const req = r.result.transaction("handles", "readonly").objectStore("handles").get(key);
+          req.onsuccess = () => res(req.result || null);
+          req.onerror = () => res(null);
+        } catch (e) { res(null); }
+      };
+      r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function idbHandleSpeichern(key, val) {
+  try {
+    const r = indexedDB.open("niju", 1);
+    r.onupgradeneeded = () => { try { r.result.createObjectStore("handles"); } catch (e) {} };
+    r.onsuccess = () => { try { r.result.transaction("handles", "readwrite").objectStore("handles").put(val, key); } catch (e) {} };
+  } catch (e) {}
+}
+
+/* Klassischer Download in den Download-Ordner (Fallback). */
+function downloadJson(txt, name) {
+  const blob = new Blob([txt], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* Speichern über den Datei-Dialog (File System Access API, wo verfügbar).
+   startIn = zuletzt gespeicherte Datei desselben Typs → Dialog öffnet im
+   gemerkten Ordner. Rückgabe: true = erledigt (gespeichert ODER abgebrochen),
+   false = API nicht verfügbar → Aufrufer soll downloaden. */
+async function speichereMitDialog(txt, suggestedName, key) {
+  if (!window.showSaveFilePicker) return false;
+  const opts = { suggestedName: suggestedName, types: [{ description: "JSON", accept: { "application/json": [".json"] } }] };
+  try { const last = await idbHandleLaden(key); if (last) opts.startIn = last; } catch (e) {}
+  try {
+    const handle = await window.showSaveFilePicker(opts);
+    const w = await handle.createWritable();
+    await w.write(txt);
+    await w.close();
+    idbHandleSpeichern(key, handle);   /* Ordner für nächstes Mal merken */
+    return true;
+  } catch (e) {
+    if (e && e.name === "AbortError") return true;   /* Nutzer hat abgebrochen */
+    return false;                                    /* sonst Download-Fallback */
+  }
+}
+
+/* Klassischer Download (Menü: Export → JSON). */
+function speichern() {
+  if (!STATE.daten) { alert(t("msg.noSaveData")); return; }
+  downloadJson(baueJsonText(), dateiName());
+}
+/* "Speichern…": Ordner-/Dateiauswahl, sonst Download. */
+async function speichernAls() {
+  if (!STATE.daten) { alert(t("msg.noSaveData")); return; }
+  const txt = baueJsonText();
+  if (!await speichereMitDialog(txt, dateiName(), "proc")) downloadJson(txt, dateiName());
+}
+/* "Als Vorlage speichern…": wie Speichern, aber eigener Ordner-Merker (tpl)
+   und Template-Dateiname. Dieselbe JSON-Struktur wie ein Prozess. */
+async function templateSpeichern() {
+  if (!STATE.daten) { alert(t("msg.noSaveData")); return; }
+  const txt = baueJsonText();
+  if (!await speichereMitDialog(txt, dateiNameTemplate(), "tpl")) downloadJson(txt, dateiNameTemplate());
+}
+
+/* ============================================================
+   JPEG-Export (offline, ohne Bibliothek)
+   Das Blatt wird über ein SVG-<foreignObject> in ein Bild gerendert
+   (kein fetch/D3/html2canvas) und auf einer Canvas in der gewünschten
+   Pixelgröße als JPEG ausgegeben. Die DPI-Zahl wird in den JFIF-Header
+   geschrieben (Druckauflösung). Speicherort: File-System-Access-Dialog,
+   sonst klassischer Download.
+   ============================================================ */
+function jpegName() {
+  const m = (STATE.daten && STATE.daten.meta) || {};
+  let basis = m.prozessId || m.titel || "prozess";
+  basis = basis.toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-+|-+$/g, "");
+  return (basis || "prozess") + (STATE.ansicht === "detail" ? "-detail" : "") + ".jpg";
+}
+
+/* Alle Seiten-CSS einsammeln: die eingebetteten <style>-Blöcke (enthalten das
+   komplette Blatt-Layout inkl. ::before-Aufzählungspunkte) + die aktiven
+   Design-Variablen von :root. base.css (nur Toolbar/Chrome) wird nicht benötigt. */
+function sammleSeitenCss() {
+  let css = "";
+  document.querySelectorAll("style").forEach(s => { css += s.textContent + "\n"; });
+  const rs = getComputedStyle(document.documentElement);
+  const vars = ["--ink","--paper","--muted","--akzent","--rule","--rule-mid","--rule-strong",
+    "--sidebar","--body","--zebra","--verbinder","--num-soft","--sans","--mono",
+    "--raci-R","--raci-R-text","--raci-A","--raci-A-text","--raci-C","--raci-C-text","--raci-I","--raci-I-text"];
+  let root = ":root{";
+  vars.forEach(v => { const val = rs.getPropertyValue(v); if (val) root += v + ":" + val + ";"; });
+  root += "}";
+  return root + "\n" + css;
+}
+
+/* Rendert das aktuelle Blatt als JPEG-Blob in (outW × outH) Pixeln. */
+function blattAlsJpeg(outW, outH, dpi, quality) {
+  return new Promise((resolve, reject) => {
+    const blatt = document.getElementById("blatt");
+    if (!blatt) { reject(new Error("no sheet")); return; }
+    const natW = blatt.offsetWidth, natH = blatt.offsetHeight;
+
+    /* Klon ohne Bildschirm-Transform/Schatten, an 0/0 in natürlicher Größe */
+    const klon = blatt.cloneNode(true);
+    klon.style.transform = "none";
+    klon.style.boxShadow = "none";
+    klon.style.margin = "0";
+    klon.style.position = "static";
+    klon.style.width = natW + "px";
+
+    const wrap = document.createElement("div");
+    wrap.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+    wrap.style.width = natW + "px"; wrap.style.height = natH + "px"; wrap.style.background = "#ffffff";
+    const styleEl = document.createElement("style");
+    styleEl.textContent = sammleSeitenCss();
+    wrap.appendChild(styleEl);
+    wrap.appendChild(klon);
+
+    const xhtml = new XMLSerializer().serializeToString(wrap);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + natW + '" height="' + natH + '">' +
+                '<foreignObject x="0" y="0" width="' + natW + '" height="' + natH + '">' + xhtml +
+                '</foreignObject></svg>';
+    const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+
+    const img = new Image();
+    img.onload = function () {
+      try {
+        const cv = document.createElement("canvas");
+        cv.width = outW; cv.height = outH;
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, outW, outH);
+        ctx.drawImage(img, 0, 0, outW, outH);
+        cv.toBlob(function (blob) {
+          if (!blob) { reject(new Error("toBlob failed")); return; }
+          blob.arrayBuffer().then(buf => {
+            const bytes = setJpegDpi(new Uint8Array(buf), dpi);
+            resolve(new Blob([bytes], { type: "image/jpeg" }));
+          }).catch(reject);
+        }, "image/jpeg", quality);
+      } catch (e) { reject(e); }
+    };
+    img.onerror = function () { reject(new Error("SVG image load failed")); };
+    img.src = url;
+  });
+}
+
+/* DPI in den JFIF-APP0-Header schreiben (units=1 = dots per inch). */
+function setJpegDpi(bytes, dpi) {
+  if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) return bytes; /* kein JPEG */
+  for (let i = 2; i < bytes.length - 1; i++) {
+    if (bytes[i] === 0xFF && bytes[i + 1] === 0xE0) { /* APP0 */
+      const seg = i + 4; /* nach Marker(2)+Länge(2): "JFIF\0"(5) version(2) units(1) X(2) Y(2) */
+      if (bytes[seg] === 0x4A && bytes[seg + 1] === 0x46 && bytes[seg + 2] === 0x49 && bytes[seg + 3] === 0x46) {
+        const u = seg + 7;
+        bytes[u] = 1;                          /* units = DPI */
+        bytes[u + 1] = (dpi >> 8) & 0xFF; bytes[u + 2] = dpi & 0xFF;   /* Xdensity */
+        bytes[u + 3] = (dpi >> 8) & 0xFF; bytes[u + 4] = dpi & 0xFF;   /* Ydensity */
+      }
+      break;
+    }
+  }
+  return bytes;
+}
+
+/* Blob über den Datei-Dialog speichern (FSA), sonst Download. */
+async function speichereBlobMitDialog(blob, suggestedName, key) {
+  if (window.showSaveFilePicker) {
+    const opts = { suggestedName: suggestedName, types: [{ description: "JPEG", accept: { "image/jpeg": [".jpg", ".jpeg"] } }] };
+    try { const last = await idbHandleLaden(key); if (last) opts.startIn = last; } catch (e) {}
+    try {
+      const handle = await window.showSaveFilePicker(opts);
+      const w = await handle.createWritable(); await w.write(blob); await w.close();
+      idbHandleSpeichern(key, handle);
+      return true;
+    } catch (e) { if (e && e.name === "AbortError") return true; /* sonst Download */ }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = suggestedName;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
+}
+
+/* Dialog: Breite/Höhe (px) + DPI, dann exportieren + Speicherort wählen. */
+function zeigeJpegDialog() {
+  if (!STATE.daten) { alert(t("msg.noSaveData")); return; }
+  const blatt = document.getElementById("blatt");
+  if (!blatt) { alert(t("msg.invalidData")); return; }
+  const natW = Math.round(blatt.offsetWidth), natH = Math.round(blatt.offsetHeight);
+  const ratio = natW / natH;
+  const alt = document.getElementById("jpegOverlay"); if (alt) alt.remove();
+
+  const overlay = el("div", "import-overlay"); overlay.id = "jpegOverlay";
+  const dialog = el("div", "import-dialog"); dialog.style.width = "min(440px, 94vw)";
+  const kopf = el("div", "import-kopf");
+  kopf.appendChild(el("h2", null, t("jpeg.title")));
+  kopf.appendChild(el("p", null, t("jpeg.intro")));
+  dialog.appendChild(kopf);
+
+  const body = el("div", "import-body");
+  function num(labelKey, val) {
+    const f = el("div", "ed-field"); f.style.marginBottom = "12px";
+    f.appendChild(el("label", null, t(labelKey)));
+    const inp = document.createElement("input"); inp.type = "number"; inp.min = "1"; inp.value = String(val);
+    f.appendChild(inp); body.appendChild(f); return inp;
+  }
+  const inW = num("jpeg.width", natW);
+  const inH = num("jpeg.height", natH);
+  const inDpi = num("jpeg.dpi", 150);
+  inDpi.min = "1";
+  const inQ = num("jpeg.quality", 92); inQ.min = "10"; inQ.max = "100";
+
+  /* Seitenverhältnis koppeln */
+  const ratioWrap = el("label", "ed-check");
+  const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = true;
+  ratioWrap.appendChild(chk); ratioWrap.appendChild(document.createTextNode(" " + t("jpeg.keepRatio")));
+  body.appendChild(ratioWrap);
+  inW.addEventListener("input", () => { if (chk.checked) { const w = parseFloat(inW.value); if (w > 0) inH.value = String(Math.round(w / ratio)); } });
+  inH.addEventListener("input", () => { if (chk.checked) { const h = parseFloat(inH.value); if (h > 0) inW.value = String(Math.round(h * ratio)); } });
+  dialog.appendChild(body);
+
+  const fuss = el("div", "import-fuss");
+  const hinweis = el("div", "summe"); fuss.appendChild(hinweis);
+  const abbrechen = el("button", "btn-sek", t("jpeg.cancel"));
+  abbrechen.addEventListener("click", () => overlay.remove());
+  const exportieren = el("button", "btn-akt", t("jpeg.export"));
+  exportieren.addEventListener("click", async () => {
+    const w = parseInt(inW.value, 10), h = parseInt(inH.value, 10), dpi = parseInt(inDpi.value, 10);
+    let q = parseInt(inQ.value, 10); if (!(q > 0)) q = 92; q = Math.max(10, Math.min(100, q));
+    if (!(w > 0) || !(h > 0) || !(dpi > 0)) { alert(t("jpeg.badSize")); return; }
+    exportieren.disabled = true; abbrechen.disabled = true; hinweis.textContent = t("jpeg.rendering");
+    try {
+      const blob = await blattAlsJpeg(w, h, dpi, q / 100);
+      overlay.remove();
+      await speichereBlobMitDialog(blob, jpegName(), "jpeg");
+    } catch (e) {
+      exportieren.disabled = false; abbrechen.disabled = false; hinweis.textContent = "";
+      alert(t("jpeg.failed", { err: (e && e.message) || String(e) }));
+    }
+  });
+  fuss.appendChild(abbrechen); fuss.appendChild(exportieren);
+  dialog.appendChild(fuss);
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+}
+
+/* ============================================================
+   HTML-Export (offline, statisch — ohne JavaScript zum Anzeigen)
+   Erzeugt EINE in sich geschlossene .html-Datei: Prozessübersicht +
+   ALLE Detailseiten, fertig gerendert wie im NIJU-Viewer. Kein JS, kein
+   Nachladen — Blatt-CSS inline, Logos als Data-URL, RACI-Verbinder als
+   eingebackenes SVG, das aktive Design als :root-Variablen. Zusätzlich ist
+   die Original-JSON eingebettet (verlustfreier Rück-Import). Jede Seite wird
+   als ECHTES HTML ausgegeben (KEIN SVG-<foreignObject> — das verrutscht in
+   Safari/Firefox/Chrome, v. a. Badges + Verbinder) → rendert 1:1 mit der CSS-
+   Engine wie im Viewer. Ein winziges Inline-Skript skaliert jede Seite per
+   transform:scale auf die Spaltenbreite (wie der Viewer-„fit"); ohne Skript
+   zeigt sie sich in natürlicher Größe (scrollbar) — Inhalt bleibt vollständig.
+   Einbetten: Datei anhängen und per iframe einbinden, oder standalone öffnen.
+   ============================================================ */
+function htmlName(daten) {
+  const m = ((daten || STATE.daten) || {}).meta || {};
+  let basis = m.prozessId || m.titel || "prozess";
+  basis = basis.toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-+|-+$/g, "");
+  return (basis || "prozess") + ".html";
+}
+
+/* Aktuelles #blatt klonen → HTML-String. KEINE festen Pixel-Maße einbacken:
+   das Blatt behält seine mm-Breite (über Browser konstant) und natürliche Höhe.
+   Größe + Verbinder werden im Export pro Browser frisch gemessen/gezeichnet —
+   so passen Layout und RACI-Linien überall (auch Safari), nicht nur im Browser,
+   in dem exportiert wurde. */
+function blattSeiteSerialisieren() {
+  const blatt = document.getElementById("blatt");
+  const klon = blatt.cloneNode(true);
+  klon.style.transform = "none";
+  klon.style.boxShadow = "none";
+  klon.style.margin = "0";
+  /* relative (NICHT static): #verbinder ist position:absolute;inset:0 und muss
+     das Blatt als positionierten Vorfahren überlagern (sonst verrutschen die
+     RACI-Verbinderlinien). top/left=0 = normaler Fluss-Platz. */
+  klon.style.position = "relative";
+  klon.style.left = "0"; klon.style.top = "0";
+  return klon.outerHTML;
+}
+
+/* Vollständiges, statisches HTML-Dokument bauen (Übersicht + alle Details).
+   zielDaten = zu exportierender Prozess (Default: aktueller). Für den Stapel
+   wird STATE.daten kurz auf den Zielprozess umgeschaltet und danach wieder
+   zurückgesetzt — der Editor-Zustand bleibt unverändert. */
+function baueHtmlDokument(zielDaten) {
+  const daten = zielDaten || STATE.daten;
+  const sichern = { daten: STATE.daten, ansicht: STATE.ansicht, idx: STATE.detailIndex, bearb: STATE.bearbeiten };
+  STATE.daten = daten;
+  STATE.bearbeiten = false;   /* read-only Look (keine Editier-Affordances) */
+
+  const seiten = [];
+  /* Übersicht */
+  STATE.ansicht = "uebersicht";
+  render(daten); zeichneVerbinder();
+  seiten.push(blattSeiteSerialisieren());
+  /* alle Detailseiten */
+  const n = (daten.schritte || []).length;
+  for (let i = 0; i < n; i++) {
+    STATE.ansicht = "detail"; STATE.detailIndex = i;
+    render(daten); zeichneVerbinder();
+    seiten.push(blattSeiteSerialisieren());
+  }
+
+  /* ALLES, was den Live-Zustand liest (Design am :root, body-Klassen, JSON des
+     Zielprozesses), VOR dem Restore erfassen — sonst bekäme der Stapel das
+     Design/JSON des falschen (zurückgesetzten) Prozesses. */
+  const sheetCss = sammleSeitenCss();
+  const optClasses = Array.from(document.body.classList).filter(c => /^opt-/.test(c)).join(" ");
+  const rs = getComputedStyle(document.documentElement);
+  const designVars = ["--ink","--paper","--muted","--akzent","--rule","--rule-mid","--rule-strong",
+    "--sidebar","--body","--zebra","--verbinder","--num-soft","--sans","--mono",
+    "--raci-R","--raci-R-text","--raci-A","--raci-A-text","--raci-C","--raci-C-text","--raci-I","--raci-I-text"];
+  let rootStyle = "";
+  designVars.forEach(v => { const val = rs.getPropertyValue(v); if (val) rootStyle += v + ":" + val.trim() + ";"; });
+  /* Original-JSON als Daten-Insel (nicht ausgeführt) → Rück-Import / Datenträger */
+  const jsonText = baueJsonText().replace(/<\//g, "<\\/");
+
+  /* Zustand wiederherstellen (Daten + Ansicht) */
+  STATE.daten = sichern.daten; STATE.bearbeiten = sichern.bearb;
+  setAnsicht(sichern.ansicht === "detail" ? "detail" : "uebersicht", sichern.idx);
+
+  /* Design-Options-Regeln (liegen sonst in base.css = Chrome, hier nicht geladen) */
+  const optRules =
+    "body.opt-no-connectors #verbinder{display:none!important}" +
+    "body.opt-badge-round .badge,body.opt-badge-round .bb-badge{border-radius:50%}" +
+    "body.opt-no-zebra .rrow-1 .raci-zelle,body.opt-no-zebra .raci-zelle.rrow-1," +
+    "body.opt-no-zebra .rrow-1.raci-rolle,body.opt-no-zebra .rm-rolle.stripe," +
+    "body.opt-no-zebra .rm-zelle.stripe{background:transparent!important}";
+  /* Dokument-Layout. WICHTIG: das eingebettete Builder-CSS setzt
+     body{height:100vh;overflow:hidden;display:flex} (App-Shell) — unten
+     überschrieben. .niju-doc-scale = inline-block, schrumpft auf die natürliche
+     Blattgröße; das Skript skaliert sie per transform und setzt die Seitengröße.
+     Ohne Skript: natürliche Größe, .niju-doc-page scrollt statt zu beschneiden. */
+  const docCss =
+    "html{margin:0;padding:0}" +
+    "body{margin:0;padding:0;display:block;height:auto;min-height:0;overflow:visible;" +
+      "background:#e9ecef;font-family:var(--sans,\"Helvetica Neue\",Arial,sans-serif)}" +
+    ".niju-doc{display:block;box-sizing:border-box;max-width:1200px;margin:0 auto;padding:20px 14px 44px}" +
+    ".niju-doc-page{box-sizing:content-box;margin:0 auto 22px;background:var(--paper,#fff);" +
+      "box-shadow:0 6px 22px rgba(15,23,42,.20);border-radius:4px;overflow:auto}" +
+    ".niju-doc-page:last-child{margin-bottom:0}" +
+    ".niju-doc-scale{display:inline-block;vertical-align:top;transform-origin:top left}" +
+    "@media print{body{background:#fff}@page{size:A3 landscape;margin:6mm}" +
+    ".niju-doc{max-width:none;margin:0;padding:0}" +
+    ".niju-doc-page{margin:0;width:auto!important;height:auto!important;overflow:visible;" +
+    "box-shadow:none;border-radius:0;break-after:page}" +
+    ".niju-doc-page:last-child{break-after:auto}" +
+    ".niju-doc-scale{transform:none!important}}";
+  const css = sheetCss + "\n" + optRules + "\n" + docCss;
+
+  const seitenHtml = seiten.map(h =>
+    '<div class="niju-doc-page"><div class="niju-doc-scale">' + h + '</div></div>'
+  ).join("\n");
+
+  /* Inline-Skript: (1) zeichnet die RACI-Verbinder im Export-Browser NEU gegen
+     die echten Badge-Positionen (1:1, in jedem Browser deckungsgleich), (2)
+     skaliert jede Seite per transform:scale auf die Spaltenbreite (wie der
+     Viewer-„fit"). Wird bei jedem fit() in natürlicher Größe gemessen → robust
+     gegen Font-/Reflow-Unterschiede. Inhalt steht auch ohne das Skript. */
+  const fitScript =
+    '<script>(function(){' +
+    'var NS="http://www.w3.org/2000/svg";' +
+    'function draw(blatt){' +
+      'var svg=blatt.querySelector("#verbinder");if(!svg)return;' +
+      'var ref=svg.parentNode;while(svg.firstChild)svg.removeChild(svg.firstChild);' +
+      'var w=ref.clientWidth,h=ref.clientHeight;' +
+      'svg.setAttribute("viewBox","0 0 "+w+" "+h);svg.setAttribute("preserveAspectRatio","none");' +
+      'var rr=ref.getBoundingClientRect();' +
+      'function L(a,b,c,d){var l=document.createElementNS(NS,"line");l.setAttribute("x1",a);l.setAttribute("y1",b);l.setAttribute("x2",c);l.setAttribute("y2",d);svg.appendChild(l);}' +
+      'function E(a,b,c,d){if(Math.abs(b-d)<0.5){L(a,b,c,d);return;}var xm=(a+c)/2;L(a,b,xm,b);L(xm,b,xm,d);L(xm,d,c,d);}' +
+      'function C(el){var r=el.getBoundingClientRect();return{x:r.left+r.width/2-rr.left,y:r.top+r.height/2-rr.top};}' +
+      'function tree(bs){var cs=[],is=[],R=null,A=null,i;' +
+        'for(i=0;i<bs.length;i++){var p=C(bs[i]),l=bs[i].getAttribute("data-letter");' +
+          'if(l==="C")cs.push(p);else if(l==="I")is.push(p);else if(l==="R")R=p;else if(l==="A")A=p;}' +
+        'cs.sort(function(a,b){return a.y-b.y;});is.sort(function(a,b){return a.y-b.y;});' +
+        'var xC=cs.length?cs[0].x:null,xI=is.length?is[0].x:null,cE=[],iE=[],prev=null;' +
+        'if(xC!=null)prev={k:"col",x:xC,e:cE};' +
+        'if(R){if(prev&&prev.k==="col"){L(prev.x,R.y,R.x,R.y);prev.e.push(R.y);}prev={k:"pt",x:R.x,y:R.y};}' +
+        'if(A){if(prev&&prev.k==="pt")E(prev.x,prev.y,A.x,A.y);else if(prev&&prev.k==="col"){L(prev.x,A.y,A.x,A.y);prev.e.push(A.y);}prev={k:"pt",x:A.x,y:A.y};}' +
+        'if(xI!=null){if(prev&&prev.k==="pt"){L(prev.x,prev.y,xI,prev.y);iE.push(prev.y);}else if(prev&&prev.k==="col"){var y=cs[0].y;L(prev.x,y,xI,y);iE.push(y);prev.e.push(y);}}' +
+        'function V(items,x,e){if(x==null)return;var ys=[],i;for(i=0;i<items.length;i++)ys.push(items[i].y);ys=ys.concat(e);if(ys.length<2)return;var y1=Math.min.apply(null,ys),y2=Math.max.apply(null,ys);if(y2-y1>0.5)L(x,y1,x,y2);}' +
+        'V(cs,xC,cE);V(is,xI,iE);}' +
+      'if(blatt.className.indexOf("detail")>=0){tree([].slice.call(ref.querySelectorAll(".rm-zelle .badge")));}' +
+      'else{var g={},bs=blatt.querySelectorAll(".raci-zelle .badge"),i;' +
+        'for(i=0;i<bs.length;i++){var st=bs[i].getAttribute("data-step")||"";(g[st]=g[st]||[]).push(bs[i]);}' +
+        'for(var k in g)if(g.hasOwnProperty(k))tree(g[k]);}' +
+    '}' +
+    'function fit(){var doc=document.querySelector(".niju-doc");if(!doc)return;' +
+      'var avail=doc.clientWidth-28;if(avail<1)return;' +
+      'var ps=document.querySelectorAll(".niju-doc-page"),i;' +
+      'for(i=0;i<ps.length;i++){var p=ps[i],sc=p.firstElementChild;if(!sc)continue;' +
+        'sc.style.transform="none";' +
+        'var bl=sc.querySelector(".blatt");if(bl)draw(bl);' +
+        'var w=sc.offsetWidth,h=sc.offsetHeight;var s=avail/w;if(s>1)s=1;' +
+        'sc.style.transform="scale("+s+")";' +
+        'p.style.width=Math.round(w*s)+"px";p.style.height=Math.round(h*s)+"px";p.style.overflow="hidden";}}' +
+    'if(document.readyState!=="loading")fit();else document.addEventListener("DOMContentLoaded",fit);' +
+    'window.addEventListener("load",fit);window.addEventListener("resize",fit);' +
+    '})();</scr' + 'ipt>';
+
+  const m = daten.meta || {};
+  const esc = s => String(s == null ? "" : s).replace(/[<>&"]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+  const lang = (window.NIJU.I18N && NIJU.I18N.get()) || "en";
+
+  return '<!DOCTYPE html>\n<html lang="' + esc(lang) + '" style="' + esc(rootStyle) + '">\n<head>\n<meta charset="utf-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    '<meta name="generator" content="NIJU ICHI Process Builder">\n' +
+    '<title>' + esc(m.titel || "Prozess") + '</title>\n' +
+    '<style>\n' + css + '\n</style>\n</head>\n' +
+    '<body class="' + optClasses + '">\n' +
+    '<div class="niju-doc">\n' + seitenHtml + '\n</div>\n' +
+    fitScript + '\n' +
+    '<script type="application/json" id="niju-process">' + jsonText + '</scr' + 'ipt>\n' +
+    '</body>\n</html>\n';
+}
+
+/* Klassischer HTML-Download (Blob, text/html). */
+function downloadHtml(html, name) {
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+/* „HTML page": aktueller Prozess → eine HTML-Datei. */
+function exportiereHtml() {
+  if (!STATE.daten || !STATE.daten.meta) { alert(t("msg.noSaveData")); return; }
+  let html;
+  try { html = baueHtmlDokument(STATE.daten); }
+  catch (e) { alert(t("html.failed", { err: (e && e.message) || String(e) })); return; }
+  downloadHtml(html, htmlName(STATE.daten));
+}
+
+/* ============================================================
+   „HTML batch": mehrere Prozessdateien wählen → Auswahlfenster →
+   pro ausgewähltem Prozess EINE HTML-Datei. Quelle = vom Nutzer
+   gewählte JSON-Dateien (Mehrfachauswahl), nichts wird wahllos
+   exportiert. Ausgabe: Zielordner (File System Access) oder Downloads.
+   ============================================================ */
+const htmlBatchInput = document.getElementById("htmlBatchInput");
+function htmlBatchStart() { htmlBatchInput.value = ""; htmlBatchInput.click(); }
+
+htmlBatchInput.addEventListener("change", (ev) => {
+  const files = Array.from(ev.target.files || []);
+  if (!files.length) return;
+  const kandidaten = [];
+  let rest = files.length;
+  const fertig = () => { if (--rest === 0) zeigeHtmlBatchDialog(kandidaten); };
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = e => {
+      try {
+        const d = JSON.parse(e.target.result);
+        if (d && d.meta && Array.isArray(d.schritte)) kandidaten.push({ file: f.name, daten: d });
+      } catch (err) {}
+      fertig();
+    };
+    r.onerror = fertig;
+    r.readAsText(f, "utf-8");
+  });
+});
+
+function batchTitel(k) { return (k.daten.meta && k.daten.meta.titel) || k.file; }
+
+function zeigeHtmlBatchDialog(kandidaten) {
+  const alt = document.getElementById("htmlBatchOverlay"); if (alt) alt.remove();
+  if (!kandidaten.length) { alert(t("htmlBatch.none")); return; }
+  kandidaten.sort((a, b) => batchTitel(a).localeCompare(batchTitel(b)));
+
+  const overlay = el("div", "import-overlay"); overlay.id = "htmlBatchOverlay";
+  const dialog = el("div", "import-dialog"); dialog.style.width = "min(540px, 94vw)";
+  const kopf = el("div", "import-kopf");
+  kopf.appendChild(el("h2", null, t("htmlBatch.title")));
+  kopf.appendChild(el("p", null, t("htmlBatch.intro")));
+  dialog.appendChild(kopf);
+
+  const body = el("div", "import-body");
+  const liste = el("div", "batch-liste");
+  const checks = [];
+  kandidaten.forEach(k => {
+    const row = el("label", "batch-row");
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = true;
+    cb.addEventListener("change", aktualisiere);
+    const txt = el("div", "batch-txt");
+    txt.appendChild(el("div", "batch-titel", batchTitel(k)));
+    txt.appendChild(el("div", "batch-datei", k.file));
+    row.appendChild(cb); row.appendChild(txt);
+    liste.appendChild(row);
+    checks.push({ cb: cb, k: k });
+  });
+  body.appendChild(liste);
+  dialog.appendChild(body);
+
+  const fuss = el("div", "import-fuss");
+  const summe = el("div", "summe"); fuss.appendChild(summe);
+  const alleBtn = el("button", "btn-sek", "");
+  alleBtn.addEventListener("click", () => {
+    const an = checks.some(c => !c.cb.checked);
+    checks.forEach(c => c.cb.checked = an); aktualisiere();
+  });
+  const abbrechen = el("button", "btn-sek", t("htmlBatch.cancel"));
+  abbrechen.addEventListener("click", () => overlay.remove());
+  const exportBtn = el("button", "btn-akt", "");
+  exportBtn.addEventListener("click", async () => {
+    const auswahl = checks.filter(c => c.cb.checked).map(c => c.k);
+    if (!auswahl.length) return;
+    exportBtn.disabled = abbrechen.disabled = alleBtn.disabled = true;
+    summe.textContent = t("htmlBatch.working");
+    try {
+      const res = await fuehreHtmlBatchAus(auswahl);
+      overlay.remove();
+      if (res && !res.aborted) {
+        alert(res.folder ? t("htmlBatch.writtenFolder", { n: res.written })
+                         : t("htmlBatch.done", { n: res.written }));
+      }
+    } catch (e) {
+      exportBtn.disabled = abbrechen.disabled = alleBtn.disabled = false;
+      summe.textContent = "";
+      alert(t("html.failed", { err: (e && e.message) || String(e) }));
+    }
+  });
+
+  function aktualisiere() {
+    const n = checks.filter(c => c.cb.checked).length;
+    summe.textContent = t("htmlBatch.count", { n: n });
+    exportBtn.textContent = t("htmlBatch.export", { n: n });
+    exportBtn.disabled = (n === 0);
+    alleBtn.textContent = checks.some(c => !c.cb.checked) ? t("htmlBatch.selectAll") : t("htmlBatch.deselectAll");
+  }
+
+  fuss.appendChild(alleBtn); fuss.appendChild(abbrechen); fuss.appendChild(exportBtn);
+  dialog.appendChild(fuss);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  aktualisiere();
+}
+
+function htmlDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fuehreHtmlBatchAus(auswahl) {
+  /* Pro Prozess eine Datei bauen; bei Namensgleichheit eindeutig machen. */
+  const gesehen = {};
+  const dateien = auswahl.map(k => {
+    let name = htmlName(k.daten);
+    if (gesehen[name]) { const basis = name.replace(/\.html$/, ""); let i = 2; while (gesehen[basis + "-" + i + ".html"]) i++; name = basis + "-" + i + ".html"; }
+    gesehen[name] = true;
+    return { name: name, html: baueHtmlDokument(k.daten) };
+  });
+  return await batchSpeichern(dateien);
+}
+
+/* Ausgabe: bevorzugt Zielordner (File System Access), sonst Einzel-Downloads. */
+async function batchSpeichern(dateien) {
+  if (window.showDirectoryPicker) {
+    let dir = null;
+    try {
+      const opts = { mode: "readwrite" };
+      try { const last = await idbHandleLaden("htmlout"); if (last) opts.startIn = last; } catch (e) {}
+      dir = await window.showDirectoryPicker(opts);
+    } catch (e) { if (e && e.name === "AbortError") return { aborted: true }; }
+    if (dir) {
+      for (const d of dateien) {
+        const fh = await dir.getFileHandle(d.name, { create: true });
+        const w = await fh.createWritable(); await w.write(d.html); await w.close();
+      }
+      idbHandleSpeichern("htmlout", dir);
+      return { written: dateien.length, folder: true };
+    }
+  }
+  for (const d of dateien) { downloadHtml(d.html, d.name); await htmlDelay(180); }
+  return { written: dateien.length, folder: false };
+}
+
+/* ============================================================
+   Ansicht umschalten (Übersicht / Prozessschritt-Detail)
+   ============================================================ */
+/* Seitengröße für den Druck setzen: Übersicht = A3, Detail = A4 (je quer). */
+function setzeDruckGroesse() {
+  const st = document.getElementById("druckGroesse");
+  if (st) st.textContent = "@page { size: " + (STATE.ansicht === "detail" ? "A4" : "A3") + " landscape; margin: 8mm; }";
+}
+function aktualisiereAnsichtKnoepfe() {
+  const bu = document.getElementById("btnAnsichtUebersicht");
+  const bd = document.getElementById("btnAnsichtDetail");
+  if (bu) bu.classList.toggle("aktiv", STATE.ansicht === "uebersicht");
+  if (bd) bd.classList.toggle("aktiv", STATE.ansicht === "detail");
+  const sichtbar = (STATE.ansicht === "detail");
+  const lab = document.getElementById("schrittLab");
+  const sel = document.getElementById("schrittWahl");
+  if (lab) lab.style.display = sichtbar ? "" : "none";
+  if (sel) sel.style.display = sichtbar ? "" : "none";
+}
+function setAnsicht(name, index) {
+  STATE.ansicht = (name === "detail") ? "detail" : "uebersicht";
+  if (typeof index === "number") STATE.detailIndex = index;
+  setzeDruckGroesse();
+  aktualisiereAnsichtKnoepfe();
+  schliesseRaciMenu();
+  render(STATE.daten);
+  if (STATE.bearbeiten) baueEditor();
+  requestAnimationFrame(passeBildschirmEin);
+}
+
+/* ============================================================
+   Hamburger-Menü (oben links): Neu / Laden
+   ============================================================ */
+const btnMenu = document.getElementById("btnMenu");
+const menuDropdown = document.getElementById("menuDropdown");
+function schliesseMenu() {
+  menuDropdown.hidden = true;
+  btnMenu.setAttribute("aria-expanded", "false");
+  menuDropdown.querySelectorAll(".menu-sub.auf").forEach(s => s.classList.remove("auf"));
+  document.removeEventListener("click", aufMenuAussenklick);
+}
+function aufMenuAussenklick(e) {
+  if (!menuDropdown.contains(e.target) && e.target !== btnMenu) schliesseMenu();
+}
+btnMenu.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!menuDropdown.hidden) { schliesseMenu(); return; }
+  menuDropdown.hidden = false;
+  btnMenu.setAttribute("aria-expanded", "true");
+  setTimeout(() => document.addEventListener("click", aufMenuAussenklick), 0);
+});
+/* Untermenüs (Import/Export) per Klick auf-/zuklappen */
+Array.from(menuDropdown.querySelectorAll(".has-sub")).forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const sub = btn.parentElement;
+    const auf = sub.classList.contains("auf");
+    menuDropdown.querySelectorAll(".menu-sub.auf").forEach(s => s.classList.remove("auf"));
+    if (!auf) sub.classList.add("auf");
+  });
+});
+
+/* ============================================================
+   draw.io-Import (Phase 3) — .drawio / .xml (mxGraph)
+   Liest alle Textfelder + Koordinaten, schlägt eine Zuordnung vor
+   und zeigt einen Bestätigungs-Dialog (semi-automatisch).
+   ============================================================ */
+
+/* draw.io-Wert (oft HTML) → reiner Text mit Zeilenumbrüchen */
+function textAusWert(wert) {
+  if (wert == null) return "";
+  let s = String(wert).replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<\/div>/gi, "\n");
+  const tmp = document.createElement("div");
+  tmp.innerHTML = s;
+  let txt = tmp.textContent || "";
+  return txt.replace(/ /g, " ").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{2,}/g, "\n").trim();
+}
+
+/* Base64 → Uint8Array */
+function base64ZuBytes(b64) {
+  const bin = atob(b64.replace(/\s+/g, ""));
+  const a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return a;
+}
+
+/* Raw-Deflate entpacken über die Browser-API (offline, ohne Bibliothek) */
+async function entpackeRaw(bytes) {
+  if (typeof DecompressionStream === "undefined") throw new Error(t("msg.decompressUnsupported"));
+  const ds = new DecompressionStream("deflate-raw");
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  const buf = await new Response(stream).arrayBuffer();
+  return new TextDecoder().decode(new Uint8Array(buf));
+}
+
+/* Geometrie einer Zelle (eigene, relativ zum Eltern) */
+function geomVon(cell) {
+  const g = Array.from(cell.children).find(ch => ch.nodeName === "mxGeometry");
+  if (!g) return null;
+  const num = a => { const v = parseFloat(g.getAttribute(a)); return isNaN(v) ? 0 : v; };
+  return { x: num("x"), y: num("y"), w: num("width"), h: num("height") };
+}
+/* Absolute Position (Eltern-Gruppen aufsummieren) */
+function absPos(cell, byId) {
+  let x = 0, y = 0, cur = cell;
+  while (cur && cur.getAttribute && cur.getAttribute("vertex") === "1") {
+    const g = geomVon(cur); if (g) { x += g.x; y += g.y; }
+    cur = byId[cur.getAttribute("parent")];
+  }
+  return { x, y };
+}
+
+/* Datei-Text → Liste von Text-Knoten {text,x,y,w,h,cx,cy} (async wegen Entpacken) */
+async function leseDrawio(text) {
+  let xmlText = text;
+  if (!/<mxGraphModel/i.test(xmlText)) {
+    const m = xmlText.match(/<diagram[^>]*>([\s\S]*?)<\/diagram>/i);
+    if (m && m[1].trim()) {
+      xmlText = decodeURIComponent(await entpackeRaw(base64ZuBytes(m[1].trim())));
+    }
+  }
+  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+  if (doc.querySelector("parsererror")) throw new Error(t("msg.notXml"));
+  const cells = Array.from(doc.getElementsByTagName("mxCell"));
+  const byId = {};
+  cells.forEach(c => { byId[c.getAttribute("id")] = c; });
+  const nodes = [];
+  cells.forEach(c => {
+    if (c.getAttribute("vertex") !== "1") return;
+    const txt = textAusWert(c.getAttribute("value") || "");
+    if (!txt) return;
+    const g = geomVon(c); if (!g) return;
+    const p = absPos(c, byId);
+    nodes.push({ id: c.getAttribute("id"), text: txt, x: p.x, y: p.y, w: g.w, h: g.h, cx: p.x + g.w / 2, cy: p.y + g.h / 2 });
+  });
+  return nodes;
+}
+
+/* Heuristische Erst-Zuordnung anhand der Lage */
+function klassifiziere(nodes) {
+  const raciRe = /^[\s]*[raciRACI]([\s,\/.;|·]*[raciRACI])*[\s]*$/;
+  nodes.forEach(n => { n.kat = (raciRe.test(n.text) && n.text.length <= 14) ? "raci" : null; });
+  const raci = nodes.filter(n => n.kat === "raci");
+  const rest = nodes.filter(n => n.kat !== "raci");
+  if (rest.length) {
+    let titel = rest[0];
+    rest.forEach(n => { if (n.y < titel.y - 2 || (Math.abs(n.y - titel.y) <= 2 && n.w > titel.w)) titel = n; });
+    titel.kat = "titel";
+  }
+  if (raci.length) {
+    const minX = Math.min.apply(null, raci.map(n => n.x));
+    const maxX = Math.max.apply(null, raci.map(n => n.x + n.w));
+    const minY = Math.min.apply(null, raci.map(n => n.y));
+    const maxY = Math.max.apply(null, raci.map(n => n.y + n.h));
+    nodes.forEach(n => {
+      if (n.kat) return;
+      if (n.cy >= minY - 6 && n.cy <= maxY + 6 && n.cx < minX) n.kat = "rolle";
+      else if (n.cx >= minX - 6 && n.cx <= maxX + 6 && n.cy < minY) n.kat = "schritt";
+    });
+  }
+  nodes.forEach(n => { if (!n.kat) n.kat = "ignore"; });
+}
+
+/* Kategorien für die Dropdowns */
+const IMPORT_KATEGORIEN = [
+  ["ignore", "import.catIgnore"],
+  ["titel", "import.catTitle"],
+  ["prozessId", "import.catProcessId"],
+  ["firma", "import.catCompany"],
+  ["owner", "import.catOwner"],
+  ["schritt", "import.catStep"],
+  ["rolle", "import.catRole"],
+  ["raci", "import.catRaci"],
+  ["input", "import.catInput"],
+  ["output", "import.catOutput"],
+  ["legende", "import.catLegend"]
+];
+
+/* Aus den (vom Nutzer bestätigten) Knoten das Prozess-JSON bauen */
+function baueDatenAusNodes(nodes) {
+  const get = k => nodes.filter(n => n.kat === k);
+  const einzeilig = n => n.text.replace(/\n+/g, " ").trim();
+  const meta = { titel: "", firma: "", firmaModus: "text", logo: "", prozessId: "", version: "1.0", datum: "", processOwner: "", fusstext: "" };
+  if (get("titel")[0]) meta.titel = einzeilig(get("titel")[0]);
+  if (get("prozessId")[0]) meta.prozessId = einzeilig(get("prozessId")[0]);
+  if (get("firma")[0]) meta.firma = einzeilig(get("firma")[0]);
+  if (get("owner")[0]) meta.processOwner = einzeilig(get("owner")[0]);
+
+  const schrittNodes = get("schritt").sort((a, b) => a.cx - b.cx);
+  const schritte = schrittNodes.map((n, i) => {
+    const zeilen = n.text.split("\n").map(s => s.trim()).filter(Boolean);
+    return { id: "schritt_imp_" + i, titel: zeilen[0] || t("render.stepFallback", { n: i }), untertitel: zeilen.slice(1).join(" "), punkteUeberschrift: "", punkte: [], beschreibung: [] };
+  });
+  const rolleNodes = get("rolle").sort((a, b) => a.cy - b.cy);
+  const rollen = rolleNodes.map(einzeilig);
+
+  const raci = {};
+  schritte.forEach(s => { raci[s.id] = {}; });
+  get("raci").forEach(n => {
+    if (!schrittNodes.length || !rolleNodes.length) return;
+    let si = 0, best = Infinity;
+    schrittNodes.forEach((s, i) => { const d = Math.abs(s.cx - n.cx); if (d < best) { best = d; si = i; } });
+    let ri = 0; best = Infinity;
+    rolleNodes.forEach((r, i) => { const d = Math.abs(r.cy - n.cy); if (d < best) { best = d; ri = i; } });
+    const vorhanden = (n.text.toUpperCase().match(/[RACI]/g) || []);
+    const buchstaben = ["R", "A", "C", "I"].filter(L => vorhanden.includes(L));
+    if (buchstaben.length) raci[schritte[si].id][rollen[ri]] = buchstaben;
+  });
+
+  const input = { label: "Input [Responsible]", punkte: get("input").sort((a, b) => a.cy - b.cy).map(einzeilig) };
+  const output = { label: "Output [Responsible]", verantwortlich: "", punkte: get("output").sort((a, b) => a.cy - b.cy).map(einzeilig) };
+  const legende = {
+    "R": "Concept responsibility (Responsible)", "A": "Decision responsibility (Accountable)",
+    "C": "Contribution responsibility (Consulted)", "I": "Right to be informed (Informed)"
+  };
+  return { meta, input, output, schritte, rollen, raci, legende };
+}
+
+/* Bestätigungs-Dialog anzeigen */
+function zeigeImportDialog(nodes) {
+  const alt = document.getElementById("importOverlay");
+  if (alt) alt.remove();
+
+  const overlay = el("div", "import-overlay"); overlay.id = "importOverlay";
+  const dialog = el("div", "import-dialog");
+
+  const kopf = el("div", "import-kopf");
+  kopf.appendChild(el("h2", null, t("import.dialogTitle")));
+  kopf.appendChild(el("p", null, t("import.dialogIntro")));
+  dialog.appendChild(kopf);
+
+  const body = el("div", "import-body");
+  const tab = el("table", "import-tabelle");
+  const thead = el("tr");
+  ["import.colText", "import.colPosition", "import.colCategory"].forEach(k => thead.appendChild(el("th", null, t(k))));
+  tab.appendChild(thead);
+
+  const sortiert = nodes.slice().sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  const summeAktualisieren = () => {
+    const z = {}; nodes.forEach(n => { z[n.kat] = (z[n.kat] || 0) + 1; });
+    summe.textContent = t("import.summary", { steps: (z.schritt || 0), roles: (z.rolle || 0), raci: (z.raci || 0), input: (z.input || 0), output: (z.output || 0) });
+  };
+
+  sortiert.forEach(n => {
+    const tr = el("tr");
+    if (n.kat === "raci") tr.classList.add("ist-raci");
+    tr.appendChild(el("td", "txt", n.text.replace(/\n/g, " ⏎ ")));
+    tr.appendChild(el("td", "pos", "x " + Math.round(n.x) + " · y " + Math.round(n.y)));
+    const tdK = el("td");
+    const sel = document.createElement("select"); sel.className = "ed-select";
+    IMPORT_KATEGORIEN.forEach(([v, key]) => { const o = document.createElement("option"); o.value = v; o.textContent = t(key); sel.appendChild(o); });
+    sel.value = n.kat;
+    sel.addEventListener("change", () => { n.kat = sel.value; tr.classList.toggle("ist-raci", n.kat === "raci"); summeAktualisieren(); });
+    tdK.appendChild(sel);
+    tr.appendChild(tdK);
+    tab.appendChild(tr);
+  });
+  body.appendChild(tab);
+  dialog.appendChild(body);
+
+  const fuss = el("div", "import-fuss");
+  const summe = el("div", "summe");
+  fuss.appendChild(summe);
+  const abbrechen = el("button", "btn-sek", t("import.cancel"));
+  abbrechen.addEventListener("click", () => overlay.remove());
+  const uebernehmen = el("button", "btn-akt", t("import.apply"));
+  uebernehmen.addEventListener("click", () => {
+    const daten = baueDatenAusNodes(nodes);
+    overlay.remove();
+    setDaten(daten);
+    setAnsicht("uebersicht");
+    if (!STATE.bearbeiten) setzeBearbeiten(true);
+  });
+  fuss.appendChild(abbrechen);
+  fuss.appendChild(uebernehmen);
+  dialog.appendChild(fuss);
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  summeAktualisieren();
+}
+
+/* Import-Datei wählen + verarbeiten */
+document.getElementById("btnImport").addEventListener("click", () => { schliesseMenu(); document.getElementById("drawioInput").click(); });
+document.getElementById("drawioInput").addEventListener("change", (ev) => {
+  const datei = ev.target.files[0];
+  if (!datei) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const nodes = await leseDrawio(e.target.result);
+      if (!nodes.length) { alert(t("msg.noTextFields")); return; }
+      klassifiziere(nodes);
+      zeigeImportDialog(nodes);
+    } catch (err) {
+      alert(t("msg.importFailed", { err: err.message }));
+    }
+  };
+  reader.readAsText(datei, "utf-8");
+  ev.target.value = "";
+});
+
+/* ============================================================
+   Datei laden + Drucken
+   ============================================================ */
+document.getElementById("btnLaden").addEventListener("click", () => { schliesseMenu(); document.getElementById("dateiInput").click(); });
+document.getElementById("dateiInput").addEventListener("change", (ev) => {
+  const datei = ev.target.files[0];
+  if (!datei) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try { setDaten(JSON.parse(e.target.result)); }
+    catch (err) { alert(t("msg.jsonReadFailed", { err: err.message })); }
+  };
+  reader.readAsText(datei, "utf-8");
+  ev.target.value = "";
+});
+
+/* ---- Autocomplete: Funktions-/Rollennamen aus der Organisation ----
+   Quelle 1: per "Organisation laden…" eingelesene index.json/organisation.json.
+   Quelle 2: die im aktuellen Prozess bereits vorhandenen Rollen.
+   Beides füllt das <datalist id="orgNamen"> für alle Rollen-Eingaben. */
+let ORG_NAMEN = [];
+function aktualisiereOrgNamen() {
+  const liste = document.getElementById("orgNamen");
+  if (!liste) return;
+  const set = {}, out = [];
+  ORG_NAMEN.forEach((n) => { n = (n || "").trim(); if (n && !set[n]) { set[n] = 1; out.push(n); } });
+  ((STATE.daten && STATE.daten.rollen) || []).forEach((n) => { n = (n || "").trim(); if (n && !set[n]) { set[n] = 1; out.push(n); } });
+  out.sort((a, b) => a.localeCompare(b));
+  liste.innerHTML = "";
+  out.forEach((n) => { const o = document.createElement("option"); o.value = n; liste.appendChild(o); });
+}
+document.getElementById("btnLadeOrg").addEventListener("click", () => { schliesseMenu(); document.getElementById("orgInput").click(); });
+document.getElementById("orgInput").addEventListener("change", (ev) => {
+  const datei = ev.target.files[0];
+  if (!datei) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let obj = null;
+    try { obj = JSON.parse(e.target.result); } catch (err) { alert(t("msg.jsonReadFailed", { err: err.message })); return; }
+    /* Datei kann das ganze index.json sein (.organisation) oder direkt eine organisation */
+    const org = (obj && obj.organisation) ? obj.organisation : obj;
+    if (!org || !Array.isArray(org.knoten)) { alert(t("org.loadInvalid")); return; }
+    ORG_NAMEN = NIJU.ORG.alleNamen(NIJU.ORG.normalize(org));
+    aktualisiereOrgNamen();
+    alert(t("org.loadedNames", { n: ORG_NAMEN.length }));
+  };
+  reader.readAsText(datei, "utf-8");
+  ev.target.value = "";
+});
+
+/* Neuer Prozess aus dem eingebetteten Standard-Template */
+document.getElementById("btnNeu").addEventListener("click", () => {
+  schliesseMenu();
+  if (STATE.daten && !confirm(t("msg.confirmNew"))) return;
+  setDaten(tiefKopie(TEMPLATE_LEER));
+  if (!STATE.bearbeiten) setzeBearbeiten(true);
+});
+
+/* Vorlage laden (eigene Inhalts-Vorlage als Startpunkt; gleiches JSON-Format) */
+document.getElementById("btnTemplateLaden").addEventListener("click", () => {
+  schliesseMenu();
+  if (STATE.daten && !confirm(t("msg.confirmLoadTemplate"))) return;
+  document.getElementById("templateInput").click();
+});
+document.getElementById("templateInput").addEventListener("change", (ev) => {
+  const datei = ev.target.files[0];
+  if (!datei) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      setDaten(JSON.parse(e.target.result));
+      if (!STATE.bearbeiten) setzeBearbeiten(true);
+    } catch (err) { alert(t("msg.jsonReadFailed", { err: err.message })); }
+  };
+  reader.readAsText(datei, "utf-8");
+  ev.target.value = "";
+});
+/* Als Vorlage speichern (Dialog, gemerkter Template-Ordner) */
+document.getElementById("btnTemplateSpeichern").addEventListener("click", () => { schliesseMenu(); templateSpeichern(); });
+
+/* Bearbeiten-Modus umschalten */
+document.getElementById("btnBearbeiten").addEventListener("click", () => setzeBearbeiten(!STATE.bearbeiten));
+
+/* Download (Menü oben: klassischer Download in den Download-Ordner) */
+document.getElementById("btnSave").addEventListener("click", () => { schliesseMenu(); speichern(); });
+/* Speichern unter… (Menü oben: Ordner-/Dateiauswahl mit editierbarem Namen, sonst Download) */
+document.getElementById("btnSaveAs").addEventListener("click", () => { schliesseMenu(); speichernAls(); });
+/* Speichern als JSON-Datei (Menü: Export → JSON, klassischer Download) */
+document.getElementById("btnSpeichern").addEventListener("click", () => { schliesseMenu(); speichern(); });
+/* JPEG-Export (Menü: Export → JPEG) */
+document.getElementById("btnJpeg").addEventListener("click", () => { schliesseMenu(); zeigeJpegDialog(); });
+document.getElementById("btnHtml").addEventListener("click", () => { schliesseMenu(); exportiereHtml(); });
+document.getElementById("btnHtmlBatch").addEventListener("click", () => { schliesseMenu(); htmlBatchStart(); });
+
+/* Ansicht-Navigation */
+document.getElementById("btnAnsichtUebersicht").addEventListener("click", () => setAnsicht("uebersicht"));
+document.getElementById("btnAnsichtDetail").addEventListener("click", () => setAnsicht("detail"));
+document.getElementById("schrittWahl").addEventListener("change", (ev) => {
+  const idx = parseInt(ev.target.value, 10) || 0;
+  setAnsicht("detail", idx);
+});
+
+/* Druck: natürliche Größe (das @media-print-CSS erzwingt transform:none
+   und neutralisiert die Hülle). Vorher Seitengröße passend zur Ansicht setzen
+   und die Verbinder bei natürlichen Koordinaten frisch zeichnen. */
+window.addEventListener("beforeprint", () => { setzeDruckGroesse(); zeichneVerbinder(); });
+window.addEventListener("afterprint", () => passeBildschirmEin());
+document.getElementById("btnDrucken").addEventListener("click", () => { schliesseMenu(); window.print(); });
+
+/* Beim Schließen des Popovers bei Fenster-Resize/Scroll aufräumen. */
+window.addEventListener("resize", schliesseRaciMenu);
+document.querySelector(".buehne").addEventListener("scroll", schliesseRaciMenu);
+
+/* ============================================================
+   Configuration-Ansicht (eingebettet in die Bühne)
+   ============================================================ */
+function oeffneKonfiguration() {
+  schliesseMenu();
+  schliesseRaciMenu();
+  const buehne = document.querySelector(".buehne");
+  const editor = document.getElementById("editor");
+  const host = document.getElementById("cfgHost");
+  buehne.hidden = true;
+  editor.hidden = true;
+  host.hidden = false;
+  NIJU.CONFIG.open(host, {
+    design: true,
+    backup: {
+      getData: function () {
+        if (!STATE.daten) return { prozesse: {}, index: null };
+        const m = STATE.daten.meta || {};
+        let fn = (m.prozessId || m.titel || "process").replace(/[/\\:*?"<>|]/g, "-").replace(/\s+/g, "-").toLowerCase();
+        if (!fn) fn = "process";
+        const prz = {};
+        prz[fn + ".json"] = { data: STATE.daten, titel: m.titel || fn };
+        return { prozesse: prz, index: null, name: "niju-builder-backup" };
+      },
+      onRestore: function (result) {
+        if (result.settings) NIJU.BACKUP.applySettings(result.settings);
+        NIJU.DESIGN.init(); NIJU.I18N.init();
+        const keys = Object.keys(result.prozesse || {});
+        if (keys.length) {
+          const first = result.prozesse[keys[0]];
+          setDaten((first && first.data) ? first.data : first);
+        }
+      }
+    },
+    onClose: () => {
+      host.hidden = true; host.innerHTML = "";
+      buehne.hidden = false;
+      if (STATE.bearbeiten) editor.hidden = false;
+      render(STATE.daten);
+      requestAnimationFrame(passeBildschirmEin);
+    }
+  });
+}
+document.getElementById("btnConfig").addEventListener("click", oeffneKonfiguration);
+document.getElementById("btnAbout").addEventListener("click", function() {
+  schliesseMenu(); schliesseRaciMenu();
+  var buehne = document.querySelector(".buehne"), editor = document.getElementById("editor"), host = document.getElementById("cfgHost");
+  buehne.hidden = true; editor.hidden = true; host.hidden = false;
+  NIJU.CONFIG.open(host, { aboutOnly: true, onClose: function() { host.hidden = true; host.innerHTML = ""; buehne.hidden = false; if (STATE.bearbeiten) editor.hidden = false; render(STATE.daten); requestAnimationFrame(passeBildschirmEin); } });
+});
+
+/* ============================================================
+   Mehrsprachigkeit + Modul-Umschalter starten
+   ============================================================ */
+NIJU.I18N.init();                       /* gespeicherte Sprache laden + statische Labels setzen */
+NIJU.DESIGN.init();                     /* gespeichertes Design + Anpassungen laden + anwenden */
+/* Design-Änderung (aus der Configuration): Effektiv-Snapshot in die Daten
+   stempeln, damit Speichern den aktuellen Look mitnimmt. */
+NIJU.DESIGN.onChange(() => { if (STATE.daten) STATE.daten.design = NIJU.DESIGN.effektiv(); });
+NIJU.NAV.mount("navWrap", "builder");   /* Marke oben rechts → Modul-Dropdown */
+
+/* Beim Start: leeres Template laden und Editor öffnen. */
+setzeDruckGroesse();
+aktualisiereAnsichtKnoepfe();
+setDaten(tiefKopie(TEMPLATE_LEER));
+setzeBearbeiten(true);
+
+/* Bei Sprachwechsel die dynamisch erzeugten Teile neu beschriften
+   (Inhalte des Nutzers bleiben unverändert). */
+NIJU.I18N.onChange(() => {
+  render(STATE.daten);
+  if (STATE.bearbeiten) baueEditor();
+  aktualisiereAnsichtKnoepfe();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "titel": "",
+    "firma": "",
+    "firmaModus": "text",
+    "logo": "",
+    "prozessId": "",
+    "version": "1.0",
+    "datum": "",
+    "processOwner": "",
+    "fusstext": ""
+  },
+  "input": { "label": "", "punkte": [""] },
+  "output": { "label": "", "verantwortlich": "", "punkte": [""] },
+  "schritte": [
+    { "id": "standards", "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt1",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt2",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt3",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt4",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] }
+  ],
+  "rollen": [],
+  "raci": {
+    "standards": {},
+    "schritt1": {},
+    "schritt2": {},
+    "schritt3": {},
+    "schritt4": {}
+  },
+  "legende": {
+    "R": "",
+    "A": "",
+    "C": "",
+    "I": ""
+  }
+}

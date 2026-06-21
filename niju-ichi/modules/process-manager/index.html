@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIJU ICHI Process Manager</title>
+<link rel="stylesheet" href="../../shared/css/base.css">
+<link rel="stylesheet" href="../../shared/css/viewer.css">
+<link rel="stylesheet" href="../../shared/css/org.css">
+<link rel="stylesheet" href="../../shared/css/wissen.css">
+<script src="../../shared/js/i18n.js"></script>
+<script src="../../shared/lang/en.js"></script>
+<script src="../../shared/lang/de.js"></script>
+<script src="../../shared/lang/ja.js"></script>
+<script src="../../shared/js/modules.js"></script>
+<script src="../../shared/js/nav.js"></script>
+<script src="../../shared/js/design.js"></script>
+<script src="../../shared/design/swiss-modular.js"></script>
+<script src="../../shared/design/teal-soft.js"></script>
+<script src="../../shared/design/mono-slate.js"></script>
+<script src="../../shared/design/strategy-editorial.js"></script>
+<script src="../../shared/design/executive-dark.js"></script>
+<script src="../../shared/js/config.js"></script>
+<script src="../../shared/js/backup.js"></script>
+<script src="../../shared/js/library.js"></script>
+<script src="../../shared/js/viewer.js"></script>
+<script src="../../shared/js/tree.js"></script>
+<script src="../../shared/js/map.js"></script>
+<script src="../../shared/js/org.js"></script>
+<script src="../../shared/js/wissen.js"></script>
+<script src="../../shared/js/demo-library.js"></script>
+<style>
+  html, body { margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-family: var(--sans); color: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="menu-wrap">
+      <button class="btn icon" id="btnMenu" data-i18n-aria="menu.aria" aria-label="Menu" aria-expanded="false">
+        <svg class="sats-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <g stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <line x1="9.5" y1="3.5" x2="14.5" y2="3.5"/><line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9.5" y1="20.5" x2="14.5" y2="20.5"/>
+          </g>
+        </svg>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown" hidden>
+        <button class="menu-item" id="btnAbout" data-i18n="menu.about">About</button>
+        <hr class="menu-sep">
+        <button class="menu-item" id="btnOpen" data-i18n="lib.open">Open directory…</button>
+        <button class="menu-item" id="btnSave" data-i18n="lib.save">Save structure (index.json)</button>
+        <button class="menu-item" id="btnConfig" data-i18n="menu.config">Configuration</button>
+      </div>
+    </div>
+    <input type="file" id="dirInput" webkitdirectory directory multiple style="display:none">
+    <input type="file" id="imgInput" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" style="display:none">
+    <span class="tb-trenner"></span>
+    <div class="tb-seg">
+      <button class="btn seg aktiv" id="modeStruktur" data-i18n="map.viewStructure">Structure</button>
+      <button class="btn seg" id="modeLandkarte" data-i18n="map.viewMap">Process map</button>
+      <button class="btn seg" id="modeOrg" data-i18n="org.view">Organisation</button>
+      <button class="btn seg" id="modeWissen" data-i18n="wsn.view">AI &amp; Tools</button>
+    </div>
+    <span class="spacer"></span>
+    <div class="nav-wrap" id="navWrap"></div>
+  </div>
+
+  <div class="mod-app" id="modApp">
+    <aside class="niju-tree-pane">
+      <div class="niju-tree-titel" data-i18n="tree.paneTitle">Structure</div>
+      <div class="mod-hint" id="modHint" data-i18n="mgmt.structureHint"></div>
+      <div id="treeHost"></div>
+    </aside>
+    <div class="mod-right">
+      <div class="mod-view-head">
+        <span class="tb-lab" data-i18n="toolbar.view">View</span>
+        <button class="btn seg aktiv" id="btnUebersicht" data-i18n="toolbar.overview">Overview</button>
+        <button class="btn seg" id="btnDetail" data-i18n="toolbar.stepDetail">Process step detail</button>
+        <label class="tb-lab" id="stepLab" for="stepSel" data-i18n="toolbar.step" style="display:none">Step:</label>
+        <select id="stepSel" style="display:none"></select>
+      </div>
+      <div class="viewer-buehne" id="viewerHost"><div class="leer-hinweis" data-i18n="mgmt.selectHint"></div></div>
+    </div>
+  </div>
+
+  <div class="mod-app" id="mapApp" hidden>
+    <aside class="niju-tree-pane"><div class="nm-inspector" id="inspPane"></div></aside>
+    <div class="niju-map-stage editor" id="mapHost"></div>
+  </div>
+
+  <div class="org-stage" id="orgApp" hidden>
+    <div class="mod-view-head">
+      <span class="tb-lab" data-i18n="toolbar.view">View</span>
+      <button class="btn seg aktiv" id="orgList" data-i18n="org.viewList">List</button>
+      <button class="btn seg" id="orgChart" data-i18n="org.viewChart">Org chart</button>
+      <span class="spacer"></span>
+      <span class="mod-hint" data-i18n="org.hint" style="padding:0;max-width:520px"></span>
+    </div>
+    <div class="org-sync-bar" id="orgSync" hidden>
+      <span class="grow" id="orgSyncMsg"></span>
+      <button class="nt-btn sync" id="orgSyncBtn" data-i18n="org.syncBtn">Sync &amp; save processes</button>
+    </div>
+    <div class="org-scroll" id="orgHost"></div>
+  </div>
+
+  <div class="mod-app" id="wissenApp" hidden>
+    <div class="wsn-host" id="wissenHost" style="flex:1 1 auto;min-height:0"></div>
+  </div>
+
+  <div class="stage" id="cfgHost" hidden></div>
+
+<script>
+function t(k, v) { return NIJU.I18N.t(k, v); }
+var ST = { model: { index: null, prozesse: {} }, selected: null, ansicht: "uebersicht", detailIndex: 0, dirty: false, view: "struktur", selBox: null, currentMapId: null, orgAnsicht: "liste", changedProcs: {}, wsnSub: "tools", wsnSearchTools: "", wsnSearchKnowledge: "", wsnShowDetails: true, wsnShowDetailsKnowledge: true };
+
+/* ☰-Menü */
+var btnMenu = document.getElementById("btnMenu"), menuDropdown = document.getElementById("menuDropdown");
+function schliesseMenu() { menuDropdown.hidden = true; btnMenu.setAttribute("aria-expanded", "false"); document.removeEventListener("click", aussen); }
+function aussen(e) { if (!menuDropdown.contains(e.target) && e.target !== btnMenu) schliesseMenu(); }
+btnMenu.addEventListener("click", function (e) { e.stopPropagation(); if (!menuDropdown.hidden) { schliesseMenu(); return; } menuDropdown.hidden = false; btnMenu.setAttribute("aria-expanded", "true"); setTimeout(function () { document.addEventListener("click", aussen); }, 0); });
+
+var treeHost = document.getElementById("treeHost");
+var viewerHost = document.getElementById("viewerHost");
+var stepSel = document.getElementById("stepSel"), stepLab = document.getElementById("stepLab");
+var btnU = document.getElementById("btnUebersicht"), btnD = document.getElementById("btnDetail");
+
+function normalizeMapClusters(list) {
+  (list || []).forEach(function (c) {
+    if (c.typ === "map") { if (!c.landkarte) c.landkarte = {}; NIJU.MAP.normalize(c.landkarte); }
+    normalizeMapClusters(c.cluster);
+  });
+}
+function findMapCluster(id) {
+  var found = null;
+  (function walk(list) { (list || []).forEach(function (c) { if (!found && c.id === id && c.typ === "map") found = c; if (!found) walk(c.cluster); }); })(ST.model.index.cluster || []);
+  return found;
+}
+function alleKarten() {
+  var maps = [{ id: null, name: t("map.masterMap"), indent: "" }];
+  (function walk(list, d) { (list || []).forEach(function (c) { if (c.typ === "map") maps.push({ id: c.id, name: c.name || t("common.untitled"), indent: "— ".repeat(d) }); walk(c.cluster, d + 1); }); })(ST.model.index.cluster || [], 0);
+  return maps;
+}
+
+function ladeModel(prozesse, index) {
+  var names = Object.keys(prozesse);
+  ST.model.prozesse = prozesse;
+  ST.model.index = NIJU.LIB.normalize(index, names);
+  ST.model.index.landkarte = NIJU.MAP.normalize(ST.model.index.landkarte || {});
+  normalizeMapClusters(ST.model.index.cluster);
+  ST.model.index.organisation = NIJU.ORG.normalize(ST.model.index.organisation || {});
+  ST.model.index.wissen = NIJU.WISSEN.normalize(ST.model.index.wissen || {});
+  ST.selBox = null; ST.currentMapId = null;
+  ST.changedProcs = {};
+  if (!ST.selected || names.indexOf(ST.selected) < 0) ST.selected = names[0] || null;
+  zeichneTree();
+  zeichneViewer();
+  if (ST.view === "landkarte") { zeichneMap(); zeichneInspector(); }
+  if (ST.view === "org") zeichneOrg();
+  if (ST.view === "wissen") zeichneWissen();
+}
+function zeichneTree() {
+  NIJU.TREE.render(treeHost, { index: ST.model.index, prozesse: ST.model.prozesse, selected: ST.selected }, {
+    editable: true,
+    onSelect: function (name) { ST.selected = name; ST.ansicht = "uebersicht"; ST.detailIndex = 0; aktualisiereKopf(); zeichneTree(); zeichneViewer(); },
+    onChange: function (idx) { ST.model.index = idx; ST.dirty = true; zeichneTree(); },
+    onSelectMap: function (id) { ST.currentMapId = id; ST.selBox = null; setView("landkarte"); },
+    onNewProcessMap: function (name) {
+      ST.model.index.cluster.push({ id: NIJU.LIB.newClusterId(), name: name, typ: "map", landkarte: NIJU.MAP.normalize({}), prozesse: [], cluster: [] });
+      ST.dirty = true; zeichneTree();
+    }
+  });
+}
+function aktualisiereKopf() {
+  btnU.classList.toggle("aktiv", ST.ansicht === "uebersicht");
+  btnD.classList.toggle("aktiv", ST.ansicht === "detail");
+  var sichtbar = (ST.ansicht === "detail");
+  stepLab.style.display = sichtbar ? "" : "none";
+  stepSel.style.display = sichtbar ? "" : "none";
+}
+function fuelleStep(data) {
+  stepSel.innerHTML = "";
+  (data.schritte || []).forEach(function (s, i) {
+    var o = document.createElement("option"); o.value = String(i);
+    o.textContent = String(i).padStart(2, "0") + " — " + (s.untertitel || s.titel || t("render.stepFallback", { n: i }));
+    stepSel.appendChild(o);
+  });
+  stepSel.value = String(ST.detailIndex);
+}
+function zeichneViewer() {
+  var p = ST.selected ? ST.model.prozesse[ST.selected] : null;
+  if (!p || !p.data) { viewerHost.className = "viewer-buehne"; viewerHost.innerHTML = '<div class="leer-hinweis"></div>'; viewerHost.firstChild.textContent = t("mgmt.selectHint"); return; }
+  NIJU.VIEWER.render(viewerHost, p.data, { ansicht: ST.ansicht, detailIndex: ST.detailIndex });
+  if (ST.ansicht === "detail") fuelleStep(p.data);
+}
+btnU.addEventListener("click", function () { ST.ansicht = "uebersicht"; aktualisiereKopf(); zeichneViewer(); });
+btnD.addEventListener("click", function () { ST.ansicht = "detail"; aktualisiereKopf(); zeichneViewer(); });
+stepSel.addEventListener("change", function () { ST.detailIndex = parseInt(stepSel.value, 10) || 0; zeichneViewer(); });
+
+/* Verzeichnis öffnen */
+var dirInput = document.getElementById("dirInput");
+document.getElementById("btnOpen").addEventListener("click", function () { schliesseMenu(); dirInput.click(); });
+dirInput.addEventListener("change", function (ev) {
+  if (!ev.target.files || !ev.target.files.length) return;
+  NIJU.LIB.fromFileList(ev.target.files).then(function (m) {
+    if (!Object.keys(m.prozesse).length) { alert(t("msg.noTextFields")); return; }
+    ST.selected = null;
+    ladeModel(m.prozesse, m.index);
+    document.getElementById("modHint").textContent = t("lib.loaded", { n: Object.keys(m.prozesse).length }) + (m.index ? "" : " — " + t("lib.indexMissing"));
+  });
+  ev.target.value = "";
+});
+
+/* Struktur speichern (index.json-Download) */
+document.getElementById("btnSave").addEventListener("click", function () {
+  schliesseMenu();
+  var txt = NIJU.LIB.serialize(ST.model.index);
+  var blob = new Blob([txt], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = "index.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  ST.dirty = false;
+});
+
+/* ===== Prozesslandkarte (Editor) ===== */
+var modApp = document.getElementById("modApp"), mapApp = document.getElementById("mapApp"), cfgHost = document.getElementById("cfgHost");
+var orgApp = document.getElementById("orgApp"), wissenApp = document.getElementById("wissenApp"), wissenHost = document.getElementById("wissenHost");
+var mapHost = document.getElementById("mapHost"), inspPane = document.getElementById("inspPane");
+var modeStruktur = document.getElementById("modeStruktur"), modeLandkarte = document.getElementById("modeLandkarte"), modeOrg = document.getElementById("modeOrg"), modeWissen = document.getElementById("modeWissen");
+
+function lk() {
+  if (!ST.currentMapId) return ST.model.index.landkarte;
+  var c = findMapCluster(ST.currentMapId);
+  if (!c) return ST.model.index.landkarte;
+  if (!c.landkarte) c.landkarte = {};
+  return NIJU.MAP.normalize(c.landkarte);
+}
+function flatClusters() {
+  var out = [];
+  (function walk(list, d) { (list || []).forEach(function (c) { out.push({ id: c.id, name: c.name, depth: d, typ: c.typ || "folder" }); walk(c.cluster, d + 1); }); })(ST.model.index.cluster, 0);
+  return out;
+}
+function setView(v) {
+  ST.view = v;
+  modeStruktur.classList.toggle("aktiv", v === "struktur");
+  modeLandkarte.classList.toggle("aktiv", v === "landkarte");
+  modeOrg.classList.toggle("aktiv", v === "org");
+  modeWissen.classList.toggle("aktiv", v === "wissen");
+  modApp.hidden = (v !== "struktur");
+  mapApp.hidden = (v !== "landkarte");
+  orgApp.hidden = (v !== "org");
+  wissenApp.hidden = (v !== "wissen");
+  if (v === "landkarte") { zeichneMap(); zeichneInspector(); }
+  else if (v === "org") { zeichneOrg(); }
+  else if (v === "wissen") { zeichneWissen(); }
+  else { zeichneViewer(); }
+}
+modeStruktur.addEventListener("click", function () { setView("struktur"); });
+modeLandkarte.addEventListener("click", function () { setView("landkarte"); });
+modeOrg.addEventListener("click", function () { setView("org"); });
+modeWissen.addEventListener("click", function () { setView("wissen"); });
+
+/* ===== AI & Tools (wissen) ===== */
+function zeichneWissen() {
+  NIJU.WISSEN.renderEditor(wissenHost, { index: ST.model.index, prozesse: ST.model.prozesse }, {
+    sub: ST.wsnSub,
+    searchTools: ST.wsnSearchTools,
+    searchKnowledge: ST.wsnSearchKnowledge,
+    showDetails: ST.wsnShowDetails,
+    showDetailsKnowledge: ST.wsnShowDetailsKnowledge,
+    onChange: function () { ST.dirty = true; },
+    onSub: function (s) { ST.wsnSub = s; },
+    onSearch: function (field, q) {
+      if (field === "tools") ST.wsnSearchTools = q;
+      else ST.wsnSearchKnowledge = q;
+    },
+    onShowDetails: function (v) { ST.wsnShowDetails = v; },
+    onShowDetailsKnowledge: function (v) { ST.wsnShowDetailsKnowledge = v; }
+  });
+}
+
+/* ===== Org Manager ===== */
+var orgHost = document.getElementById("orgHost");
+var orgListBtn = document.getElementById("orgList"), orgChartBtn = document.getElementById("orgChart");
+var orgSyncBar = document.getElementById("orgSync"), orgSyncMsg = document.getElementById("orgSyncMsg"), orgSyncBtn = document.getElementById("orgSyncBtn");
+
+function org() { return ST.model.index.organisation; }
+function aktualisiereSync() {
+  var n = Object.keys(ST.changedProcs).length;
+  orgSyncBar.hidden = (n === 0);
+  if (n) orgSyncMsg.textContent = t("org.syncInfo", { n: n });
+}
+function zeichneOrg() {
+  orgListBtn.classList.toggle("aktiv", ST.orgAnsicht === "liste");
+  orgChartBtn.classList.toggle("aktiv", ST.orgAnsicht === "chart");
+  var model = { org: org(), prozesse: ST.model.prozesse };
+  var onRename = function (node, neu) {
+    var res = NIJU.ORG.umbenennen(org(), node.id, neu, ST.model.prozesse);
+    res.betroffen.forEach(function (fn) { ST.changedProcs[fn] = true; });
+    if (res.betroffen.length) ST.dirty = true;
+    aktualisiereSync();
+    zeichneOrg();
+    zeichneViewer();
+  };
+  if (ST.orgAnsicht === "chart") {
+    NIJU.ORG.renderChart(orgHost, model, { onRename: onRename });
+  } else {
+    NIJU.ORG.renderListe(orgHost, model, {
+      onChange: function () { ST.dirty = true; zeichneOrg(); },
+      onRename: onRename
+    });
+  }
+  aktualisiereSync();
+}
+orgListBtn.addEventListener("click", function () { ST.orgAnsicht = "liste"; zeichneOrg(); });
+orgChartBtn.addEventListener("click", function () { ST.orgAnsicht = "chart"; zeichneOrg(); });
+orgSyncBtn.addEventListener("click", function () { syncProcesses(); });
+
+/* Prozessdateien zurückschreiben: File System Access API, sonst Download. */
+function downloadDatei(txt, name) {
+  var blob = new Blob([txt], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+function idbGet(key) {
+  return new Promise(function (res) {
+    try {
+      var r = indexedDB.open("niju", 1);
+      r.onupgradeneeded = function () { try { r.result.createObjectStore("handles"); } catch (e) {} };
+      r.onsuccess = function () { try { var q = r.result.transaction("handles", "readonly").objectStore("handles").get(key); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } };
+      r.onerror = function () { res(null); };
+    } catch (e) { res(null); }
+  });
+}
+function idbPut(key, val) {
+  try {
+    var r = indexedDB.open("niju", 1);
+    r.onupgradeneeded = function () { try { r.result.createObjectStore("handles"); } catch (e) {} };
+    r.onsuccess = function () { try { r.result.transaction("handles", "readwrite").objectStore("handles").put(val, key); } catch (e) {} };
+  } catch (e) {}
+}
+/* "written" = in Ordner geschrieben, "abort" = Nutzer-Abbruch, "nofsa" = API fehlt */
+async function schreibeInVerzeichnis(files) {
+  if (!window.showDirectoryPicker) return "nofsa";
+  var dir = null;
+  try {
+    var merk = await idbGet("procdir");
+    if (merk && merk.requestPermission) { var perm = await merk.requestPermission({ mode: "readwrite" }); if (perm === "granted") dir = merk; }
+  } catch (e) {}
+  if (!dir) {
+    try { dir = await window.showDirectoryPicker({ mode: "readwrite" }); }
+    catch (e) { if (e && e.name === "AbortError") return "abort"; return "nofsa"; }
+    idbPut("procdir", dir);
+  }
+  for (var name in files) {
+    if (!Object.prototype.hasOwnProperty.call(files, name)) continue;
+    try { var fh = await dir.getFileHandle(name, { create: true }); var w = await fh.createWritable(); await w.write(files[name]); await w.close(); }
+    catch (e) {}
+  }
+  return "written";
+}
+async function syncProcesses() {
+  var namen = Object.keys(ST.changedProcs);
+  if (!namen.length) return;
+  var files = {};
+  namen.forEach(function (fn) { var p = ST.model.prozesse[fn]; if (p && p.data) files[fn] = JSON.stringify(p.data, null, 2) + "\n"; });
+  files["index.json"] = NIJU.LIB.serialize(ST.model.index);
+  var res = await schreibeInVerzeichnis(files);
+  if (res === "abort") return;
+  if (res === "written") { alert(t("org.syncWritten", { n: namen.length })); }
+  else { Object.keys(files).forEach(function (fn) { downloadDatei(files[fn], fn); }); alert(t("org.syncDownloaded", { n: namen.length })); }
+  ST.changedProcs = {};
+  aktualisiereSync();
+}
+
+function zeichneMap() {
+  NIJU.MAP.render(mapHost, lk(), {
+    editable: true,
+    selectedBoxId: ST.selBox,
+    onSelectBox: function (boxId) { ST.selBox = boxId; zeichneMap(); zeichneInspector(); },
+    onChangeBox: function () { ST.dirty = true; }
+  });
+}
+function bauZielSelect(box) {
+  var sel = document.createElement("select");
+  function opt(v, txt) { var o = document.createElement("option"); o.value = v; o.textContent = txt; return o; }
+  sel.appendChild(opt("", t("map.targetNone")));
+  var gC = document.createElement("optgroup"); gC.label = t("map.targetClusters");
+  flatClusters().forEach(function (c) { gC.appendChild(opt("cluster:" + c.id, "— ".repeat(c.depth) + (c.typ === "map" ? "⊞ " : "") + (c.name || t("common.untitled")))); });
+  if (gC.children.length) sel.appendChild(gC);
+  var gP = document.createElement("optgroup"); gP.label = t("map.targetProcesses");
+  Object.keys(ST.model.prozesse).forEach(function (nm) { gP.appendChild(opt("prozess:" + nm, ST.model.prozesse[nm].titel || nm)); });
+  if (gP.children.length) sel.appendChild(gP);
+  sel.value = box.ziel.typ ? (box.ziel.typ + ":" + box.ziel.ref) : "";
+  sel.addEventListener("change", function () {
+    var v = sel.value;
+    if (!v) { box.ziel = { typ: "", ref: "" }; }
+    else { var i = v.indexOf(":"); box.ziel = { typ: v.slice(0, i), ref: v.slice(i + 1) }; }
+    ST.dirty = true;
+  });
+  return sel;
+}
+function zeichneInspector() {
+  var L = lk();
+  inspPane.innerHTML = "";
+  function feld(labelKey, node) { var f = document.createElement("div"); f.className = "nm-field"; var lb = document.createElement("label"); lb.textContent = t(labelKey); f.appendChild(lb); f.appendChild(node); return f; }
+  function mini(cls, txt, fn) { var b = document.createElement("button"); b.className = "nt-btn " + cls; b.textContent = txt; b.addEventListener("click", function (e) { e.preventDefault(); fn(); }); return b; }
+
+  /* Map selector */
+  var alle = alleKarten();
+  if (alle.length > 1) {
+    var selWrap = document.createElement("div"); selWrap.className = "nm-map-sel";
+    var selLab = document.createElement("label"); selLab.textContent = t("map.selectMap");
+    var mapSel = document.createElement("select");
+    alle.forEach(function (m) { var o = document.createElement("option"); o.value = m.id || ""; o.textContent = m.indent + m.name; mapSel.appendChild(o); });
+    mapSel.value = ST.currentMapId || "";
+    mapSel.addEventListener("change", function () {
+      ST.currentMapId = mapSel.value || null; ST.selBox = null; zeichneMap(); zeichneInspector();
+    });
+    selWrap.appendChild(selLab); selWrap.appendChild(mapSel);
+    inspPane.appendChild(selWrap);
+  }
+  inspPane.appendChild(Object.assign(document.createElement("div"), { className: "nm-insp-h", textContent: t("map.viewMap") }));
+  var row1 = document.createElement("div"); row1.className = "nm-row";
+  row1.appendChild(mini("add", t("map.addBox"), function () { var b = NIJU.MAP.newBox(); L.kaesten.push(b); ST.selBox = b.id; ST.dirty = true; zeichneMap(); zeichneInspector(); }));
+  inspPane.appendChild(row1);
+
+  /* Grafik */
+  var row2 = document.createElement("div"); row2.className = "nm-row";
+  row2.appendChild(mini("", t("map.uploadImage"), function () { document.getElementById("imgInput").click(); }));
+  if (L.bild) row2.appendChild(mini("del", t("map.removeImage"), function () { L.bild = ""; ST.dirty = true; zeichneMap(); zeichneInspector(); }));
+  inspPane.appendChild(row2);
+
+  /* Image Style — Form der Kästen (gleiche Funktion wie Rechtecke) */
+  inspPane.appendChild(Object.assign(document.createElement("div"), { className: "nm-insp-h", textContent: t("map.imageStyle") }));
+  inspPane.appendChild(Object.assign(document.createElement("div"), { className: "nm-none", textContent: t("map.imageStyleHint") }));
+  var styleBox = ST.selBox ? L.kaesten.filter(function (k) { return k.id === ST.selBox; })[0] : null;
+  var styleSeg = document.createElement("div"); styleSeg.className = "nm-shape-seg";
+  var FORM_ICONS = {
+    rect:    '<svg viewBox="0 0 26 18" aria-hidden="true"><rect x="1.5" y="2.5" width="23" height="13" rx="2"/></svg>',
+    chevron: '<svg viewBox="0 0 26 18" aria-hidden="true"><polygon points="1,1 19,1 25,9 19,17 1,17 7,9"/></svg>',
+    circle:  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5"/></svg>'
+  };
+  [["rect", "map.shapeRect"], ["chevron", "map.shapeChevron"], ["circle", "map.shapeCircle"]].forEach(function (s) {
+    var b = document.createElement("button");
+    b.className = "nm-shape-btn" + (styleBox && styleBox.form === s[0] ? " aktiv" : "");
+    b.title = t(s[1]); b.setAttribute("aria-label", t(s[1])); b.innerHTML = FORM_ICONS[s[0]];
+    b.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (styleBox) { styleBox.form = s[0]; }
+      else { var nb = NIJU.MAP.newBox(s[0]); L.kaesten.push(nb); ST.selBox = nb.id; }
+      ST.dirty = true; zeichneMap(); zeichneInspector();
+    });
+    styleSeg.appendChild(b);
+  });
+  inspPane.appendChild(styleSeg);
+
+  /* Modus */
+  inspPane.appendChild(Object.assign(document.createElement("div"), { className: "nm-insp-h", textContent: t("map.mode") }));
+  var seg = document.createElement("div"); seg.className = "nm-seg";
+  [["overlay", "map.modeOverlay"], ["hotspot", "map.modeHotspot"]].forEach(function (m) {
+    var b = document.createElement("button"); b.className = "btn seg" + (L.modus === m[0] ? " aktiv" : ""); b.textContent = t(m[1]);
+    b.addEventListener("click", function () { L.modus = m[0]; ST.dirty = true; zeichneMap(); zeichneInspector(); });
+    seg.appendChild(b);
+  });
+  inspPane.appendChild(seg);
+
+  /* Gewählter Kasten */
+  inspPane.appendChild(Object.assign(document.createElement("div"), { className: "nm-insp-h", textContent: t("map.boxProps") }));
+  var box = ST.selBox ? L.kaesten.filter(function (k) { return k.id === ST.selBox; })[0] : null;
+  if (!box) { inspPane.appendChild(Object.assign(document.createElement("div"), { className: "nm-none", textContent: t("map.noSelection") })); return; }
+
+  var lab = document.createElement("input"); lab.type = "text"; lab.value = box.label || "";
+  lab.addEventListener("input", function () { box.label = lab.value; ST.dirty = true; var el = mapHost.querySelector(".nm-box.sel .nm-label"); if (el) el.textContent = lab.value; });
+  inspPane.appendChild(feld("map.label", lab));
+  inspPane.appendChild(feld("map.target", bauZielSelect(box)));
+  var col = document.createElement("input"); col.type = "color"; col.value = /^#/.test(box.farbe) ? box.farbe : "#3479c9";
+  col.addEventListener("input", function () { box.farbe = col.value; ST.dirty = true; zeichneMap(); });
+  inspPane.appendChild(feld("map.color", col));
+  inspPane.appendChild(mini("del", t("map.deleteBox"), function () { L.kaesten = L.kaesten.filter(function (k) { return k.id !== box.id; }); ST.selBox = null; ST.dirty = true; zeichneMap(); zeichneInspector(); }));
+}
+
+/* Grafik-Upload (Data-URL + Seitenverhältnis ermitteln) */
+document.getElementById("imgInput").addEventListener("change", function (ev) {
+  var datei = ev.target.files[0]; if (!datei) return;
+  var r = new FileReader();
+  r.onload = function (e) {
+    var url = e.target.result;
+    var im = new Image();
+    im.onload = function () { lk().bildRatio = (im.naturalWidth ? im.naturalHeight / im.naturalWidth : 0.5625) || 0.5625; lk().bild = url; ST.dirty = true; zeichneMap(); zeichneInspector(); };
+    im.onerror = function () { lk().bild = url; ST.dirty = true; zeichneMap(); zeichneInspector(); };
+    im.src = url;
+  };
+  r.readAsDataURL(datei);
+  ev.target.value = "";
+});
+
+/* About */
+document.getElementById("btnAbout").addEventListener("click", function () {
+  schliesseMenu();
+  modApp.hidden = true; mapApp.hidden = true; orgApp.hidden = true; wissenApp.hidden = true; cfgHost.hidden = false;
+  NIJU.CONFIG.open(cfgHost, { aboutOnly: true, onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; setView(ST.view); } });
+});
+
+/* Configuration */
+document.getElementById("btnConfig").addEventListener("click", function () {
+  schliesseMenu();
+  modApp.hidden = true; mapApp.hidden = true; orgApp.hidden = true; wissenApp.hidden = true; cfgHost.hidden = false;
+  NIJU.CONFIG.open(cfgHost, {
+    design: true,
+    processManager: true,
+    backup: {
+      getData: function () { return { prozesse: ST.model.prozesse, index: ST.model.index, name: "niju-full-backup" }; },
+      onRestore: function (result) {
+        if (result.settings) NIJU.BACKUP.applySettings(result.settings);
+        NIJU.DESIGN.init(); NIJU.I18N.init();
+        if (result.prozesse || result.index) ladeModel(result.prozesse || {}, result.index || {});
+      }
+    },
+    onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; setView(ST.view); }
+  });
+});
+
+/* Start */
+NIJU.I18N.init();
+NIJU.DESIGN.init();
+NIJU.NAV.mount("navWrap", "management");
+(function () {
+  var demo = JSON.parse(JSON.stringify(NIJU.DEMO));
+  ladeModel(demo.prozesse, demo.index);
+  document.getElementById("modHint").textContent = t("mgmt.structureHint") + " — " + t("lib.noDir");
+})();
+
+NIJU.I18N.onChange(function () { aktualisiereKopf(); zeichneTree(); zeichneViewer(); if (ST.view === "landkarte") { zeichneMap(); zeichneInspector(); } if (ST.view === "org") zeichneOrg(); if (ST.view === "wissen") zeichneWissen(); document.getElementById("modHint").textContent = t("mgmt.structureHint"); });
+var _rt = null;
+window.addEventListener("resize", function () { clearTimeout(_rt); _rt = setTimeout(function () { if (!modApp.hidden) NIJU.VIEWER.fit(viewerHost); }, 120); });
+</script>
+</body>
+</html>
