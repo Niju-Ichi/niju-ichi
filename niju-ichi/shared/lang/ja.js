@@ -340,6 +340,23 @@ NIJU.I18N.register("ja", {
   "org.menuLoadOrg": "組織を読み込む…",
   "org.loadedNames": "{n} 件の名前を候補として読み込みました。",
   "org.loadInvalid": "このファイルに組織が見つかりませんでした。",
+  "org.dragHandle": "ドラッグして並べ替え",
+  "org.dropTopLevel": "ここにドロップ → 最上位",
+  "org.menuImportCsv": "組織をインポート（CSV）…",
+  "org.menuCsvTemplate": "CSV テンプレートをダウンロード",
+  "org.csvTemplateItem": "テンプレート (CSV)",
+  "org.importOrgItem": "組織 (CSV)",
+  "org.importStats": "{f} 機能、{r} 役割が見つかりました",
+  "org.importParentUnresolved": "上位機能「{p}」が見つかりません — 最上位に設定しました。",
+  "org.importEncodingWarn": "エンコードの問題の可能性があります — Excel で「CSV UTF-8」として保存してください。",
+  "org.importReplace": "置き換え",
+  "org.importMerge": "マージ",
+  "org.importCancel": "キャンセル",
+  "org.replaceConfirm": "現在の組織をインポートしたデータで置き換えますか？",
+  "org.importDone": "{f} 機能と {r} 役割をインポートしました。",
+  "org.importEmpty": "CSV ファイルに有効なデータがありません。",
+  "org.coverage": "{used} / {total} がプロセスで使用中 · ホワイトスポット {white} 件",
+  "org.filterWhiteSpots": "ホワイトスポットのみ",
 
   /* ===== AI & Tools エディタ（Process Manager タブ）— Phase 9 ===== */
   "wsn.view": "AI & Tools",
@@ -426,6 +443,7 @@ NIJU.I18N.register("ja", {
   "brain.coverage": "AI カバレッジ",
   "brain.insights": "インサイト",
   "brain.report": "レポート出力",
+  "brain.showReport": "レポートを表示",
   "brain.reportMenu": "Brain レポートを出力（HTML）",
   "brain.coverageN": "AI カバレッジ {p}%",
   "brain.kCompany": "会社",
@@ -485,5 +503,7 @@ NIJU.I18N.register("ja", {
   "brain.kpiSpend": "ツール費用 / 月",
   "brain.invTitle": "ツール・AI インベントリ",
   "brain.totalMonth": "合計 / 月",
-  "brain.reportFoot": "NIJU ICHI ナレッジグラフ（Company Brain）からオフラインで生成。"
+  "brain.reportFoot": "NIJU ICHI ナレッジグラフ（Company Brain）からオフラインで生成。",
+  "brain.themeNight": "ナイト",
+  "brain.themeDay": "デイ"
 }, { name: "日本語", builtin: true });

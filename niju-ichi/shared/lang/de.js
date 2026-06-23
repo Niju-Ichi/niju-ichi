@@ -422,6 +422,23 @@ NIJU.I18N.register("de", {
   "org.menuLoadOrg": "Organisation laden…",
   "org.loadedNames": "{n} Name(n) als Vorschläge geladen.",
   "org.loadInvalid": "In dieser Datei wurde keine Organisation gefunden.",
+  "org.dragHandle": "Zum Umsortieren ziehen",
+  "org.dropTopLevel": "Hier ablegen → Oberste Ebene",
+  "org.menuImportCsv": "Organisation importieren (CSV)…",
+  "org.menuCsvTemplate": "CSV-Vorlage herunterladen",
+  "org.csvTemplateItem": "Vorlage (CSV)",
+  "org.importOrgItem": "Organisation (CSV)",
+  "org.importStats": "{f} Funktion(en), {r} Rolle(n) gefunden",
+  "org.importParentUnresolved": "Übergeordnete Funktion „{p}“ nicht gefunden — auf oberste Ebene gesetzt.",
+  "org.importEncodingWarn": "Mögliches Kodierungsproblem — bitte die Datei in Excel als „CSV UTF-8“ speichern.",
+  "org.importReplace": "Ersetzen",
+  "org.importMerge": "Ergänzen",
+  "org.importCancel": "Abbrechen",
+  "org.replaceConfirm": "Die aktuelle Organisation durch die importierten Daten ersetzen?",
+  "org.importDone": "{f} Funktion(en) und {r} Rolle(n) importiert.",
+  "org.importEmpty": "Die CSV-Datei enthält keine gültigen Daten.",
+  "org.coverage": "{used} von {total} in Prozessen verwendet · {white} White Spot(s)",
+  "org.filterWhiteSpots": "Nur White Spots",
 
   /* ===== AI & Tools-Editor (Process-Manager-Tab) — Phase 9 ===== */
   "wsn.view": "AI & Tools",
@@ -511,6 +528,7 @@ NIJU.I18N.register("de", {
   "brain.coverage": "KI-Abdeckung",
   "brain.insights": "Erkenntnisse",
   "brain.report": "Report exportieren",
+  "brain.showReport": "Report anzeigen",
   "brain.reportMenu": "Brain-Report exportieren (HTML)",
   "brain.coverageN": "{p}% KI-Abdeckung",
   "brain.kCompany": "Firma",
@@ -570,5 +588,7 @@ NIJU.I18N.register("de", {
   "brain.kpiSpend": "Tool-Kosten / Monat",
   "brain.invTitle": "Tools- & KI-Inventar",
   "brain.totalMonth": "Gesamt / Monat",
-  "brain.reportFoot": "Offline aus dem NIJU-ICHI-Wissensgraph erzeugt (Company Brain)."
+  "brain.reportFoot": "Offline aus dem NIJU-ICHI-Wissensgraph erzeugt (Company Brain).",
+  "brain.themeNight": "Nacht",
+  "brain.themeDay": "Tag"
 }, { name: "Deutsch", builtin: true });

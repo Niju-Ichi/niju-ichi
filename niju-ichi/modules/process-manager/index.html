@@ -27,6 +27,7 @@
 <script src="../../shared/js/tree.js"></script>
 <script src="../../shared/js/map.js"></script>
 <script src="../../shared/js/org.js"></script>
+<script src="../../shared/js/org-import.js"></script>
 <script src="../../shared/js/wissen.js"></script>
 <script src="../../shared/js/demo-library.js"></script>
 <style>
@@ -51,10 +52,24 @@
         <button class="menu-item" id="btnOpen" data-i18n="lib.open">Open directory…</button>
         <button class="menu-item" id="btnSave" data-i18n="lib.save">Save structure (index.json)</button>
         <button class="menu-item" id="btnConfig" data-i18n="menu.config">Configuration</button>
+        <hr class="menu-sep">
+        <div class="menu-sub">
+          <button class="menu-item has-sub" data-i18n="menu.download">Download</button>
+          <div class="submenu">
+            <button class="menu-item" id="btnCsvTemplate" data-i18n="org.csvTemplateItem">Template (CSV)</button>
+          </div>
+        </div>
+        <div class="menu-sub">
+          <button class="menu-item has-sub" data-i18n="menu.import">Import</button>
+          <div class="submenu">
+            <button class="menu-item" id="btnImportCsv" data-i18n="org.importOrgItem">Organisation (CSV)</button>
+          </div>
+        </div>
       </div>
     </div>
     <input type="file" id="dirInput" webkitdirectory directory multiple style="display:none">
     <input type="file" id="imgInput" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" style="display:none">
+    <input type="file" id="csvInput" accept=".csv,text/csv" style="display:none">
     <span class="tb-trenner"></span>
     <div class="tb-seg">
       <button class="btn seg aktiv" id="modeStruktur" data-i18n="map.viewStructure">Structure</button>
@@ -112,7 +127,7 @@
 
 <script>
 function t(k, v) { return NIJU.I18N.t(k, v); }
-var ST = { model: { index: null, prozesse: {} }, selected: null, ansicht: "uebersicht", detailIndex: 0, dirty: false, view: "struktur", selBox: null, currentMapId: null, orgAnsicht: "liste", changedProcs: {}, wsnSub: "tools", wsnSearchTools: "", wsnSearchKnowledge: "", wsnShowDetails: true, wsnShowDetailsKnowledge: true };
+var ST = { model: { index: null, prozesse: {} }, selected: null, ansicht: "uebersicht", detailIndex: 0, dirty: false, view: "struktur", selBox: null, currentMapId: null, orgAnsicht: "liste", orgWhiteOnly: false, changedProcs: {}, wsnSub: "tools", wsnSearchTools: "", wsnSearchKnowledge: "", wsnShowDetails: true, wsnShowDetailsKnowledge: true };
 
 /* ☰-Menü */
 var btnMenu = document.getElementById("btnMenu"), menuDropdown = document.getElementById("menuDropdown");
@@ -308,7 +323,9 @@ function zeichneOrg() {
   } else {
     NIJU.ORG.renderListe(orgHost, model, {
       onChange: function () { ST.dirty = true; zeichneOrg(); },
-      onRename: onRename
+      onRename: onRename,
+      whiteOnly: ST.orgWhiteOnly,
+      onToggleWhiteOnly: function () { ST.orgWhiteOnly = !ST.orgWhiteOnly; zeichneOrg(); }
     });
   }
   aktualisiereSync();
@@ -316,6 +333,56 @@ function zeichneOrg() {
 orgListBtn.addEventListener("click", function () { ST.orgAnsicht = "liste"; zeichneOrg(); });
 orgChartBtn.addEventListener("click", function () { ST.orgAnsicht = "chart"; zeichneOrg(); });
 orgSyncBtn.addEventListener("click", function () { syncProcesses(); });
+
+/* CSV-Import */
+var csvInput = document.getElementById("csvInput");
+document.getElementById("btnImportCsv").addEventListener("click", function () { schliesseMenu(); setView("org"); csvInput.click(); });
+csvInput.addEventListener("change", function (ev) {
+  var file = ev.target.files[0]; if (!file) return;
+  var r = new FileReader();
+  r.onload = function (e) {
+    var parsed = NIJU.ORGIMPORT.parse(e.target.result);
+    if (!parsed.knoten.length && !parsed.warnungen.length) { alert(t("org.importEmpty")); return; }
+    NIJU.ORGIMPORT.renderPreview(orgHost, parsed, {
+      onReplace: function (p) {
+        if (org().knoten.length && !confirm(t("org.replaceConfirm"))) return;
+        ST.model.index.organisation = NIJU.ORG.normalize({ version: 1, knoten: JSON.parse(JSON.stringify(p.knoten)) });
+        ST.dirty = true; zeichneOrg();
+        alert(t("org.importDone", { f: p.stats.funktionen, r: p.stats.rollen }));
+      },
+      onMerge: function (p) {
+        var existing = org();
+        var vorhanden = {};
+        existing.knoten.forEach(function (k) { var n = (k.name || "").trim(); if (n) vorhanden[n] = true; });
+        var nF = 0, nR = 0;
+        p.knoten.forEach(function (k) {
+          var n = (k.name || "").trim();
+          if (!n || vorhanden[n]) return;
+          vorhanden[n] = true;
+          existing.knoten.push({ id: NIJU.ORG.newId(), name: k.name, parent: "", typ: k.typ });
+          if (k.typ === "funktion") nF++; else nR++;
+        });
+        NIJU.ORG.normalize(existing);
+        ST.dirty = true; zeichneOrg();
+        alert(t("org.importDone", { f: nF, r: nR }));
+      },
+      onCancel: function () { zeichneOrg(); }
+    });
+  };
+  r.readAsText(file, "utf-8");
+  ev.target.value = "";
+});
+
+/* CSV-Vorlage herunterladen */
+document.getElementById("btnCsvTemplate").addEventListener("click", function () {
+  schliesseMenu();
+  var txt = NIJU.ORGIMPORT.template();
+  var blob = new Blob([txt], { type: "text/csv;charset=utf-8;" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = "organisation-template.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+});
 
 /* Prozessdateien zurückschreiben: File System Access API, sonst Download. */
 function downloadDatei(txt, name) {

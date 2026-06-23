@@ -248,6 +248,10 @@
       '<div class="brain-search">' +
         '<input id="brSearch" type="text" autocomplete="off">' +
         '<div class="brain-results" id="brResults"></div>' +
+        '<div class="brain-theme-toggle" id="brThemeToggle">' +
+          '<button class="brain-tt-btn" data-theme="night"></button>' +
+          '<button class="brain-tt-btn" data-theme="day"></button>' +
+        '</div>' +
       '</div>' +
       '<div class="brain-legend" id="brLegend"></div>' +
       '<div class="brain-modes" id="brModes">' +
@@ -515,6 +519,22 @@
       svg.transition().duration(500).call(zoom.transform, tr);
     }
 
+    /* ---- theme toggle (night / day) ---- */
+    var savedTheme = "night";
+    try { savedTheme = localStorage.getItem("niju.brain.theme") || "night"; } catch (e) {}
+    function applyTheme(theme) {
+      host.classList.toggle("night-mode", theme === "night");
+      host.querySelectorAll(".brain-tt-btn").forEach(function (b) {
+        b.classList.toggle("aktiv", b.dataset.theme === theme);
+      });
+      try { localStorage.setItem("niju.brain.theme", theme); } catch (e) {}
+    }
+    host.querySelectorAll(".brain-tt-btn").forEach(function (b) {
+      b.textContent = t(b.dataset.theme === "night" ? "brain.themeNight" : "brain.themeDay");
+      b.onclick = function () { applyTheme(b.dataset.theme); };
+    });
+    applyTheme(savedTheme);
+
     /* ---- legend (team filter) ---- */
     var legend = host.querySelector("#brLegend");
     var teamActive = {}; g.teams.forEach(function (tm) { teamActive[tm.id] = true; });
@@ -562,7 +582,8 @@
     function listHtml(arr, empty) { return arr.length ? arr.map(function (n) { return '<div class="br-item" data-go="' + n.id + '">→ ' + esc(n.name) + '</div>'; }).join("") : '<div class="br-none">' + esc(empty) + '</div>'; }
     function renderInsights() {
       insPanel.innerHTML =
-        '<h3>' + esc(t("brain.insightsTitle")) + '</h3><p class="br-sub">' + esc(t("brain.insightsSub")) + '</p>' +
+        '<div class="br-ins-header"><h3>' + esc(t("brain.insightsTitle")) + '</h3><button class="br-ins-close" aria-label="Close">✕</button></div>' +
+        '<p class="br-sub">' + esc(t("brain.insightsSub")) + '</p>' +
         quadrant() +
         sec("#2e9e4f", t("brain.insQuickWins"), t("brain.insQuickWinsDesc"), ins.quickWins, t("brain.insNoneDocFirst")) +
         sec("#e74c3c", t("brain.insWhiteSpots"), t("brain.insWhiteSpotsDesc"), ins.whiteSpots, t("brain.insNoGaps")) +
@@ -597,10 +618,21 @@
         dots + '</svg><p class="br-quad-cap">' + esc(t("brain.quadCap")) + '</p></div>';
     }
     renderInsights();
+    insPanel.querySelector(".br-ins-close").onclick = function (e) { e.stopPropagation(); insPanel.classList.remove("open"); };
 
-    /* ---- report export ---- */
-    var repBtn = host.querySelector("#brReport"); repBtn.textContent = t("brain.report");
-    repBtn.onclick = function () { exportReport(g, ins, model.index); };
+    /* ---- report show (new tab) ---- */
+    var repBtn = host.querySelector("#brReport"); repBtn.textContent = t("brain.showReport");
+    repBtn.onclick = function () {
+      var html = buildReportHtml(g, ins, model.index);
+      var win = window.open("", "_blank");
+      if (win) { win.document.write(html); win.document.close(); }
+      else {
+        var blob = new Blob([html], { type: "text/html" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a"); a.href = url; a.target = "_blank"; a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      }
+    };
 
     /* ---- stats + shape legend ---- */
     host.querySelector("#brStats").innerHTML =
@@ -632,7 +664,7 @@
   /* ============================================================
      4) STATIC REPORT EXPORT (offline, Blob download — no popups)
      ============================================================ */
-  function exportReport(g, ins, index) {
+  function buildReportHtml(g, ins) {
     function ex(s) { return esc(s); }
     var company = g.byId["__company"].name;
     var teams = g.teams;
@@ -684,7 +716,7 @@
       ".ins{display:grid;grid-template-columns:1fr 1fr;gap:18px}.ins h3{font-size:13px;margin:0 0 6px}.ins ul{margin:0;padding-left:18px;font-size:12.5px}.ins .none{list-style:none;margin-left:-18px;color:#93a0b2}" +
       ".foot{color:#93a0b2;font-size:10.5px;text-align:center;margin:30px 0 0}@media print{body{background:#fff;padding:0}}";
 
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + ex(t("brain.reportTitle")) + ' — ' + ex(company) + '</title><style>' + CSS + '</style></head><body><div class="wrap">' +
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + ex(t("brain.reportTitle")) + ' — ' + ex(company) + '</title><style>' + CSS + '</style></head><body><div class="wrap">' +
       '<p class="eyebrow">NIJU ICHI · ' + ex(t("brain.reportTitle")) + '</p><h1>' + ex(company) + '</h1>' +
       '<p class="sub">' + g.teams.length + ' ' + ex(t("brain.teams")) + ' · ' + ins.procCount + ' ' + ex(t("brain.processes")) + ' · ' + (ins.toolCount + ins.agentCount) + ' ' + ex(t("brain.tools")) + '</p>' +
       '<p class="stamp">' + ex(stamp) + '</p>' +
@@ -703,7 +735,10 @@
         '<div><h3>' + ex(t("brain.insCompliance")) + '</h3><ul>' + insList(ins.compliance) + '</ul></div>' +
         '</div></div>' +
       '<p class="foot">' + ex(t("brain.reportFoot")) + '</p></div></body></html>';
+  }
 
+  function exportReport(g, ins, index) {
+    var html = buildReportHtml(g, ins);
     var blob = new Blob([html], { type: "text/html" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a"); a.href = url; a.download = "niju-brain-report.html";

@@ -40,9 +40,9 @@ Feed your processes into AI assistants and intranet knowledge bases as **machine
 - **Confluence export** — native **Confluence storage format** (XHTML with table-of-contents / info-panel / anchor macros and a real RACI `<table>`). One `.confluence.xml` per process (single or batch) plus `manifest.json`, ready to push via the **Confluence REST API**. The content becomes part of the **indexed, searchable page body** — not an embedded blob — so **Confluence search, the Microsoft Copilot connector, and Atlassian Rovo** can read it.
 
 ### Process Manager
-- **Folder/cluster tree editor** — create, rename, delete clusters, assign and sort processes
+- **Folder/cluster tree editor** — create, rename, delete clusters, assign and sort processes; **drag &amp; drop** to move processes and reorder the tree
 - **Graphical process map** — freely positionable, clickable boxes, optional background image, overlay or hotspot mode
-- **Organisation Manager** — org chart of departments (functions) and roles, role-to-process participation counter, central rename syncs across all loaded processes
+- **Organisation Manager** — org chart of departments (functions) and roles; **drag &amp; drop** to re-parent nodes via a grab handle; **CSV import** of the organisation (functions &amp; roles, with preview and replace/merge); role-to-process participation counter; central rename syncs across all loaded processes
 - **AI & Tools editor** — manage tools/AI agents, knowledge resources, per-process AI assessments, all saved to `index.json`
 - Read-only process preview on the right panel
 
@@ -93,6 +93,7 @@ niju-ichi/
       tree.js                     Folder tree — editable + read-only (NIJU.TREE)
       map.js                      Process map — draggable boxes (NIJU.MAP)
       org.js                      Organisation Manager (NIJU.ORG)
+      org-import.js               Organisation CSV import (NIJU.ORGIMPORT)
       brain.js                    Process Brain d3 graph (NIJU.BRAIN)
       wissen.js                   AI & Tools data model + editor (NIJU.WISSEN)
       design.js                   Design Engine (NIJU.DESIGN)

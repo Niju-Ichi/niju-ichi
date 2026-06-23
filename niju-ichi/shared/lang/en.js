@@ -418,6 +418,23 @@ NIJU.I18N.register("en", {
   "org.menuLoadOrg": "Load organisation…",
   "org.loadedNames": "{n} name(s) loaded as suggestions.",
   "org.loadInvalid": "No organisation found in this file.",
+  "org.dragHandle": "Drag to reorder",
+  "org.dropTopLevel": "Drop here → top level",
+  "org.menuImportCsv": "Import organisation (CSV)…",
+  "org.menuCsvTemplate": "Download CSV template",
+  "org.csvTemplateItem": "Template (CSV)",
+  "org.importOrgItem": "Organisation (CSV)",
+  "org.importStats": "{f} function(s), {r} role(s) found",
+  "org.importParentUnresolved": "Parent function \"{p}\" not found — set to top level.",
+  "org.importEncodingWarn": "Possible encoding issue — please save the file as \"CSV UTF-8\" in Excel.",
+  "org.importReplace": "Replace",
+  "org.importMerge": "Merge",
+  "org.importCancel": "Cancel",
+  "org.replaceConfirm": "Replace the current organisation with the imported data?",
+  "org.importDone": "{f} function(s) and {r} role(s) imported.",
+  "org.importEmpty": "The CSV file contains no valid data.",
+  "org.coverage": "{used} of {total} in processes used · {white} white spot(s)",
+  "org.filterWhiteSpots": "White spots only",
 
   /* configuration — Process Manager pane */
   "config.processManager": "Process Manager",
@@ -534,6 +551,7 @@ NIJU.I18N.register("en", {
   "brain.coverage": "AI coverage",
   "brain.insights": "Insights",
   "brain.report": "Export report",
+  "brain.showReport": "Show Report",
   "brain.reportMenu": "Export brain report (HTML)",
   "brain.coverageN": "{p}% AI coverage",
   "brain.kCompany": "Company",
@@ -593,5 +611,7 @@ NIJU.I18N.register("en", {
   "brain.kpiSpend": "Tool spend / month",
   "brain.invTitle": "Tools & AI inventory",
   "brain.totalMonth": "Total / month",
-  "brain.reportFoot": "Generated offline from the NIJU ICHI knowledge graph (Company Brain)."
+  "brain.reportFoot": "Generated offline from the NIJU ICHI knowledge graph (Company Brain).",
+  "brain.themeNight": "Night",
+  "brain.themeDay": "Day"
 }, { name: "English", builtin: true });

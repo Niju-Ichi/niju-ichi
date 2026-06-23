@@ -108,6 +108,17 @@
     return { alt: alt, neu: neu, betroffen: betroffen };
   }
 
+  /* ---- Coverage: Anteil Org-Namen, die in mind. einem Prozess vorkommen ---- */
+  function coverage(org, prozesse) {
+    var namen = alleNamen(org);
+    var total = namen.length, used = 0, white = 0, whiteNames = [];
+    namen.forEach(function (n) {
+      if (beteiligungen(n, prozesse).length > 0) { used++; }
+      else { white++; whiteNames.push(n); }
+    });
+    return { total: total, used: used, white: white, whiteNames: whiteNames };
+  }
+
   /* ---- Bootstrap: fehlende Rollennamen aus Prozessen übernehmen ---- */
   function ausProzessenUebernehmen(org, prozesse) {
     var vorhanden = {};
@@ -145,17 +156,27 @@
   }
 
   /* ============================================================
-     Liste (editierbar)
+     Liste (editierbar) — inkl. DnD-Greifer + Coverage-Leiste + White-Spot-Filter
      ============================================================ */
   function renderListe(host, model, opts) {
     opts = opts || {};
     var org = normalize(model.org), prozesse = model.prozesse || {};
-    var onChange = opts.onChange || function () {};
-    var onRename = opts.onRename || function () {};
+    var onChange         = opts.onChange         || function () {};
+    var onRename         = opts.onRename         || function () {};
+    var whiteOnly        = !!opts.whiteOnly;
+    var onToggleWhiteOnly = opts.onToggleWhiteOnly || function () {};
+
     host.innerHTML = "";
     host.classList.add("org-list");
 
-    /* Aktionsleiste */
+    /* DnD-Zustand, scoped auf diesen render-Aufruf */
+    var dragging = null;   /* gezogene node.id */
+
+    /* fIds für Schleifenschutz + moveSelect */
+    var fIds = {};
+    funktionen(org).forEach(function (f) { fIds[f.id] = f; });
+
+    /* ---- Aktionsleiste ---- */
     var bar = el("div", "org-bar");
     var addF = el("button", "nt-btn add", t("org.addFunction"));
     addF.addEventListener("click", function () { org.knoten.push({ id: newId(), name: t("org.newFunction"), parent: "", typ: "funktion" }); onChange(); });
@@ -169,9 +190,47 @@
     bar.appendChild(imp);
     host.appendChild(bar);
 
+    /* ---- Coverage-Leiste (nur wenn Prozesse geladen) ---- */
+    if (Object.keys(prozesse).length) {
+      var cov = coverage(org, prozesse);
+      var covBar = el("div", "org-coverage-bar");
+      covBar.appendChild(el("span", "org-coverage-txt",
+        t("org.coverage", { used: cov.used, total: cov.total, white: cov.white })));
+      var cbLabel = document.createElement("label");
+      cbLabel.className = "org-coverage-toggle";
+      var cbCheck = document.createElement("input");
+      cbCheck.type = "checkbox"; cbCheck.checked = whiteOnly;
+      cbCheck.addEventListener("change", function () { onToggleWhiteOnly(); });
+      cbLabel.appendChild(cbCheck);
+      cbLabel.appendChild(document.createTextNode(" " + t("org.filterWhiteSpots")));
+      covBar.appendChild(cbLabel);
+      host.appendChild(covBar);
+    }
+
     if (!org.knoten.length) { host.appendChild(el("div", "org-empty", t("org.empty"))); return; }
 
-    var fIds = {}; funktionen(org).forEach(function (f) { fIds[f.id] = f; });
+    /* ---- White-Spot-Filtermodus: flache Liste aller Knoten mit 0 Beteiligungen ---- */
+    if (whiteOnly) {
+      var whiteNodes = org.knoten.filter(function (k) {
+        return (k.name || "").trim() && beteiligungen(k.name, prozesse).length === 0;
+      });
+      if (!whiteNodes.length) {
+        host.appendChild(el("div", "org-empty", t("org.usedNone")));
+        return;
+      }
+      whiteNodes.forEach(function (k) {
+        var row = el("div", "org-li " + (k.typ === "funktion" ? "funktion" : "role"));
+        row.appendChild(el("span", "org-dot " + (k.typ === "funktion" ? "funk" : "role")));
+        row.appendChild(nameInput(k));
+        row.appendChild(countBadge(k.name));
+        row.appendChild(moveSelect(k));
+        row.appendChild(delBtn(k));
+        host.appendChild(row);
+      });
+      return;
+    }
+
+    /* ---- Hilfsfunktionen (hoisted function declarations) ---- */
 
     function countBadge(name) {
       var n = beteiligungen(name, prozesse).length;
@@ -188,7 +247,7 @@
       function commit() {
         var neu = inp.value.trim();
         if (neu === alt) { node.name = neu; return; }
-        onRename(node, neu); /* Manager führt Sync aus + rerendert */
+        onRename(node, neu);
       }
       inp.addEventListener("blur", commit);
       inp.addEventListener("keydown", function (e) { if (e.key === "Enter") inp.blur(); });
@@ -204,7 +263,7 @@
       sel.value = fIds[node.parent] ? node.parent : "";
       sel.title = t("org.moveTo");
       sel.addEventListener("change", function () {
-        /* keine Schleifen: ein Knoten darf nicht unter einen seiner Nachfahren */
+        /* Schleifenschutz wie gehabt */
         var ziel = sel.value, p = ziel, schutz = 0;
         while (p && schutz++ < 999) { if (p === node.id) { sel.value = node.parent; return; } p = fIds[p] ? fIds[p].parent : ""; }
         node.parent = ziel; onChange();
@@ -217,7 +276,6 @@
       b.addEventListener("click", function () {
         var kinder = children(org, node.id);
         if (kinder.length && !confirm(t("org.confirmDeleteWithChildren", { name: node.name || "" }))) return;
-        /* Kinder eine Ebene hochziehen */
         kinder.forEach(function (c) { c.parent = node.parent; });
         org.knoten = org.knoten.filter(function (k) { return k.id !== node.id; });
         onChange();
@@ -225,9 +283,83 @@
       return b;
     }
 
-    /* rekursiv Funktionen rendern; darunter ihre Rollen als Chips-Zeile */
+    /* Greifer-Span: nur dieser ist draggable, nicht die ganze Zeile */
+    function grip(node, row) {
+      var g = el("span", "org-grip", "⠷");
+      g.setAttribute("draggable", "true");
+      g.setAttribute("aria-label", t("org.dragHandle"));
+      g.addEventListener("dragstart", function (e) {
+        dragging = node.id;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", node.id);
+        setTimeout(function () { row.classList.add("org-drag"); }, 0);
+      });
+      g.addEventListener("dragend", function () {
+        dragging = null;
+        row.classList.remove("org-drag");
+      });
+      return g;
+    }
+
+    /* Funktions-Zeile als Drop-Ziel verdrahten */
+    function makeFunkDropTarget(row, targetId) {
+      row.addEventListener("dragover", function (e) {
+        if (!dragging || dragging === targetId) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        row.classList.add("org-drop-active");
+      });
+      row.addEventListener("dragleave", function (e) {
+        if (e.relatedTarget && row.contains(e.relatedTarget)) return;
+        row.classList.remove("org-drop-active");
+      });
+      row.addEventListener("drop", function (e) {
+        e.preventDefault();
+        row.classList.remove("org-drop-active");
+        if (!dragging || dragging === targetId) return;
+        var dragNode = byId(org, dragging);
+        if (!dragNode) { dragging = null; return; }
+        /* Schleifenschutz: targetId darf kein Nachfahre des gezogenen Knotens sein */
+        var p = targetId, schutz = 0;
+        while (p && schutz++ < 999) {
+          if (p === dragging) { dragging = null; return; }
+          p = fIds[p] ? fIds[p].parent : "";
+        }
+        dragNode.parent = targetId;
+        dragging = null;
+        onChange();
+      });
+    }
+
+    /* ---- Top-Level-Drop-Leiste (persistent, oben) ---- */
+    var topDrop = el("div", "org-drop-top", t("org.dropTopLevel"));
+    topDrop.addEventListener("dragover", function (e) {
+      if (!dragging) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      topDrop.classList.add("org-drop-active");
+    });
+    topDrop.addEventListener("dragleave", function (e) {
+      if (e.relatedTarget && topDrop.contains(e.relatedTarget)) return;
+      topDrop.classList.remove("org-drop-active");
+    });
+    topDrop.addEventListener("drop", function (e) {
+      e.preventDefault();
+      topDrop.classList.remove("org-drop-active");
+      if (!dragging) return;
+      var dragNode = byId(org, dragging);
+      if (!dragNode) { dragging = null; return; }
+      dragNode.parent = "";
+      dragging = null;
+      onChange();
+    });
+    host.appendChild(topDrop);
+
+    /* ---- Hierarchie rendern ---- */
+
     function rolleZeile(role) {
       var row = el("div", "org-li role");
+      row.appendChild(grip(role, row));
       row.appendChild(el("span", "org-dot role"));
       row.appendChild(nameInput(role));
       row.appendChild(countBadge(role.name));
@@ -239,6 +371,7 @@
       var wrap = el("div", "org-block");
       wrap.style.marginLeft = (depth * 22) + "px";
       var row = el("div", "org-li funktion");
+      row.appendChild(grip(funk, row));
       row.appendChild(el("span", "org-dot funk"));
       row.appendChild(nameInput(funk));
       row.appendChild(countBadge(funk.name));
@@ -251,18 +384,15 @@
       row.appendChild(addSub);
       row.appendChild(moveSelect(funk));
       row.appendChild(delBtn(funk));
+      makeFunkDropTarget(row, funk.id);
       wrap.appendChild(row);
-      /* eigene Rollen */
       children(org, funk.id).filter(function (k) { return k.typ === "rolle"; }).forEach(function (r) { wrap.appendChild(rolleZeile(r)); });
       host.appendChild(wrap);
-      /* Unter-Funktionen */
       children(org, funk.id).filter(function (k) { return k.typ === "funktion"; }).forEach(function (sf) { funkBlock(sf, depth + 1); });
     }
 
-    /* oberste Ebene: Funktionen ohne (gültigen) Funktions-Parent */
     funktionen(org).filter(function (f) { return !fIds[f.parent]; }).forEach(function (f) { funkBlock(f, 0); });
 
-    /* lose Rollen (parent ist keine Funktion) */
     var loseR = rollen(org).filter(function (r) { return !fIds[r.parent]; });
     if (loseR.length) {
       host.appendChild(el("div", "org-sub-h", t("org.otherRoles")));
@@ -362,7 +492,8 @@
   window.NIJU.ORG = {
     normalize: normalize, newId: newId,
     byId: byId, funktionen: funktionen, rollen: rollen, children: children, alleNamen: alleNamen,
-    beteiligungen: beteiligungen, umbenennen: umbenennen, ausProzessenUebernehmen: ausProzessenUebernehmen,
+    beteiligungen: beteiligungen, coverage: coverage,
+    umbenennen: umbenennen, ausProzessenUebernehmen: ausProzessenUebernehmen,
     layout: layout, renderListe: renderListe, renderChart: renderChart
   };
 })();

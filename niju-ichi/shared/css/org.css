@@ -76,3 +76,53 @@
   background: #eef2f6; border: 1px solid #dce1e7; border-radius: 10px; padding: 2px 8px;
 }
 .org-chip-n { font-family: var(--mono); font-size: 9px; font-weight: 700; color: #fff; background: var(--akzent); border-radius: 7px; padding: 1px 5px; }
+
+/* ---------- Org-View-Head (weißes Layout wie AI & Tools Sub-Nav) ---------- */
+.org-stage .mod-view-head {
+  background: var(--paper);
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+.org-stage .mod-view-head .tb-lab { color: var(--muted); }
+
+/* ---------- DnD-Greifer ---------- */
+.org-grip {
+  cursor: grab; user-select: none; color: var(--muted); flex: none;
+  padding: 0 4px; font-size: 14px; line-height: 1;
+}
+.org-grip:active { cursor: grabbing; }
+.org-li.org-drag { opacity: .35; }
+.org-li.org-drop-active {
+  outline: 2px dashed var(--akzent); outline-offset: -2px;
+  background: rgba(52,121,201,.07);
+}
+
+/* Top-Level-Drop-Leiste */
+.org-drop-top {
+  font-size: 11px; color: var(--muted); padding: 5px 10px; margin-bottom: 6px;
+  border: 1.5px dashed #c7ccd3; border-radius: 6px; text-align: center; cursor: default;
+}
+.org-drop-top.org-drop-active {
+  outline: 2px dashed var(--akzent); outline-offset: -2px;
+  background: rgba(52,121,201,.07); color: var(--akzent);
+}
+
+/* ---------- Coverage-Leiste ---------- */
+.org-coverage-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 7px 10px; background: #f0f4f9; border-radius: 6px;
+  margin-bottom: 10px; font-size: 12px; color: var(--ink);
+}
+.org-coverage-txt { flex: 1; min-width: 0; }
+.org-coverage-toggle { display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+.org-coverage-toggle input { accent-color: var(--akzent); }
+
+/* ---------- CSV-Import-Panel ---------- */
+.org-import-panel { padding: 20px 16px 32px; }
+.org-import-h { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.org-import-stats { font-size: 13px; color: var(--ink); margin-bottom: 10px; }
+.org-import-warns { margin: 0 0 14px; padding-left: 20px; font-size: 12px; color: #c05800; }
+.org-import-warns li { margin-bottom: 4px; }
+.org-import-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.nt-btn.primary { background: var(--akzent); border-color: var(--akzent); color: #fff; font-weight: 600; }
+.nt-btn.primary:hover { filter: brightness(.93); }
