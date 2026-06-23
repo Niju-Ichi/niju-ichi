@@ -25,6 +25,12 @@ NIJU.I18N.register("en", {
   "menu.exportHtml": "HTML",
   "menu.exportHtmlPage": "HTML page",
   "menu.exportHtmlBatch": "HTML batch",
+  "menu.exportCf": "Confluence (AI)",
+  "menu.exportCfPage": "Confluence page",
+  "menu.exportCfBatch": "Confluence batch",
+  "menu.exportMd": "Markdown (AI)",
+  "menu.exportMdPage": "Markdown page",
+  "menu.exportMdBatch": "Markdown batch",
   "menu.about": "About",
   "menu.config": "Configuration",
 
@@ -55,6 +61,32 @@ NIJU.I18N.register("en", {
   "htmlBatch.working": "Creating HTML files…",
   "htmlBatch.done": "{n} HTML file(s) exported.",
   "htmlBatch.writtenFolder": "{n} HTML file(s) written to the chosen folder.",
+
+  /* Confluence / AI export (native storage format) */
+  "cfBatch.title": "Confluence export (AI)",
+  "cfBatch.intro": "Choose which processes to export. One native Confluence page (.confluence.xml storage format) is created per process, plus a manifest.json index for uploading via the Confluence REST API.",
+  "cfBatch.none": "No valid process files were found in the selection.",
+  "cfBatch.selectAll": "Select all",
+  "cfBatch.deselectAll": "Deselect all",
+  "cfBatch.count": "{n} selected",
+  "cfBatch.export": "Export {n}",
+  "cfBatch.cancel": "Cancel",
+  "cfBatch.working": "Creating Confluence pages…",
+  "cfBatch.done": "{n} Confluence page(s) + manifest.json exported.",
+  "cfBatch.writtenFolder": "{n} Confluence page(s) + manifest.json written to the chosen folder.",
+
+  /* Markdown / AI export */
+  "mdBatch.title": "Markdown export (AI)",
+  "mdBatch.intro": "Choose which processes to export. One Markdown (.md) file is created per process, plus a manifest.json corpus index.",
+  "mdBatch.none": "No valid process files were found in the selection.",
+  "mdBatch.selectAll": "Select all",
+  "mdBatch.deselectAll": "Deselect all",
+  "mdBatch.count": "{n} selected",
+  "mdBatch.export": "Export {n}",
+  "mdBatch.cancel": "Cancel",
+  "mdBatch.working": "Creating Markdown files…",
+  "mdBatch.done": "{n} Markdown file(s) + manifest.json exported.",
+  "mdBatch.writtenFolder": "{n} Markdown file(s) + manifest.json written to the chosen folder.",
 
   /* toolbar */
   "toolbar.edit": "Editor",

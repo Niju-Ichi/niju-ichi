@@ -1,36 +1,20 @@
 {
-  "meta": {
-    "titel": "",
-    "firma": "",
-    "firmaModus": "text",
-    "logo": "",
-    "prozessId": "",
-    "version": "1.0",
-    "datum": "",
-    "processOwner": "",
-    "fusstext": ""
-  },
-  "input": { "label": "", "punkte": [""] },
-  "output": { "label": "", "verantwortlich": "", "punkte": [""] },
+  "meta": { "titel": "New process overview", "firma": "", "firmaModus": "text", "logo": "", "prozessId": "", "version": "1.0", "datum": "", "processOwner": "", "fusstext": "" },
+  "input": { "label": "Input [Responsible]", "punkte": [""] },
+  "output": { "label": "Output [Responsible]", "verantwortlich": "", "punkte": [""] },
   "schritte": [
-    { "id": "standards", "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
-    { "id": "schritt1",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
-    { "id": "schritt2",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
-    { "id": "schritt3",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] },
-    { "id": "schritt4",  "kopfId": "", "titel": "", "untertitel": "", "punkteUeberschrift": "", "punkte": [{ "text": "" }], "beschreibung": [] }
+    { "id": "standards", "kopfId": "", "titel": "Standards", "untertitel": "", "punkteUeberschrift": "Standards to develop:", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt1", "kopfId": "", "titel": "Process step 1", "untertitel": "", "punkteUeberschrift": "This includes:", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt2", "kopfId": "", "titel": "Process step 2", "untertitel": "", "punkteUeberschrift": "This includes:", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt3", "kopfId": "", "titel": "Process step 3", "untertitel": "", "punkteUeberschrift": "This includes:", "punkte": [{ "text": "" }], "beschreibung": [] },
+    { "id": "schritt4", "kopfId": "", "titel": "Process step 4", "untertitel": "", "punkteUeberschrift": "This includes:", "punkte": [{ "text": "" }], "beschreibung": [] }
   ],
   "rollen": [],
-  "raci": {
-    "standards": {},
-    "schritt1": {},
-    "schritt2": {},
-    "schritt3": {},
-    "schritt4": {}
-  },
+  "raci": { "standards": {}, "schritt1": {}, "schritt2": {}, "schritt3": {}, "schritt4": {} },
   "legende": {
-    "R": "",
-    "A": "",
-    "C": "",
-    "I": ""
+    "R": "Concept responsibility (Responsible)",
+    "A": "Decision responsibility (Accountable)",
+    "C": "Contribution responsibility (Consulted)",
+    "I": "Right to be informed (Informed)"
   }
 }

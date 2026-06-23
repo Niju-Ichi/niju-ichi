@@ -14,7 +14,7 @@ The suite consists of four modules under a shared interface (module switcher top
 
 | Module | Purpose |
 |--------|---------|
-| **Process Builder** | Create and edit process **content** — steps, roles, RACI matrix. PDF & JPEG export. Import from draw.io. |
+| **Process Builder** | Create and edit process **content** — steps, roles, RACI matrix. PDF, JPEG, and **AI-ready Markdown & Confluence** export. Import from draw.io. |
 | **Process Manager** | Manage **structure** — cluster/folder tree, graphical process map, Organisation chart, AI & Tools editor. Read-only process preview. |
 | **Process Viewer** | Pure **read-only viewer** for end users — folder tree + process display. |
 | **Process Brain** | **Knowledge graph** (d3, offline) — visualises the whole organisation derived from processes and roles. AI-Readiness insights, AI coverage mode, offline HTML report export. |
@@ -30,6 +30,14 @@ The suite consists of four modules under a shared interface (module switcher top
 - **JPEG export** with custom width/height/DPI/quality dialog — rendered offline via SVG `<foreignObject>` → Canvas (no html2canvas)
 - **draw.io import** (`.drawio`/`.xml`) with semi-automatic mapping confirmation screen
 - **Design snapshot** per process — the active design is stamped into the JSON on save
+- **Flexible step content** — each step is an ordered sequence of blocks: bulleted lists (with their own heading and round sub-points) and free text paragraphs
+
+#### AI-ready exports (for Copilot, RAG & knowledge bases)
+
+Feed your processes into AI assistants and intranet knowledge bases as **machine-readable, retrieval-optimised** content — the model is a commodity, the data quality is the differentiator.
+
+- **Markdown export** — one `.md` per process (single **or batch**) plus a `manifest.json` corpus index. Plain text built for retrieval: YAML front-matter (process ID, owner, version), **RACI written out in full sentences**, stable per-step anchors, a consolidated RACI table, and a glossary. Ideal for **Microsoft 365 Copilot, SharePoint** libraries, and custom **RAG** pipelines.
+- **Confluence export** — native **Confluence storage format** (XHTML with table-of-contents / info-panel / anchor macros and a real RACI `<table>`). One `.confluence.xml` per process (single or batch) plus `manifest.json`, ready to push via the **Confluence REST API**. The content becomes part of the **indexed, searchable page body** — not an embedded blob — so **Confluence search, the Microsoft Copilot connector, and Atlassian Rovo** can read it.
 
 ### Process Manager
 - **Folder/cluster tree editor** — create, rename, delete clusters, assign and sort processes
@@ -133,7 +141,7 @@ niju-ichi/
 ## Data Model
 
 ### Process file (`*.json`)
-Fields: `meta` (title, company, processId, version, date, processOwner, footer), `input`, `output`, `schritte[]` (steps with bullet points), `rollen[]` (roles), `raci` (step-id → role → `["R","A","C","I"]`), `legende`, `design` (snapshot).
+Fields: `meta` (title, company, processId, version, date, processOwner, footer), `input`, `output`, `schritte[]` (steps; content as an ordered sequence of **blocks** — lists with an optional heading and sub-points, or text paragraphs), `rollen[]` (roles), `raci` (step-id → role → `["R","A","C","I"]`), `legende`, `design` (snapshot).
 
 ### Library file (`index.json`)
 Central directory file. Contains:

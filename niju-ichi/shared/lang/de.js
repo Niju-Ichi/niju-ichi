@@ -25,6 +25,12 @@ NIJU.I18N.register("de", {
   "menu.exportHtml": "HTML",
   "menu.exportHtmlPage": "HTML-Seite",
   "menu.exportHtmlBatch": "HTML-Stapel",
+  "menu.exportCf": "Confluence (KI)",
+  "menu.exportCfPage": "Confluence-Seite",
+  "menu.exportCfBatch": "Confluence-Stapel",
+  "menu.exportMd": "Markdown (KI)",
+  "menu.exportMdPage": "Markdown-Seite",
+  "menu.exportMdBatch": "Markdown-Stapel",
   "menu.about": "About",
   "menu.config": "Konfiguration",
 
@@ -55,6 +61,32 @@ NIJU.I18N.register("de", {
   "htmlBatch.working": "HTML-Dateien werden erstellt…",
   "htmlBatch.done": "{n} HTML-Datei(en) exportiert.",
   "htmlBatch.writtenFolder": "{n} HTML-Datei(en) in den gewählten Ordner geschrieben.",
+
+  /* Confluence-/KI-Export (natives Storage-Format) */
+  "cfBatch.title": "Confluence-Export (KI)",
+  "cfBatch.intro": "Wähle, welche Prozesse exportiert werden. Pro Prozess wird eine native Confluence-Seite (.confluence.xml, Storage-Format) erstellt, dazu ein manifest.json-Index zum Hochladen über die Confluence-REST-API.",
+  "cfBatch.none": "In der Auswahl wurden keine gültigen Prozessdateien gefunden.",
+  "cfBatch.selectAll": "Alle auswählen",
+  "cfBatch.deselectAll": "Alle abwählen",
+  "cfBatch.count": "{n} ausgewählt",
+  "cfBatch.export": "{n} exportieren",
+  "cfBatch.cancel": "Abbrechen",
+  "cfBatch.working": "Confluence-Seiten werden erstellt…",
+  "cfBatch.done": "{n} Confluence-Seite(n) + manifest.json exportiert.",
+  "cfBatch.writtenFolder": "{n} Confluence-Seite(n) + manifest.json in den gewählten Ordner geschrieben.",
+
+  /* Markdown-/KI-Export */
+  "mdBatch.title": "Markdown-Export (KI)",
+  "mdBatch.intro": "Wähle, welche Prozesse exportiert werden. Pro Prozess wird eine Markdown-Datei (.md) erstellt, dazu ein Korpus-Index manifest.json.",
+  "mdBatch.none": "In der Auswahl wurden keine gültigen Prozessdateien gefunden.",
+  "mdBatch.selectAll": "Alle auswählen",
+  "mdBatch.deselectAll": "Alle abwählen",
+  "mdBatch.count": "{n} ausgewählt",
+  "mdBatch.export": "{n} exportieren",
+  "mdBatch.cancel": "Abbrechen",
+  "mdBatch.working": "Markdown-Dateien werden erstellt…",
+  "mdBatch.done": "{n} Markdown-Datei(en) + manifest.json exportiert.",
+  "mdBatch.writtenFolder": "{n} Markdown-Datei(en) + manifest.json in den gewählten Ordner geschrieben.",
 
   /* Toolbar */
   "toolbar.edit": "Editor",

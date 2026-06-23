@@ -90,8 +90,10 @@ ul.liste > li { position: relative; padding-left: 13px; margin-bottom: 5px; }
 ul.liste > li::before { content: ""; position: absolute; left: 0; top: .42em; width: 5px; height: 5px; background: var(--ink); }
 ul.liste > li > .txt { font-size: 11px; color: var(--body); line-height: 1.32; }
 ul.liste ul { list-style: none; margin: 3px 0 0; padding: 0; }
-ul.liste ul li { position: relative; padding-left: 13px; margin-bottom: 2px; font-size: 10px; color: var(--muted); line-height: 1.3; }
-ul.liste ul li::before { content: ""; position: absolute; left: 0; top: .5em; width: 5px; height: 1.5px; background: var(--muted); }
+ul.liste ul li { position: relative; padding-left: 13px; margin-bottom: 2px; font-size: 10px; color: var(--body); line-height: 1.3; }
+ul.liste ul li::before { content: ""; position: absolute; left: 0; top: .45em; width: 4px; height: 4px; border-radius: 50%; background: var(--ink); }
+.si-block + .si-block { margin-top: 8px; }
+.si-absatz { font-size: 11px; color: var(--body); line-height: 1.32; }
 
 .raci-head {
   grid-column: 1 / -1; border-top: 2.5px solid var(--ink); padding: 12px 0 10px;
@@ -170,6 +172,9 @@ ul.bb-liste { list-style: none; margin: 4px 0 7px; padding: 0; }
 ul.bb-liste.spalten2 { column-count: 2; column-gap: 26px; }
 ul.bb-liste > li { position: relative; padding-left: 14px; margin-bottom: 4px; break-inside: avoid; font-size: 11px; color: var(--body); line-height: 1.34; }
 ul.bb-liste > li::before { content: ""; position: absolute; left: 0; top: .42em; width: 5px; height: 5px; background: var(--ink); }
+ul.bb-liste ul { list-style: none; margin: 2px 0 0; padding: 0; }
+ul.bb-liste ul li { position: relative; padding-left: 13px; margin-bottom: 2px; font-size: 10px; color: var(--body); line-height: 1.3; }
+ul.bb-liste ul li::before { content: ""; position: absolute; left: 0; top: .45em; width: 4px; height: 4px; border-radius: 50%; background: var(--ink); }
 
 @media print {
   html, body { background: #fff; height: auto; overflow: visible; display: block; }

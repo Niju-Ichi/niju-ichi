@@ -63,6 +63,11 @@
     });
     return ul;
   }
+  /* Schritt-Inhalt: flexibles Block-Modell (liest altes + neues Modell, read-only). */
+  function schrittBloecke(s) {
+    if (s && Array.isArray(s.bloecke)) return s.bloecke;
+    return [{ typ: "liste", stil: "eckig", ueberschrift: (s && s.punkteUeberschrift) || "", punkte: (s && s.punkte) || [] }];
+  }
 
   function blattVon(host) { return host.querySelector(".blatt"); }
 
@@ -129,8 +134,16 @@
     schritte.forEach(function (s, i) {
       var c = el("div", "zelle schritt-inhalt");
       c.style.gridColumn = String(i + 2); c.style.gridRow = "2";
-      if (s.punkteUeberschrift) c.appendChild(el("div", "si-lab", s.punkteUeberschrift));
-      c.appendChild(punkteListe(s.punkte));
+      schrittBloecke(s).forEach(function (block) {
+        var bd = el("div", "si-block");
+        if (block.typ === "absatz") {
+          var p = el("div", "si-absatz"); p.innerHTML = richHTML(block.text || ""); bd.appendChild(p);
+        } else {
+          if (block.ueberschrift) bd.appendChild(el("div", "si-lab", block.ueberschrift));
+          bd.appendChild(punkteListe(block.punkte));
+        }
+        c.appendChild(bd);
+      });
       raster.appendChild(c);
     });
 
@@ -292,7 +305,18 @@
         if (typeof teil === "string") { var p = el("p", "bb-p"); p.innerHTML = richHTML(teil); inhalt.appendChild(p); }
         else if (teil && teil.liste) {
           var ul = el("ul", "bb-liste" + (teil.spalten === 2 ? " spalten2" : ""));
-          teil.liste.forEach(function (li) { var item = el("li"); item.innerHTML = richHTML(li); ul.appendChild(item); });
+          teil.liste.forEach(function (li) {
+            var item = el("li");
+            var txt = (typeof li === "string") ? li : (li.text || "");
+            item.innerHTML = richHTML(txt);
+            var unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
+            if (unter && unter.length) {
+              var sub = el("ul");
+              unter.forEach(function (u) { var sl = el("li"); sl.innerHTML = richHTML(u); sub.appendChild(sl); });
+              item.appendChild(sub);
+            }
+            ul.appendChild(item);
+          });
           inhalt.appendChild(ul);
         }
       });

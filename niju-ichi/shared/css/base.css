@@ -249,17 +249,20 @@
    Banner padding-bottom 0 + .launch-mid padding-top = gap = mid-gap =
    row margin-top. */
 :root { --flow-gap: 20px; }
+/* Brain + die beiden ↑-Pfeile sitzen eine Pfeillänge höher: kein oberer Abstand
+   (rückt die Gruppe näher an die Grafik), dafür doppelter Abstand zur Modul-Reihe.
+   Die Modul-Reihe bleibt dadurch an ihrer Position. */
 .launch-mid {
   flex: 0 0 auto; display: flex; flex-direction: column;
   align-items: center; gap: var(--flow-gap);
-  width: 100%; padding: var(--flow-gap) 28px 0; box-sizing: border-box;
+  width: 100%; padding: 0 28px 0; box-sizing: border-box;
 }
 .launch-mid .launch-card { width: 300px; max-width: 80vw; }
 
 /* Module — untere Reihe, alle drei nebeneinander, direkt unter Brain */
 .launch-row {
   flex: 0 0 auto; display: flex; align-items: stretch; justify-content: center;
-  gap: 22px; width: 100%; max-width: 1100px; margin: var(--flow-gap) auto 0;
+  gap: 22px; width: 100%; max-width: 1100px; margin: calc(var(--flow-gap) * 2) auto 0;
   padding: 0 28px 44px; box-sizing: border-box;
 }
 .launch-row .launch-card { flex: 1 1 0; min-width: 200px; max-width: 300px; }
