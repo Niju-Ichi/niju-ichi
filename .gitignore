@@ -8,3 +8,10 @@ Icon?
 .idea/
 *.swp
 *~
+
+# Local dev process data — safety net.
+# Real/customer process files are loaded at runtime via "Load folder" and must
+# never be committed. Only the empty index.json skeleton is tracked here; the
+# shipped demo dataset lives in data/demo/ (tracked).
+/niju-ichi/data/processes/*.json
+!/niju-ichi/data/processes/index.json
