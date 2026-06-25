@@ -510,7 +510,12 @@
      damit es nicht mit dem Übersichts-Layout kollidiert.
      ============================================================ */
   .blatt.detail {
-    width: 281mm; min-height: 188mm; padding: 9mm 13mm 7mm;
+    /* +25 % Blattbreite (281mm → 351mm). Die Mehrbreite geht KOMPLETT in die
+       rechte (Text-)Spalte: linke Spalte (RACI-Matrix + Legende), vertikale
+       Trennlinie und der rechte Außenrand bleiben unverändert. --detail-links =
+       bisherige Breite der linken Spalte (war 0.86fr von 255mm). */
+    --detail-links: 109.54mm;
+    width: 351mm; min-height: 188mm; padding: 9mm 13mm 7mm;
   }
   .blatt.detail .titel { padding-bottom: 8px; }
   .blatt.detail .titel h1 {
@@ -520,7 +525,7 @@
 
   .koerper {
     flex: 1; display: grid;
-    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    grid-template-columns: var(--detail-links, 109.54mm) minmax(0, 1fr);
     margin-top: 11px;
   }
   .spalte-links  { padding-right: 26px; display: flex; flex-direction: column; }
@@ -988,6 +993,29 @@ function normalisiereSchritte(daten) {
   });
   return daten;
 }
+/* RACI-Werte robust normalisieren: jede belegte Zelle wird zu einem Array
+   gültiger, eindeutiger, kanonisch sortierter Buchstaben. Schützt vor von Hand
+   geschriebenen JSONs mit String-Werten ("A" statt ["A"]) oder Mehrbuchstaben-
+   Strings ("CI"): die rendern zwar (.includes greift auf Strings), würden aber
+   beim ersten Klick auf eine Matrix-Zelle crashen, weil toggleRaci() .slice()/
+   .push() auf einem String aufruft. Idempotent; persistiert beim Speichern
+   automatisch saubere Arrays in die Datei. */
+function normalisiereRaci(daten) {
+  const raci = daten && daten.raci;
+  if (!raci || typeof raci !== "object") return daten;
+  Object.keys(raci).forEach(sid => {
+    const zeile = raci[sid];
+    if (!zeile || typeof zeile !== "object") { delete raci[sid]; return; }
+    Object.keys(zeile).forEach(rolle => {
+      const roh = zeile[rolle];
+      if (roh == null) { delete zeile[rolle]; return; }
+      const flach = (Array.isArray(roh) ? roh.join("") : String(roh)).toUpperCase();
+      const arr = RACI_REIHENFOLGE.filter(b => flach.indexOf(b) >= 0);
+      if (arr.length) zeile[rolle] = arr; else delete zeile[rolle];
+    });
+  });
+  return daten;
+}
 /* Ersten eckigen Listen-Block liefern (Glue für den noch unveränderten Editor;
    der volle Block-Editor mit Drag&Drop kommt in Phase C). */
 function ersterListenBlock(s) {
@@ -1003,6 +1031,7 @@ function ersterListenBlock(s) {
    ============================================================ */
 function render(daten) {
   normalisiereSchritte(daten);
+  normalisiereRaci(daten);
   const blatt = document.getElementById("blatt");
   if (window.NIJU.DESIGN) window.NIJU.DESIGN.applyForProcess(daten);
   blatt.classList.toggle("detail", STATE.ansicht === "detail");
@@ -1992,12 +2021,45 @@ function inhaltEditor(block) {
       box.appendChild(optRow);
       if (!teil.liste) teil.liste = [];
       teil.liste.forEach((li, lii) => {
+        /* Ein Listenpunkt darf String ODER { text, unterpunkte[] } sein — Detail-
+           Render und Export (md/Confluence/HTML) verstehen beides. Unterpunkte =
+           eingerückte Punkte mit schwarzem Punkt, wie in der Übersicht. */
+        const istObj = (typeof li === "object" && li);
         const row = el("div", "ed-row");
-        const inp = document.createElement("input"); inp.type = "text"; inp.className = "grow"; inp.value = li;
-        inp.addEventListener("input", () => { teil.liste[lii] = inp.value; render(STATE.daten); });
+        const inp = document.createElement("input"); inp.type = "text"; inp.className = "grow";
+        inp.value = istObj ? (li.text || "") : (li || "");
+        inp.addEventListener("input", () => {
+          const cur = teil.liste[lii];
+          if (typeof cur === "object" && cur) cur.text = inp.value; else teil.liste[lii] = inp.value;
+          render(STATE.daten);
+        });
         row.appendChild(inp);
         row.appendChild(knopf("✕", "del", () => { teil.liste.splice(lii, 1); nachStruktur(); }, t("editor.removeListItem")));
         box.appendChild(row);
+
+        /* eingerückte Unterpunkte + „+ Sub-point" (gleiches Muster wie punkteEditor) */
+        const ubox = el("div", "ed-unter");
+        const unter = (istObj && li.unterpunkte) ? li.unterpunkte : [];
+        unter.forEach((u, ui) => {
+          const urow = el("div", "ed-row");
+          const uin = document.createElement("input"); uin.type = "text"; uin.className = "grow"; uin.value = u;
+          uin.addEventListener("input", () => { teil.liste[lii].unterpunkte[ui] = uin.value; render(STATE.daten); });
+          urow.appendChild(uin);
+          urow.appendChild(knopf("✕", "del", () => {
+            teil.liste[lii].unterpunkte.splice(ui, 1);
+            if (!teil.liste[lii].unterpunkte.length) delete teil.liste[lii].unterpunkte;
+            nachStruktur();
+          }, t("editor.removeSubpoint")));
+          ubox.appendChild(urow);
+        });
+        ubox.appendChild(knopf(t("editor.addSubpoint"), "add", () => {
+          /* Punkt bei Bedarf von String → Objekt anheben, damit er Unterpunkte tragen kann */
+          let item = teil.liste[lii];
+          if (typeof item !== "object" || !item) { item = { text: item || "" }; teil.liste[lii] = item; }
+          if (!item.unterpunkte) item.unterpunkte = [];
+          item.unterpunkte.push(""); nachStruktur();
+        }));
+        box.appendChild(ubox);
       });
       box.appendChild(knopf(t("editor.addListItem"), "add", () => { teil.liste.push(""); nachStruktur(); }));
     } else {
@@ -2784,7 +2846,12 @@ function mdBeschreibung(beschr, L) {
     (b.inhalt || []).forEach(it => {
       if (typeof it === "string") { s += String(it).trim() + "\n\n"; }
       else if (it && it.liste) {
-        it.liste.forEach(li => { s += "- " + String(li).trim() + "\n"; });
+        it.liste.forEach(li => {
+          const text = (typeof li === "string") ? li : (li.text || "");
+          s += "- " + String(text).trim() + "\n";
+          const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
+          if (unter && unter.length) unter.forEach(u => { s += "  - " + String(u).trim() + "\n"; });
+        });
         s += "\n";
       }
     });
@@ -3128,7 +3195,17 @@ function cfBeschreibung(beschr, L) {
     s += "<p><strong>" + cfEsc((tag ? tag + " · " : "") + String(b.titel || "").replace(/\n/g, " ")) + "</strong></p>";
     (b.inhalt || []).forEach(it => {
       if (typeof it === "string") { s += "<p>" + cfRich(String(it).trim()) + "</p>"; }
-      else if (it && it.liste) { s += "<ul>"; it.liste.forEach(li => { s += "<li>" + cfRich(String(li).trim()) + "</li>"; }); s += "</ul>"; }
+      else if (it && it.liste) {
+        s += "<ul>";
+        it.liste.forEach(li => {
+          const text = (typeof li === "string") ? li : (li.text || "");
+          const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
+          s += "<li>" + cfRich(String(text).trim());
+          if (unter && unter.length) { s += "<ul>"; unter.forEach(u => { s += "<li>" + cfRich(String(u).trim()) + "</li>"; }); s += "</ul>"; }
+          s += "</li>";
+        });
+        s += "</ul>";
+      }
     });
   });
   return s;
@@ -3405,7 +3482,9 @@ function zeigeCfBatchDialog(kandidaten) {
 /* Seitengröße für den Druck setzen: Übersicht = A3, Detail = A4 (je quer). */
 function setzeDruckGroesse() {
   const st = document.getElementById("druckGroesse");
-  if (st) st.textContent = "@page { size: " + (STATE.ansicht === "detail" ? "A4" : "A3") + " landscape; margin: 8mm; }";
+  /* Detailseite ist jetzt 351mm breit (+25 %) → passt nicht mehr auf A4 quer
+     (297mm). Beide Ansichten drucken auf A3 quer (deckt sich mit dem HTML-Export). */
+  if (st) st.textContent = "@page { size: A3 landscape; margin: 8mm; }";
 }
 function aktualisiereAnsichtKnoepfe() {
   const bu = document.getElementById("btnAnsichtUebersicht");

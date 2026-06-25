@@ -130,11 +130,14 @@ ul.liste ul li::before { content: ""; position: absolute; left: 0; top: .45em; w
 .leer-hinweis { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 15px; white-space: pre-line; }
 
 /* ----- Detailseite (A4 quer) ----- */
-.blatt.detail { width: 281mm; min-height: 188mm; padding: 9mm 13mm 7mm; }
+/* +25 % Blattbreite (281mm → 351mm), deckungsgleich mit dem Process Builder:
+   die Mehrbreite geht komplett in die rechte (Text-)Spalte; linke Spalte
+   (RACI-Matrix + Legende) + vertikale Trennlinie + rechter Rand bleiben gleich. */
+.blatt.detail { --detail-links: 109.54mm; width: 351mm; min-height: 188mm; padding: 9mm 13mm 7mm; }
 .blatt.detail .titel { padding-bottom: 8px; }
 .blatt.detail .titel h1 { font-size: 28px; font-weight: 800; letter-spacing: -.015em; line-height: 1.05; color: var(--ink); }
 .blatt.detail .badge { width: 22px; height: 22px; font-size: 12px; }
-.koerper { flex: 1; display: grid; grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr); margin-top: 11px; }
+.koerper { flex: 1; display: grid; grid-template-columns: var(--detail-links, 109.54mm) minmax(0, 1fr); margin-top: 11px; }
 .spalte-links { padding-right: 26px; display: flex; flex-direction: column; }
 .spalte-rechts { padding-left: 28px; border-left: 1.5px solid var(--ink); }
 .abschnitt-lab { font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--akzent); margin-bottom: 11px; }
