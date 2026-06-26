@@ -214,6 +214,13 @@ NIJU.I18N.register("de", {
   "editor.addListItem": "+ Listenpunkt",
   "editor.addParagraph": "+ Absatz",
   "editor.addList": "+ Liste",
+  "editor.more": "Weitere Aktionen",
+  "editor.duplicate": "Duplizieren",
+  "editor.dragMove": "Verschieben (ziehen)",
+  "editor.makeSubpoint": "Zu Unterpunkt einrücken",
+  "editor.addContentBlock": "Block hinzufügen",
+  "editor.blockSoon": "bald",
+  "editor.collapse": "Ein-/ausklappen",
 
   /* Inhalts-Vorgaben für neue Daten (Nutzer bearbeitet danach) */
   "content.newStep": "Neuer Schritt",

@@ -481,6 +481,100 @@
   .ed-unter .ed-row input { font-size: 12px; }
   .ed-hint { font-size: 11px; color: var(--muted); margin: 2px 0 8px; }
 
+  /* ============================================================
+     Editor redesign — icon buttons, hover-reveal, block headers,
+     popover menus, segment toggle. Themed via the design variables.
+     ============================================================ */
+  .ic { width: 16px; height: 16px; display: inline-block; flex: none; pointer-events: none; }
+
+  /* 28x28 icon button: transparent, muted → ink on hover (per spec §5.3). */
+  .ed-iconbtn {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    width: 28px; height: 28px; padding: 0; border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .12s, color .12s, opacity .12s;
+  }
+  .ed-iconbtn:hover { background: var(--zebra); color: var(--ink); }
+  .ed-iconbtn:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; color: var(--ink); }
+  .ed-iconbtn:disabled { opacity: .3 !important; cursor: default; pointer-events: none; }
+  .ed-tools { display: inline-flex; align-items: center; gap: 1px; flex: none; }
+
+  /* Hover-Reveal: Griff + Aktionen erst bei :hover ODER :focus-within sichtbar
+     (Tastatur-Nutzer!). Im Ruhezustand unsichtbar und nicht klickbar. */
+  .ed-row .ed-reveal, .ed-item-kopf .ed-reveal, .ed-block-h .ed-reveal {
+    opacity: 0; pointer-events: none;
+  }
+  .ed-row:hover .ed-reveal, .ed-row:focus-within .ed-reveal,
+  .ed-item-kopf:hover .ed-reveal, .ed-item-kopf:focus-within .ed-reveal,
+  .ed-block-h:hover .ed-reveal, .ed-block-h:focus-within .ed-reveal,
+  .ed-block:focus-within > .ed-block-h .ed-reveal {
+    opacity: 1; pointer-events: auto;
+  }
+
+  /* Drag-Griff */
+  .ed-grip { cursor: grab; color: var(--muted); }
+  .ed-grip:active { cursor: grabbing; }
+  .ed-row.ed-dragging, .ed-block.ed-dragging { opacity: .45; }
+  .ed-drop-before { box-shadow: inset 0 2px 0 0 var(--akzent); }
+  .ed-drop-after  { box-shadow: inset 0 -2px 0 0 var(--akzent); }
+
+  /* Inhaltsblock mit Header-Streifen (Absatz / Liste / Zwischenüberschrift) */
+  .ed-block { border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); margin-bottom: 8px; }
+  .ed-block-h { display: flex; align-items: center; gap: 5px; padding: 4px 5px 4px 2px; }
+  .ed-chev { color: var(--muted); }
+  .ed-typebadge {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); background: var(--zebra); border-radius: 4px; padding: 2px 6px; flex: none;
+  }
+  .ed-block-sum { flex: 1; min-width: 0; font-size: 11.5px; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ed-block-body { padding: 4px 8px 9px; }
+  .ed-block.zu .ed-block-body { display: none; }
+  .ed-block.zu .ed-block-sum { display: block; }
+  .ed-block:not(.zu) .ed-block-sum { visibility: hidden; }
+
+  /* Popover-Menü (⋯ Overflow, + Block) — einfaches positioniertes div, kein Framework */
+  .ed-pop {
+    position: absolute; z-index: 60; min-width: 168px; padding: 4px;
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15,23,42,.22);
+  }
+  .ed-pop button {
+    display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+    appearance: none; border: 0; background: transparent; color: var(--ink);
+    font-family: inherit; font-size: 12.5px; padding: 7px 9px; border-radius: 5px; cursor: pointer;
+  }
+  .ed-pop button .ic { color: var(--muted); }
+  .ed-pop button:hover { background: var(--zebra); }
+  .ed-pop hr { border: 0; border-top: 1px solid var(--rule); margin: 4px 2px; }
+
+  /* Segment-Toggle (2 Spalten | 1) */
+  .ed-seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; flex: none; }
+  .ed-seg button {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    font-family: inherit; font-size: 10.5px; letter-spacing: .02em; padding: 3px 8px; cursor: pointer;
+  }
+  .ed-seg button + button { border-left: 1px solid var(--rule); }
+  .ed-seg button.an { background: var(--akzent); color: #fff; }
+
+  /* Dezente Ghost-Aktion am Listenende / „+ Block hinzufügen" */
+  .ed-ghost {
+    appearance: none; width: 100%; text-align: left; cursor: pointer;
+    border: 1px dashed var(--rule-strong, var(--rule)); border-radius: 6px; background: transparent;
+    color: var(--muted); font-family: inherit; font-size: 12px; padding: 7px 10px;
+    display: inline-flex; align-items: center; gap: 8px; transition: color .12s, border-color .12s;
+  }
+  .ed-ghost:hover { color: var(--akzent); border-color: var(--akzent); }
+  .ed-ghost .kbd { margin-left: auto; font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
+
+  /* Auto-grow Textarea (Absatz): Höhe = Inhalt */
+  textarea.ed-grow { overflow: hidden; resize: none; }
+
+  /* Listenpunkt-Zeilen im Block-Body + eingerückte Unterpunkte (max. 2 Ebenen) */
+  .ed-block-body .ed-row { margin-bottom: 4px; align-items: center; }
+  .ed-block-body .ed-sub { margin-left: 22px; }
+  .ed-block-body .ed-ghost { margin-top: 2px; }
+
   /* RACI im Blatt anklickbar machen */
   .blatt.bearbeiten .raci-zelle.editierbar {
     cursor: pointer; box-shadow: inset 0 0 0 1px transparent;
@@ -510,10 +604,10 @@
      damit es nicht mit dem Übersichts-Layout kollidiert.
      ============================================================ */
   .blatt.detail {
-    /* +25 % Blattbreite (281mm → 351mm). Die Mehrbreite geht KOMPLETT in die
-       rechte (Text-)Spalte: linke Spalte (RACI-Matrix + Legende), vertikale
-       Trennlinie und der rechte Außenrand bleiben unverändert. --detail-links =
-       bisherige Breite der linken Spalte (war 0.86fr von 255mm). */
+    /* +25% sheet width (281mm → 351mm). The extra width goes ENTIRELY into the
+       right (text) column: the left column (RACI matrix + legend), the vertical
+       divider and the right outer margin stay unchanged. --detail-links =
+       previous width of the left column (was 0.86fr of 255mm). */
     --detail-links: 109.54mm;
     width: 351mm; min-height: 188mm; padding: 9mm 13mm 7mm;
   }
@@ -612,6 +706,24 @@
 <style id="druckGroesse">@page { size: A3 landscape; margin: 8mm; }</style>
 </head>
 <body>
+
+  <!-- Local icon sprite (offline, no webfont/CDN). 16x16, currentColor, slim outline.
+       Use via <svg class="ic"><use href="#ic-…"></use></svg>. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+    <symbol id="ic-grip" viewBox="0 0 16 16"><g fill="currentColor"><circle cx="6" cy="4" r="1.3"/><circle cx="10" cy="4" r="1.3"/><circle cx="6" cy="8" r="1.3"/><circle cx="10" cy="8" r="1.3"/><circle cx="6" cy="12" r="1.3"/><circle cx="10" cy="12" r="1.3"/></g></symbol>
+    <symbol id="ic-chevron-down" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-chevron-right" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10"/><path d="M6.5 4.5V3h3v1.5"/><path d="M4.6 4.5l.6 8.5h5.6l.6-8.5"/><path d="M6.8 7v3.6M9.2 7v3.6"/></g></symbol>
+    <symbol id="ic-indent" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v5h6"/><path d="M9 7l2.2 2-2.2 2"/></g></symbol>
+    <symbol id="ic-dots-vertical" viewBox="0 0 16 16"><g fill="currentColor"><circle cx="8" cy="3.5" r="1.35"/><circle cx="8" cy="8" r="1.35"/><circle cx="8" cy="12.5" r="1.35"/></g></symbol>
+    <symbol id="ic-plus" viewBox="0 0 16 16"><path d="M8 3.2v9.6M3.2 8h9.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-duplicate" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="7.5" height="7.5" rx="1.4"/><path d="M10.5 3H3v7.5"/></g></symbol>
+    <symbol id="ic-arrow-up" viewBox="0 0 16 16"><path d="M8 12.5V3.5M4.5 7L8 3.5 11.5 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-arrow-down" viewBox="0 0 16 16"><path d="M8 3.5v9M4.5 9l3.5 3.5L11.5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-paragraph" viewBox="0 0 16 16"><path d="M3 4.5h10M3 8h10M3 11.5h6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="ic-list" viewBox="0 0 16 16"><g stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 4.5h7M6 8h7M6 11.5h7" fill="none"/></g><g fill="currentColor"><circle cx="3.2" cy="4.5" r="1"/><circle cx="3.2" cy="8" r="1"/><circle cx="3.2" cy="11.5" r="1"/></g></symbol>
+    <symbol id="ic-heading" viewBox="0 0 16 16"><path d="M4 3.5v9M11 3.5v9M4 8h7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  </defs></svg>
 
   <div class="toolbar">
     <div class="menu-wrap">
@@ -1628,6 +1740,191 @@ function pfeilWerkzeuge(arr, i, struktur) {
   return w;
 }
 
+/* ============================================================
+   Editor redesign — shared building blocks (detail-page editor).
+   Local icons, hover-reveal icon buttons, popover menus, collapse
+   view-state, keyboard-driven list editing. All offline, no deps.
+   ============================================================ */
+const SVG_NS_ED = "http://www.w3.org/2000/svg";
+/* Local SVG icon, referencing the inline sprite at the top of <body>. */
+function ic(name) {
+  const svg = document.createElementNS(SVG_NS_ED, "svg");
+  svg.setAttribute("class", "ic"); svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS(SVG_NS_ED, "use");
+  use.setAttribute("href", "#" + name);
+  svg.appendChild(use);
+  return svg;
+}
+function setIc(host, name) { const u = host.querySelector("use"); if (u) u.setAttribute("href", "#" + name); }
+/* 28x28 icon button. label → aria-label + title (a11y §6).
+   opts: { reveal:hover-reveal, grip:drag handle, klasse, disabled }. */
+function iconBtn(name, label, onClick, opts) {
+  opts = opts || {};
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "ed-iconbtn" + (opts.reveal ? " ed-reveal" : "") + (opts.grip ? " ed-grip" : "") + (opts.klasse ? " " + opts.klasse : "");
+  b.setAttribute("aria-label", label); b.title = label;
+  b.appendChild(ic(name));
+  if (opts.disabled) b.disabled = true;
+  if (onClick) b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); onClick(e); });
+  return b;
+}
+
+/* ----- Popover menu (⋯ overflow, + block). Plain positioned div, closes on
+   outside-click / Esc. items: { icon, label, onClick, disabled } or "-". ----- */
+let _edPop = null;
+function _edPopAussen(e) { if (_edPop && !_edPop.contains(e.target)) schliessePop(); }
+function _edPopTaste(e) { if (e.key === "Escape") schliessePop(); }
+function schliessePop() {
+  if (_edPop) { _edPop.remove(); _edPop = null; }
+  document.removeEventListener("mousedown", _edPopAussen, true);
+  document.removeEventListener("keydown", _edPopTaste, true);
+}
+function oeffnePop(anchor, items) {
+  schliessePop();
+  const pop = el("div", "ed-pop");
+  items.forEach(function (it) {
+    if (it === "-") { pop.appendChild(document.createElement("hr")); return; }
+    const b = document.createElement("button"); b.type = "button";
+    b.appendChild(ic(it.icon || "ic-dots-vertical"));
+    b.appendChild(el("span", null, it.label));
+    if (it.disabled) b.disabled = true;
+    else b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); schliessePop(); it.onClick(); });
+    pop.appendChild(b);
+  });
+  document.body.appendChild(pop);
+  pop.style.position = "fixed";
+  const r = anchor.getBoundingClientRect();
+  let left = r.right - pop.offsetWidth, top = r.bottom + 4;
+  if (left < 6) left = 6;
+  if (top + pop.offsetHeight > window.innerHeight - 6) top = r.top - pop.offsetHeight - 4;
+  pop.style.left = Math.round(left) + "px";
+  pop.style.top = Math.round(Math.max(6, top)) + "px";
+  _edPop = pop;
+  setTimeout(function () {
+    document.addEventListener("mousedown", _edPopAussen, true);
+    document.addEventListener("keydown", _edPopTaste, true);
+  }, 0);
+}
+
+/* ----- Collapse view-state — NEVER written to the JSON (§4). WeakMap keyed by
+   the (stable) description-block object → Set of collapsed content-part indices.
+   Toggling only flips a CSS class (no rebuild), so the index stays valid. ----- */
+const ED_COLLAPSE = new WeakMap();
+function istZu(block, ti) { const s = ED_COLLAPSE.get(block); return !!(s && s.has(ti)); }
+function setZu(block, ti, zu) {
+  let s = ED_COLLAPSE.get(block);
+  if (!s) { s = new Set(); ED_COLLAPSE.set(block, s); }
+  if (zu) s.add(ti); else s.delete(ti);
+}
+
+/* Read a list item's text whether it is a plain string or { text, unterpunkte }. */
+function itemText(li) { return (typeof li === "object" && li) ? (li.text || "") : (li || ""); }
+function klonTeil(teil) { return (typeof teil === "object" && teil) ? JSON.parse(JSON.stringify(teil)) : teil; }
+/* Collapsed one-line summary of a content part (§5.1). */
+function blockKurz(teil) {
+  if (typeof teil === "string") {
+    const s = teil.trim().replace(/\s+/g, " ");
+    return s ? (s.length > 60 ? s.slice(0, 60) + "…" : s) : t("editor.paragraph");
+  }
+  if (teil && teil.liste) {
+    const n = teil.liste.length;
+    const f = n ? String(itemText(teil.liste[0])).trim().replace(/\s+/g, " ") : "";
+    return f ? (f + (n > 1 ? "  ·  +" + (n - 1) : "")) : t("editor.list");
+  }
+  return "";
+}
+/* Auto-grow textarea (§5.9): height = content. */
+function autoGrow(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+
+/* 2-column segment toggle for a list part (§5.8) — same data effect as before. */
+function segmentToggle(teil) {
+  const seg = el("div", "ed-seg"); seg.setAttribute("role", "group");
+  [["2", 2], ["1", 1]].forEach(function (o) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = o[0];
+    if ((teil.spalten === 2 ? 2 : 1) === o[1]) b.classList.add("an");
+    b.title = (o[1] === 2) ? t("editor.twoColumns") : "1";
+    b.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      teil.spalten = o[1]; render(STATE.daten);
+      Array.from(seg.children).forEach(function (c) { c.classList.remove("an"); });
+      b.classList.add("an");
+    });
+    seg.appendChild(b);
+  });
+  return seg;
+}
+
+/* ----- Keyboard model focus restoration across editor rebuilds (§5.5).
+   List inputs carry data-bi/ti/lii/ui; after a structural change we re-focus the
+   intended cell. ui = "x" for a top-level item, a number for a sub-point. ----- */
+let _edFokus = null;
+function nachFokus(tok) { _edFokus = tok; nachStruktur(); stelleFokusHer(); }
+function stelleFokusHer() {
+  if (!_edFokus) return;
+  const f = _edFokus; _edFokus = null;
+  const ui = (f.ui == null) ? "x" : f.ui;
+  const inp = document.querySelector('#editor input[data-bi="' + f.bi + '"][data-ti="' + f.ti + '"][data-lii="' + f.lii + '"][data-ui="' + ui + '"]');
+  if (inp) { inp.focus(); const p = (f.caret == null) ? inp.value.length : f.caret; try { inp.setSelectionRange(p, p); } catch (e) {} }
+}
+/* The row visually above (lii,ui) — for Backspace focus handoff. */
+function vorigeZeile(teil, lii, ui) {
+  if (ui != null) return (ui > 0) ? { lii: lii, ui: ui - 1 } : { lii: lii, ui: "x" };
+  if (lii === 0) return null;
+  const prev = teil.liste[lii - 1];
+  const subs = (typeof prev === "object" && prev && prev.unterpunkte) ? prev.unterpunkte : null;
+  return subs && subs.length ? { lii: lii - 1, ui: subs.length - 1 } : { lii: lii - 1, ui: "x" };
+}
+
+/* Move an array entry from index `from` to insertion index `to` (both on the
+   original array). Shared by drag-reorder and the ⋯ menu. */
+function arrVerschieben(arr, from, to) {
+  if (from < 0 || from >= arr.length) return;
+  const it = arr.splice(from, 1)[0];
+  if (from < to) to--;
+  if (to < 0) to = 0; if (to > arr.length) to = arr.length;
+  arr.splice(to, 0, it);
+}
+
+/* ----- Drag-reorder via the grip (HTML5 native DnD, file://-safe, §5.4).
+   The grip flips draggable on while pressed; drops only land inside the same
+   sibling group (`gruppe`); a thin --akzent line marks the insertion point.
+   reorder(from, to) mutates the array and re-renders. ----- */
+let _edDrag = null;
+function _edDropPutzen() {
+  Array.prototype.forEach.call(document.querySelectorAll(".ed-drop-before,.ed-drop-after"),
+    function (x) { x.classList.remove("ed-drop-before", "ed-drop-after"); });
+}
+function dragWire(grip, itemEl, gruppe, index, reorder) {
+  grip.addEventListener("pointerdown", function () { itemEl.draggable = true; });
+  grip.addEventListener("pointerup", function () { itemEl.draggable = false; });
+  itemEl.addEventListener("dragstart", function (e) {
+    if (!itemEl.draggable) { e.preventDefault(); return; }
+    _edDrag = { gruppe: gruppe, von: index, reorder: reorder };
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(index)); } catch (_) {}
+    setTimeout(function () { itemEl.classList.add("ed-dragging"); }, 0);
+  });
+  itemEl.addEventListener("dragend", function () {
+    itemEl.draggable = false; itemEl.classList.remove("ed-dragging"); _edDropPutzen(); _edDrag = null;
+  });
+  itemEl.addEventListener("dragover", function (e) {
+    if (!_edDrag || _edDrag.gruppe !== gruppe) return;
+    e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move";
+    const r = itemEl.getBoundingClientRect(); const after = (e.clientY - r.top) > r.height / 2;
+    _edDropPutzen();
+    itemEl.classList.add(after ? "ed-drop-after" : "ed-drop-before");
+  });
+  itemEl.addEventListener("drop", function (e) {
+    if (!_edDrag || _edDrag.gruppe !== gruppe) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = itemEl.getBoundingClientRect(); const after = (e.clientY - r.top) > r.height / 2;
+    const von = _edDrag.von, ziel = index + (after ? 1 : 0), reord = _edDrag.reorder;
+    _edDropPutzen(); _edDrag = null;
+    if (von !== ziel) reord(von, ziel);
+  });
+}
+
 /* aufklappbarer Abschnitt */
 function abschnitt(titel, key, bauen) {
   const sec = el("div", "ed-section");
@@ -1980,10 +2277,22 @@ function beschreibungBlockEditor(schritt, block, bi) {
   const it = el("div", "ed-item");
   const kopf = el("div", "ed-item-kopf");
   kopf.appendChild(el("span", "titel", t("editor.block", { n: bi + 1, raci: block.raci || "?" })));
-  const werkz = el("div", "werkz");
-  const pf = pfeilWerkzeuge(liste, bi, nachStruktur);
-  Array.from(pf.children).forEach(c => werkz.appendChild(c));
-  werkz.appendChild(knopf("✕", "del", () => { liste.splice(bi, 1); nachStruktur(); }, t("editor.removeBlock")));
+  const sp = el("div"); sp.style.flex = "1"; kopf.appendChild(sp);
+  /* Hover-reveal tools instead of always-visible ↑ ↓ ✕ (§5.2): grip + ⋯ menu. */
+  const werkz = el("div", "ed-tools");
+  const gripB = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+  werkz.appendChild(gripB);
+  dragWire(gripB, it, "besch", bi, function (from, to) { arrVerschieben(liste, from, to); nachStruktur(); });
+  const moreB = iconBtn("ic-dots-vertical", t("editor.more"), function () {
+    oeffnePop(moreB, [
+      { icon: "ic-duplicate", label: t("editor.duplicate"), onClick: function () { liste.splice(bi + 1, 0, JSON.parse(JSON.stringify(block))); nachStruktur(); } },
+      { icon: "ic-arrow-up", label: t("editor.moveUp"), disabled: bi === 0, onClick: function () { const x = liste[bi - 1]; liste[bi - 1] = liste[bi]; liste[bi] = x; nachStruktur(); } },
+      { icon: "ic-arrow-down", label: t("editor.moveDown"), disabled: bi === liste.length - 1, onClick: function () { const x = liste[bi + 1]; liste[bi + 1] = liste[bi]; liste[bi] = x; nachStruktur(); } },
+      "-",
+      { icon: "ic-trash", label: t("editor.removeBlock"), onClick: function () { liste.splice(bi, 1); nachStruktur(); } }
+    ]);
+  }, { reveal: true });
+  werkz.appendChild(moreB);
   kopf.appendChild(werkz);
   it.appendChild(kopf);
 
@@ -1993,88 +2302,209 @@ function beschreibungBlockEditor(schritt, block, bi) {
   });
   it.appendChild(auswahl(t("editor.responsibilityRaci"), opt, block.raci, v => { block.raci = v; render(d); }));
   it.appendChild(feld(t("editor.heading"), block.titel, v => { block.titel = v; render(d); }));
-  it.appendChild(el("div", "ed-hint", t("editor.contentHint")));
-  it.appendChild(inhaltEditor(block));
+  it.appendChild(inhaltEditor(block, bi));
   return it;
 }
 
-/* Editor für den gemischten Inhalt eines Blocks (String=Absatz | {liste,spalten}) */
-function inhaltEditor(block) {
+/* Editor for a description block's mixed content. Each content part (paragraph |
+   list) is a collapsible block with a header strip [chevron][type][summary] …
+   [2-col toggle][grip][⋯] (§5.1). Lists are edited with the keyboard model
+   (§5.5); the three add-buttons collapse into one "+ Add block" menu (§5.6). */
+function inhaltEditor(block, bi) {
   const wrap = el("div");
   if (!block.inhalt) block.inhalt = [];
-  block.inhalt.forEach((teil, ti) => {
+  block.inhalt.forEach(function (teil, ti) {
     const istListe = (typeof teil === "object" && teil && teil.liste);
-    const box = el("div", "ed-punkt");
-    const kopf = el("div", "ed-row");
-    kopf.appendChild(el("span", "ed-hint", istListe ? t("editor.list") : t("editor.paragraph")));
-    const sp = el("div"); sp.style.flex = "1"; kopf.appendChild(sp);
-    const pf = pfeilWerkzeuge(block.inhalt, ti, nachStruktur);
-    Array.from(pf.children).forEach(c => kopf.appendChild(c));
-    kopf.appendChild(knopf("✕", "del", () => { block.inhalt.splice(ti, 1); nachStruktur(); }, t("editor.remove")));
-    box.appendChild(kopf);
+    const bl = el("div", "ed-block"); if (istZu(block, ti)) bl.classList.add("zu");
 
+    /* ---- header strip ---- */
+    const h = el("div", "ed-block-h");
+    const chev = iconBtn(istZu(block, ti) ? "ic-chevron-right" : "ic-chevron-down", t("editor.collapse"), null, { klasse: "ed-chev" });
+    chev.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      const zu = !bl.classList.contains("zu");
+      bl.classList.toggle("zu", zu); setZu(block, ti, zu); setIc(chev, zu ? "ic-chevron-right" : "ic-chevron-down");
+    });
+    h.appendChild(chev);
+    h.appendChild(el("span", "ed-typebadge", istListe ? t("editor.list") : t("editor.paragraph")));
+    h.appendChild(el("span", "ed-block-sum", blockKurz(teil)));
+    if (istListe) h.appendChild(segmentToggle(teil));
+    const gripB = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+    h.appendChild(gripB);
+    dragWire(gripB, bl, "inh:" + bi, ti, function (from, to) { arrVerschieben(block.inhalt, from, to); nachStruktur(); });
+    const moreB = iconBtn("ic-dots-vertical", t("editor.more"), function () {
+      oeffnePop(moreB, [
+        { icon: "ic-duplicate", label: t("editor.duplicate"), onClick: function () { block.inhalt.splice(ti + 1, 0, klonTeil(teil)); nachStruktur(); } },
+        { icon: "ic-arrow-up", label: t("editor.moveUp"), disabled: ti === 0, onClick: function () { const a = block.inhalt, x = a[ti - 1]; a[ti - 1] = a[ti]; a[ti] = x; nachStruktur(); } },
+        { icon: "ic-arrow-down", label: t("editor.moveDown"), disabled: ti === block.inhalt.length - 1, onClick: function () { const a = block.inhalt, x = a[ti + 1]; a[ti + 1] = a[ti]; a[ti] = x; nachStruktur(); } },
+        "-",
+        { icon: "ic-trash", label: t("editor.remove"), onClick: function () { block.inhalt.splice(ti, 1); nachStruktur(); } }
+      ]);
+    }, { reveal: true });
+    h.appendChild(moreB);
+    bl.appendChild(h);
+
+    /* ---- body ---- */
+    const body = el("div", "ed-block-body");
     if (istListe) {
-      const optRow = el("label", "ed-check");
-      const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = (teil.spalten === 2);
-      chk.addEventListener("change", () => { teil.spalten = chk.checked ? 2 : 1; render(STATE.daten); });
-      optRow.appendChild(chk); optRow.appendChild(document.createTextNode(t("editor.twoColumns")));
-      box.appendChild(optRow);
       if (!teil.liste) teil.liste = [];
-      teil.liste.forEach((li, lii) => {
-        /* Ein Listenpunkt darf String ODER { text, unterpunkte[] } sein — Detail-
-           Render und Export (md/Confluence/HTML) verstehen beides. Unterpunkte =
-           eingerückte Punkte mit schwarzem Punkt, wie in der Übersicht. */
-        const istObj = (typeof li === "object" && li);
-        const row = el("div", "ed-row");
-        const inp = document.createElement("input"); inp.type = "text"; inp.className = "grow";
-        inp.value = istObj ? (li.text || "") : (li || "");
-        inp.addEventListener("input", () => {
-          const cur = teil.liste[lii];
-          if (typeof cur === "object" && cur) cur.text = inp.value; else teil.liste[lii] = inp.value;
-          render(STATE.daten);
-        });
-        row.appendChild(inp);
-        row.appendChild(knopf("✕", "del", () => { teil.liste.splice(lii, 1); nachStruktur(); }, t("editor.removeListItem")));
-        box.appendChild(row);
-
-        /* eingerückte Unterpunkte + „+ Sub-point" (gleiches Muster wie punkteEditor) */
-        const ubox = el("div", "ed-unter");
-        const unter = (istObj && li.unterpunkte) ? li.unterpunkte : [];
-        unter.forEach((u, ui) => {
-          const urow = el("div", "ed-row");
-          const uin = document.createElement("input"); uin.type = "text"; uin.className = "grow"; uin.value = u;
-          uin.addEventListener("input", () => { teil.liste[lii].unterpunkte[ui] = uin.value; render(STATE.daten); });
-          urow.appendChild(uin);
-          urow.appendChild(knopf("✕", "del", () => {
-            teil.liste[lii].unterpunkte.splice(ui, 1);
-            if (!teil.liste[lii].unterpunkte.length) delete teil.liste[lii].unterpunkte;
-            nachStruktur();
-          }, t("editor.removeSubpoint")));
-          ubox.appendChild(urow);
-        });
-        ubox.appendChild(knopf(t("editor.addSubpoint"), "add", () => {
-          /* Punkt bei Bedarf von String → Objekt anheben, damit er Unterpunkte tragen kann */
-          let item = teil.liste[lii];
-          if (typeof item !== "object" || !item) { item = { text: item || "" }; teil.liste[lii] = item; }
-          if (!item.unterpunkte) item.unterpunkte = [];
-          item.unterpunkte.push(""); nachStruktur();
-        }));
-        box.appendChild(ubox);
-      });
-      box.appendChild(knopf(t("editor.addListItem"), "add", () => { teil.liste.push(""); nachStruktur(); }));
+      listenKoerper(body, teil, block, bi, ti);
     } else {
       const ta = document.createElement("textarea");
-      ta.className = "grow"; ta.value = (typeof teil === "string" ? teil : ""); ta.rows = 3; ta.style.width = "100%";
-      ta.addEventListener("input", () => { block.inhalt[ti] = ta.value; render(STATE.daten); });
-      box.appendChild(ta);
+      ta.className = "grow ed-grow"; ta.value = (typeof teil === "string" ? teil : ""); ta.rows = 2;
+      ta.addEventListener("input", function () {
+        block.inhalt[ti] = ta.value; autoGrow(ta);
+        const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = blockKurz(ta.value);
+        render(STATE.daten);
+      });
+      body.appendChild(ta);
+      requestAnimationFrame(function () { autoGrow(ta); });
     }
-    wrap.appendChild(box);
+    bl.appendChild(body);
+    wrap.appendChild(bl);
   });
-  const addRow = el("div", "ed-row");
-  addRow.appendChild(knopf(t("editor.addParagraph"), "add", () => { block.inhalt.push(""); nachStruktur(); }));
-  addRow.appendChild(knopf(t("editor.addList"), "add", () => { block.inhalt.push({ liste: [""], spalten: 1 }); nachStruktur(); }));
-  wrap.appendChild(addRow);
+
+  /* ---- one "+ Add block" menu replaces the +Paragraph / +List buttons (§5.6) ---- */
+  const add = el("button", "ed-ghost"); add.type = "button";
+  add.appendChild(ic("ic-plus"));
+  add.appendChild(el("span", null, t("editor.addContentBlock")));
+  const chv = ic("ic-chevron-down"); chv.style.marginLeft = "auto"; add.appendChild(chv);
+  add.addEventListener("click", function (e) {
+    e.preventDefault();
+    oeffnePop(add, [
+      { icon: "ic-paragraph", label: t("editor.paragraph"), onClick: function () { block.inhalt.push(""); nachStruktur(); } },
+      { icon: "ic-list", label: t("editor.list"), onClick: function () { block.inhalt.push({ liste: [""], spalten: 1 }); nachStruktur(); } },
+      { icon: "ic-heading", label: t("editor.heading") + " (" + t("editor.blockSoon") + ")", disabled: true }
+    ]);
+  });
+  wrap.appendChild(add);
   return wrap;
+}
+
+/* List body: one single-line input per point, sub-points indented one level.
+   Editing is keyboard-first (§5.5); a single ghost "+ point" sits at the end. */
+function listenKoerper(body, teil, block, bi, ti) {
+  teil.liste.forEach(function (li, lii) {
+    body.appendChild(punktRow(teil, bi, ti, lii, null));
+    const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : [];
+    unter.forEach(function (u, ui) { body.appendChild(punktRow(teil, bi, ti, lii, ui)); });
+  });
+  const ghost = el("button", "ed-ghost"); ghost.type = "button";
+  ghost.appendChild(ic("ic-plus")); ghost.appendChild(el("span", null, t("editor.addPoint")));
+  ghost.appendChild(el("span", "kbd", "Enter"));
+  ghost.addEventListener("click", function (e) {
+    e.preventDefault();
+    teil.liste.push(""); nachFokus({ bi: bi, ti: ti, lii: teil.liste.length - 1, ui: "x", caret: 0 });
+  });
+  body.appendChild(ghost);
+}
+
+/* One editable point row. ui == null → top-level item, else a sub-point. */
+function punktRow(teil, bi, ti, lii, ui) {
+  const liste = teil.liste;
+  const istSub = (ui != null);
+  const row = el("div", "ed-row" + (istSub ? " ed-sub" : ""));
+  const inp = document.createElement("input");
+  inp.type = "text"; inp.className = "grow";
+  inp.value = istSub ? (liste[lii].unterpunkte[ui] || "") : itemText(liste[lii]);
+  inp.dataset.bi = bi; inp.dataset.ti = ti; inp.dataset.lii = lii; inp.dataset.ui = (ui == null ? "x" : ui);
+  inp.addEventListener("input", function () {
+    if (istSub) liste[lii].unterpunkte[ui] = inp.value;
+    else { const cur = liste[lii]; if (typeof cur === "object" && cur) cur.text = inp.value; else liste[lii] = inp.value; }
+    render(STATE.daten);
+  });
+  inp.addEventListener("keydown", function (e) { punktTaste(e, inp, teil, bi, ti, lii, ui); });
+  row.appendChild(inp);
+
+  const tools = el("div", "ed-tools");
+  const grip = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+  tools.appendChild(grip);
+  /* Drag among siblings only: top-level points share one group, a parent's
+     sub-points share their own group (sub-points never cross parents, §5.4). */
+  dragWire(grip, row, istSub ? ("sub:" + bi + ":" + ti + ":" + lii) : ("pts:" + bi + ":" + ti), istSub ? ui : lii,
+    function (from, to) { arrVerschieben(istSub ? liste[lii].unterpunkte : liste, from, to); nachStruktur(); });
+  if (!istSub && lii > 0) tools.appendChild(iconBtn("ic-indent", t("editor.makeSubpoint"), function () { punktEinruecken(teil, bi, ti, lii); }, { reveal: true }));
+  tools.appendChild(iconBtn("ic-trash", t("editor.remove"), function () { punktLoeschen(teil, bi, ti, lii, ui, true); }, { reveal: true }));
+  const moreB = iconBtn("ic-dots-vertical", t("editor.more"), function () {
+    oeffnePop(moreB, [
+      { icon: "ic-arrow-up", label: t("editor.moveUp"), onClick: function () { punktBewegen(teil, bi, ti, lii, ui, -1); } },
+      { icon: "ic-arrow-down", label: t("editor.moveDown"), onClick: function () { punktBewegen(teil, bi, ti, lii, ui, 1); } },
+      { icon: "ic-duplicate", label: t("editor.duplicate"), onClick: function () { punktDuplizieren(teil, bi, ti, lii, ui); } },
+      "-",
+      { icon: "ic-trash", label: t("editor.remove"), onClick: function () { punktLoeschen(teil, bi, ti, lii, ui, false); } }
+    ]);
+  }, { reveal: true });
+  tools.appendChild(moreB);
+  row.appendChild(tools);
+  return row;
+}
+
+/* ----- Point operations (keyboard model §5.5 + ⋯ menu). All mutate the array
+   and rebuild via nachFokus so focus lands on the intended cell. ----- */
+function punktBewegen(teil, bi, ti, lii, ui, dir) {
+  if (ui == null) {
+    const a = teil.liste, j = lii + dir; if (j < 0 || j >= a.length) return;
+    const x = a[lii]; a[lii] = a[j]; a[j] = x; nachFokus({ bi: bi, ti: ti, lii: j, ui: "x", caret: null });
+  } else {
+    const a = teil.liste[lii].unterpunkte, j = ui + dir; if (j < 0 || j >= a.length) return;
+    const x = a[ui]; a[ui] = a[j]; a[j] = x; nachFokus({ bi: bi, ti: ti, lii: lii, ui: j, caret: null });
+  }
+}
+function punktLoeschen(teil, bi, ti, lii, ui, fokusVorig) {
+  const prev = fokusVorig ? vorigeZeile(teil, lii, ui) : null;
+  if (ui == null) teil.liste.splice(lii, 1);
+  else { teil.liste[lii].unterpunkte.splice(ui, 1); if (!teil.liste[lii].unterpunkte.length) delete teil.liste[lii].unterpunkte; }
+  if (prev) nachFokus({ bi: bi, ti: ti, lii: prev.lii, ui: prev.ui, caret: null });
+  else nachStruktur();
+}
+function punktDuplizieren(teil, bi, ti, lii, ui) {
+  if (ui == null) { teil.liste.splice(lii + 1, 0, klonTeil(teil.liste[lii])); nachFokus({ bi: bi, ti: ti, lii: lii + 1, ui: "x", caret: null }); }
+  else { const a = teil.liste[lii].unterpunkte; a.splice(ui + 1, 0, a[ui]); nachFokus({ bi: bi, ti: ti, lii: lii, ui: ui + 1, caret: null }); }
+}
+/* Indent a top-level item to become sub-point(s) of the previous item (max 2 levels). */
+function punktEinruecken(teil, bi, ti, lii) {
+  if (lii <= 0) return;
+  const liste = teil.liste, cur = liste[lii], text = itemText(cur);
+  const ownSubs = (typeof cur === "object" && cur && cur.unterpunkte) ? cur.unterpunkte.slice() : [];
+  let prev = liste[lii - 1];
+  if (typeof prev !== "object" || !prev) { prev = { text: prev || "" }; liste[lii - 1] = prev; }
+  if (!prev.unterpunkte) prev.unterpunkte = [];
+  const at = prev.unterpunkte.length;
+  prev.unterpunkte.push(text);
+  ownSubs.forEach(function (u) { prev.unterpunkte.push(u); });
+  liste.splice(lii, 1);
+  nachFokus({ bi: bi, ti: ti, lii: lii - 1, ui: at, caret: null });
+}
+/* Outdent a sub-point back to a top-level item right after its parent. */
+function punktAusruecken(teil, bi, ti, lii, ui) {
+  const parent = teil.liste[lii];
+  if (typeof parent !== "object" || !parent || !parent.unterpunkte) return;
+  const text = parent.unterpunkte[ui];
+  parent.unterpunkte.splice(ui, 1);
+  if (!parent.unterpunkte.length) delete parent.unterpunkte;
+  teil.liste.splice(lii + 1, 0, text);
+  nachFokus({ bi: bi, ti: ti, lii: lii + 1, ui: "x", caret: null });
+}
+function punktTaste(e, inp, teil, bi, ti, lii, ui) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (ui == null) { teil.liste.splice(lii + 1, 0, ""); nachFokus({ bi: bi, ti: ti, lii: lii + 1, ui: "x", caret: 0 }); }
+    else { teil.liste[lii].unterpunkte.splice(ui + 1, 0, ""); nachFokus({ bi: bi, ti: ti, lii: lii, ui: ui + 1, caret: 0 }); }
+  } else if (e.key === "Tab" && !e.shiftKey) {
+    if (ui == null && lii > 0) { e.preventDefault(); punktEinruecken(teil, bi, ti, lii); }
+  } else if (e.key === "Tab" && e.shiftKey) {
+    if (ui != null) { e.preventDefault(); punktAusruecken(teil, bi, ti, lii, ui); }
+  } else if (e.key === "Backspace" && inp.value === "") {
+    if (ui == null) {
+      const cur = teil.liste[lii];
+      if (typeof cur === "object" && cur && cur.unterpunkte && cur.unterpunkte.length) return;  /* keep a parent that still has sub-points */
+    }
+    e.preventDefault();
+    punktLoeschen(teil, bi, ti, lii, ui, true);
+  } else if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+    e.preventDefault();
+    punktBewegen(teil, bi, ti, lii, ui, e.key === "ArrowUp" ? -1 : 1);
+  }
 }
 
 /* ----- RACI-Popover (Vorschau) ----- */
@@ -3482,8 +3912,8 @@ function zeigeCfBatchDialog(kandidaten) {
 /* Seitengröße für den Druck setzen: Übersicht = A3, Detail = A4 (je quer). */
 function setzeDruckGroesse() {
   const st = document.getElementById("druckGroesse");
-  /* Detailseite ist jetzt 351mm breit (+25 %) → passt nicht mehr auf A4 quer
-     (297mm). Beide Ansichten drucken auf A3 quer (deckt sich mit dem HTML-Export). */
+  /* The detail page is now 351mm wide (+25%) → no longer fits A4 landscape
+     (297mm). Both views print on A3 landscape (matches the HTML export). */
   if (st) st.textContent = "@page { size: A3 landscape; margin: 8mm; }";
 }
 function aktualisiereAnsichtKnoepfe() {

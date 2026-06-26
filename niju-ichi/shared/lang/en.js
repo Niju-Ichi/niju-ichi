@@ -214,6 +214,13 @@ NIJU.I18N.register("en", {
   "editor.addListItem": "+ List item",
   "editor.addParagraph": "+ Paragraph",
   "editor.addList": "+ List",
+  "editor.more": "More actions",
+  "editor.duplicate": "Duplicate",
+  "editor.dragMove": "Move (drag)",
+  "editor.makeSubpoint": "Indent to sub-point",
+  "editor.addContentBlock": "Add block",
+  "editor.blockSoon": "soon",
+  "editor.collapse": "Collapse / expand",
 
   /* content defaults inserted into new data (user edits afterwards) */
   "content.newStep": "New step",

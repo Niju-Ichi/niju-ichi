@@ -130,9 +130,9 @@ ul.liste ul li::before { content: ""; position: absolute; left: 0; top: .45em; w
 .leer-hinweis { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 15px; white-space: pre-line; }
 
 /* ----- Detailseite (A4 quer) ----- */
-/* +25 % Blattbreite (281mm → 351mm), deckungsgleich mit dem Process Builder:
-   die Mehrbreite geht komplett in die rechte (Text-)Spalte; linke Spalte
-   (RACI-Matrix + Legende) + vertikale Trennlinie + rechter Rand bleiben gleich. */
+/* +25% sheet width (281mm → 351mm), identical to the Process Builder:
+   the extra width goes entirely into the right (text) column; the left column
+   (RACI matrix + legend), the vertical divider and the right margin stay put. */
 .blatt.detail { --detail-links: 109.54mm; width: 351mm; min-height: 188mm; padding: 9mm 13mm 7mm; }
 .blatt.detail .titel { padding-bottom: 8px; }
 .blatt.detail .titel h1 { font-size: 28px; font-weight: 800; letter-spacing: -.015em; line-height: 1.05; color: var(--ink); }
