@@ -571,9 +571,10 @@
   textarea.ed-grow { overflow: hidden; resize: none; }
 
   /* Listenpunkt-Zeilen im Block-Body + eingerückte Unterpunkte (max. 2 Ebenen) */
-  .ed-block-body .ed-row { margin-bottom: 4px; align-items: center; }
-  .ed-block-body .ed-sub { margin-left: 22px; }
-  .ed-block-body .ed-ghost { margin-top: 2px; }
+  .ed-row { align-items: center; }
+  .ed-sub { margin-left: 22px; }
+  .ed-block-body .ed-row, .ed-item .ed-row { margin-bottom: 4px; }
+  .ed-block-body .ed-ghost, .ed-item .ed-ghost { margin-top: 2px; }
 
   /* RACI im Blatt anklickbar machen */
   .blatt.bearbeiten .raci-zelle.editierbar {
@@ -1127,15 +1128,6 @@ function normalisiereRaci(daten) {
     });
   });
   return daten;
-}
-/* Ersten eckigen Listen-Block liefern (Glue für den noch unveränderten Editor;
-   der volle Block-Editor mit Drag&Drop kommt in Phase C). */
-function ersterListenBlock(s) {
-  if (!Array.isArray(s.bloecke)) s.bloecke = [];
-  let b = s.bloecke.find(x => x && x.typ === "liste");
-  if (!b) { b = { typ: "liste", stil: "eckig", ueberschrift: "", punkte: [] }; s.bloecke.unshift(b); }
-  if (!Array.isArray(b.punkte)) b.punkte = [];
-  return b;
 }
 
 /* ============================================================
@@ -1730,15 +1722,6 @@ function knopf(text, klasse, onClick, titel) {
   b.addEventListener("click", (e) => { e.preventDefault(); onClick(); });
   return b;
 }
-function pfeilWerkzeuge(arr, i, struktur) {
-  const w = el("div"); w.style.display = "flex"; w.style.gap = "4px";
-  const up = knopf("↑", "", () => { if (i > 0) { [arr[i-1], arr[i]] = [arr[i], arr[i-1]]; struktur(); } }, t("editor.moveUpLeft"));
-  const dn = knopf("↓", "", () => { if (i < arr.length-1) { [arr[i+1], arr[i]] = [arr[i], arr[i+1]]; struktur(); } }, t("editor.moveDownRight"));
-  if (i === 0) up.disabled = true;
-  if (i === arr.length-1) dn.disabled = true;
-  w.appendChild(up); w.appendChild(dn);
-  return w;
-}
 
 /* ============================================================
    Editor redesign — shared building blocks (detail-page editor).
@@ -1856,22 +1839,23 @@ function segmentToggle(teil) {
 }
 
 /* ----- Keyboard model focus restoration across editor rebuilds (§5.5).
-   List inputs carry data-bi/ti/lii/ui; after a structural change we re-focus the
-   intended cell. ui = "x" for a top-level item, a number for a sub-point. ----- */
+   List inputs carry data-listid/lii/ui; after a structural change we re-focus the
+   intended cell. `listid` identifies the point-list (detail: "d:<bi>:<ti>",
+   overview: "o:<si>"); ui = "x" for a top-level item, a number for a sub-point. ----- */
 let _edFokus = null;
 function nachFokus(tok) { _edFokus = tok; nachStruktur(); stelleFokusHer(); }
 function stelleFokusHer() {
   if (!_edFokus) return;
   const f = _edFokus; _edFokus = null;
   const ui = (f.ui == null) ? "x" : f.ui;
-  const inp = document.querySelector('#editor input[data-bi="' + f.bi + '"][data-ti="' + f.ti + '"][data-lii="' + f.lii + '"][data-ui="' + ui + '"]');
+  const inp = document.querySelector('#editor input[data-listid="' + f.listid + '"][data-lii="' + f.lii + '"][data-ui="' + ui + '"]');
   if (inp) { inp.focus(); const p = (f.caret == null) ? inp.value.length : f.caret; try { inp.setSelectionRange(p, p); } catch (e) {} }
 }
 /* The row visually above (lii,ui) — for Backspace focus handoff. */
-function vorigeZeile(teil, lii, ui) {
+function vorigeZeile(liste, lii, ui) {
   if (ui != null) return (ui > 0) ? { lii: lii, ui: ui - 1 } : { lii: lii, ui: "x" };
   if (lii === 0) return null;
-  const prev = teil.liste[lii - 1];
+  const prev = liste[lii - 1];
   const subs = (typeof prev === "object" && prev && prev.unterpunkte) ? prev.unterpunkte : null;
   return subs && subs.length ? { lii: lii - 1, ui: subs.length - 1 } : { lii: lii - 1, ui: "x" };
 }
@@ -1995,66 +1979,117 @@ function abschnittFusszeile() {
 }
 
 /* Editor für eine einfache String-Liste (Input-/Output-Punkte) */
-function stringListe(arr, addLabel) {
+function stringListe(arr, addLabel, gruppe) {
   const wrap = el("div");
-  arr.forEach((s, i) => {
+  arr.forEach(function (s, i) {
     const row = el("div", "ed-row");
     const inp = document.createElement("input");
     inp.type = "text"; inp.className = "grow"; inp.value = s || "";
-    inp.addEventListener("input", () => { arr[i] = inp.value; render(STATE.daten); });
+    inp.addEventListener("input", function () { arr[i] = inp.value; render(STATE.daten); });
     row.appendChild(inp);
-    row.appendChild(knopf("✕", "del", () => { arr.splice(i, 1); nachStruktur(); }, t("editor.remove")));
+    const tools = el("div", "ed-tools");
+    const grip = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+    tools.appendChild(grip);
+    /* unique group per list ("str:input"/"str:output") so items never cross lists */
+    dragWire(grip, row, "str:" + (gruppe || "x"), i, function (from, to) { arrVerschieben(arr, from, to); nachStruktur(); });
+    tools.appendChild(iconBtn("ic-trash", t("editor.remove"), function () { arr.splice(i, 1); nachStruktur(); }, { reveal: true }));
+    row.appendChild(tools);
     wrap.appendChild(row);
   });
-  wrap.appendChild(knopf("+ " + addLabel, "add", () => { arr.push(""); nachStruktur(); }));
+  const ghost = el("button", "ed-ghost"); ghost.type = "button";
+  ghost.appendChild(ic("ic-plus")); ghost.appendChild(el("span", null, addLabel));
+  ghost.addEventListener("click", function (e) { e.preventDefault(); arr.push(""); nachStruktur(); });
+  wrap.appendChild(ghost);
   return wrap;
 }
 
 /* Editor für die Aufzählungspunkte (inkl. Unterpunkten) EINES Listen-Blocks.
    Phase-B-Glue: arbeitet auf block.punkte (erster Listen-Block des Schritts).
    Der volle Block-Editor (mehrere Blöcke, Drag&Drop) folgt in Phase C. */
-function punkteEditor(block) {
-  const wrap = el("div");
-  (block.punkte || []).forEach((p, pi) => {
-    const pbox = el("div", "ed-punkt");
-    const row = el("div", "ed-row");
-    const ta = document.createElement("textarea");
-    ta.className = "grow"; ta.value = p.text || ""; ta.rows = 2;
-    ta.addEventListener("input", () => { p.text = ta.value; render(STATE.daten); });
-    row.appendChild(ta);
-    const w = el("div"); w.style.display = "flex"; w.style.flexDirection = "column"; w.style.gap = "4px";
-    const up = knopf("↑", "", () => { if (pi > 0) { [block.punkte[pi-1], block.punkte[pi]] = [block.punkte[pi], block.punkte[pi-1]]; nachStruktur(); } }, t("editor.moveUp"));
-    const dn = knopf("↓", "", () => { if (pi < block.punkte.length-1) { [block.punkte[pi+1], block.punkte[pi]] = [block.punkte[pi], block.punkte[pi+1]]; nachStruktur(); } }, t("editor.moveDown"));
-    if (pi === 0) up.disabled = true;
-    if (pi === block.punkte.length-1) dn.disabled = true;
-    w.appendChild(up); w.appendChild(dn);
-    w.appendChild(knopf("✕", "del", () => { block.punkte.splice(pi, 1); nachStruktur(); }, t("editor.removePoint")));
-    row.appendChild(w);
-    pbox.appendChild(row);
+/* Collapsed one-line summary of an overview content block (list | paragraph). */
+function bloeckeKurz(block) {
+  if (block.typ === "absatz") {
+    const s = String(block.text || "").trim().replace(/\s+/g, " ");
+    return s ? (s.length > 60 ? s.slice(0, 60) + "…" : s) : t("editor.paragraph");
+  }
+  const head = String(block.ueberschrift || "").trim();
+  if (head) return head;
+  const n = (block.punkte || []).length;
+  const f = n ? String(itemText(block.punkte[0])).trim().replace(/\s+/g, " ") : "";
+  return f ? (f + (n > 1 ? "  ·  +" + (n - 1) : "")) : t("editor.list");
+}
 
-    const ubox = el("div", "ed-unter");
-    const unter = p.unterpunkte || [];
-    unter.forEach((u, ui) => {
-      const urow = el("div", "ed-row");
-      const uin = document.createElement("input");
-      uin.type = "text"; uin.className = "grow"; uin.value = u;
-      uin.addEventListener("input", () => { p.unterpunkte[ui] = uin.value; render(STATE.daten); });
-      urow.appendChild(uin);
-      urow.appendChild(knopf("✕", "del", () => {
-        p.unterpunkte.splice(ui, 1);
-        if (!p.unterpunkte.length) delete p.unterpunkte;
-        nachStruktur();
-      }, t("editor.removeSubpoint")));
-      ubox.appendChild(urow);
+/* Overview: full block editor for a step's content (schritt.bloecke[] — list
+   blocks with a heading + points, or paragraph blocks). Mirrors the detail page's
+   inhaltEditor: collapsible block headers, hover-reveal tools, drag, the shared
+   keyboard list model, and one "+ Add block" menu (§5.1/§5.6). */
+function bloeckeEditor(schritt, si) {
+  const wrap = el("div");
+  if (!Array.isArray(schritt.bloecke)) schritt.bloecke = schrittBloecke(schritt);
+  schritt.bloecke.forEach(function (block, ti) {
+    const istListe = (block.typ !== "absatz");
+    const bl = el("div", "ed-block"); if (istZu(schritt, ti)) bl.classList.add("zu");
+
+    const h = el("div", "ed-block-h");
+    const chev = iconBtn(istZu(schritt, ti) ? "ic-chevron-right" : "ic-chevron-down", t("editor.collapse"), null, { klasse: "ed-chev" });
+    chev.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      const zu = !bl.classList.contains("zu");
+      bl.classList.toggle("zu", zu); setZu(schritt, ti, zu); setIc(chev, zu ? "ic-chevron-right" : "ic-chevron-down");
     });
-    ubox.appendChild(knopf(t("editor.addSubpoint"), "add", () => {
-      if (!p.unterpunkte) p.unterpunkte = [];
-      p.unterpunkte.push(""); nachStruktur();
-    }));
-    pbox.appendChild(ubox);
-    wrap.appendChild(pbox);
+    h.appendChild(chev);
+    h.appendChild(el("span", "ed-typebadge", istListe ? t("editor.list") : t("editor.paragraph")));
+    h.appendChild(el("span", "ed-block-sum", bloeckeKurz(block)));
+    const gripB = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+    h.appendChild(gripB);
+    dragWire(gripB, bl, "bl:" + si, ti, function (from, to) { arrVerschieben(schritt.bloecke, from, to); nachStruktur(); });
+    const moreB = iconBtn("ic-dots-vertical", t("editor.more"), function () {
+      oeffnePop(moreB, [
+        { icon: "ic-duplicate", label: t("editor.duplicate"), onClick: function () { schritt.bloecke.splice(ti + 1, 0, JSON.parse(JSON.stringify(block))); nachStruktur(); } },
+        { icon: "ic-arrow-up", label: t("editor.moveUp"), disabled: ti === 0, onClick: function () { arrVerschieben(schritt.bloecke, ti, ti - 1); nachStruktur(); } },
+        { icon: "ic-arrow-down", label: t("editor.moveDown"), disabled: ti === schritt.bloecke.length - 1, onClick: function () { arrVerschieben(schritt.bloecke, ti, ti + 2); nachStruktur(); } },
+        "-",
+        { icon: "ic-trash", label: t("editor.remove"), onClick: function () { schritt.bloecke.splice(ti, 1); nachStruktur(); } }
+      ]);
+    }, { reveal: true });
+    h.appendChild(moreB);
+    bl.appendChild(h);
+
+    const body = el("div", "ed-block-body");
+    if (istListe) {
+      if (!Array.isArray(block.punkte)) block.punkte = [];
+      body.appendChild(feld(t("editor.listHeading"), block.ueberschrift, function (v) {
+        block.ueberschrift = v; const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block); render(STATE.daten);
+      }));
+      listenKoerper(body, block.punkte, "o:" + si + ":" + ti);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.className = "grow ed-grow"; ta.value = block.text || ""; ta.rows = 2;
+      ta.addEventListener("input", function () {
+        block.text = ta.value; autoGrow(ta);
+        const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block);
+        render(STATE.daten);
+      });
+      body.appendChild(ta);
+      requestAnimationFrame(function () { autoGrow(ta); });
+    }
+    bl.appendChild(body);
+    wrap.appendChild(bl);
   });
-  wrap.appendChild(knopf(t("editor.addPoint"), "add", () => { block.punkte.push({ text: "" }); nachStruktur(); }));
+
+  const add = el("button", "ed-ghost"); add.type = "button";
+  add.appendChild(ic("ic-plus"));
+  add.appendChild(el("span", null, t("editor.addContentBlock")));
+  const chv = ic("ic-chevron-down"); chv.style.marginLeft = "auto"; add.appendChild(chv);
+  add.addEventListener("click", function (e) {
+    e.preventDefault();
+    oeffnePop(add, [
+      { icon: "ic-paragraph", label: t("editor.paragraph"), onClick: function () { schritt.bloecke.push({ typ: "absatz", text: "" }); nachStruktur(); } },
+      { icon: "ic-list", label: t("editor.list"), onClick: function () { schritt.bloecke.push({ typ: "liste", stil: "eckig", ueberschrift: "", punkte: [""] }); nachStruktur(); } },
+      { icon: "ic-heading", label: t("editor.heading") + " (" + t("editor.blockSoon") + ")", disabled: true }
+    ]);
+  });
+  wrap.appendChild(add);
   return wrap;
 }
 
@@ -2111,7 +2146,7 @@ function baueEditorUebersicht() {
     body.appendChild(feld(t("editor.label"), d.input.label, v => { d.input.label = v; render(d); }));
     body.appendChild(el("div", "ed-hint", t("editor.inputHint")));
     if (!d.input.punkte) d.input.punkte = [];
-    body.appendChild(stringListe(d.input.punkte, t("editor.inputPoint")));
+    body.appendChild(stringListe(d.input.punkte, t("editor.inputPoint"), "input"));
   }));
 
   /* Output */
@@ -2120,7 +2155,7 @@ function baueEditorUebersicht() {
     body.appendChild(feld(t("editor.label"), d.output.label, v => { d.output.label = v; render(d); }));
     body.appendChild(feld(t("editor.responsible"), d.output.verantwortlich, v => { d.output.verantwortlich = v; render(d); }));
     if (!d.output.punkte) d.output.punkte = [];
-    body.appendChild(stringListe(d.output.punkte, t("editor.outputPoint")));
+    body.appendChild(stringListe(d.output.punkte, t("editor.outputPoint"), "output"));
   }));
 
   /* Prozessschritte (Spalten) */
@@ -2129,26 +2164,32 @@ function baueEditorUebersicht() {
       const it = el("div", "ed-item");
       const kopf = el("div", "ed-item-kopf");
       kopf.appendChild(el("span", "titel", t("editor.stepSection", { n: si + 1 })));
-      const werkz = el("div", "werkz");
-      const pf = pfeilWerkzeuge(d.schritte, si, nachStruktur);
-      Array.from(pf.children).forEach(c => werkz.appendChild(c));
-      werkz.appendChild(knopf("✕", "del", () => {
-        if (confirm(t("msg.confirmDeleteStep", { titel: s.titel || "" }))) {
-          const id = s.id;
-          d.schritte.splice(si, 1);
-          if (d.raci) delete d.raci[id];
-          nachStruktur();
-        }
-      }, t("editor.deleteStep")));
+      const sp = el("div"); sp.style.flex = "1"; kopf.appendChild(sp);
+      /* Hover-reveal grip + ⋯ menu (mirror of the detail blocks, §5.2/§5.4). */
+      const werkz = el("div", "ed-tools");
+      const gripB = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+      werkz.appendChild(gripB);
+      dragWire(gripB, it, "schritte", si, function (from, to) { arrVerschieben(d.schritte, from, to); nachStruktur(); });
+      const moreB = iconBtn("ic-dots-vertical", t("editor.more"), function () {
+        oeffnePop(moreB, [
+          { icon: "ic-arrow-up", label: t("editor.moveUp"), disabled: si === 0, onClick: function () { arrVerschieben(d.schritte, si, si - 1); nachStruktur(); } },
+          { icon: "ic-arrow-down", label: t("editor.moveDown"), disabled: si === d.schritte.length - 1, onClick: function () { arrVerschieben(d.schritte, si, si + 2); nachStruktur(); } },
+          "-",
+          { icon: "ic-trash", label: t("editor.deleteStep"), onClick: function () {
+            if (confirm(t("msg.confirmDeleteStep", { titel: s.titel || "" }))) {
+              const id = s.id; d.schritte.splice(si, 1); if (d.raci) delete d.raci[id]; nachStruktur();
+            }
+          } }
+        ]);
+      }, { reveal: true });
+      werkz.appendChild(moreB);
       kopf.appendChild(werkz);
       it.appendChild(kopf);
       it.appendChild(feld(t("editor.colId"), s.kopfId || "", v => { s.kopfId = v; render(d); }, { platzhalter: t("editor.colIdPh") }));
       it.appendChild(feld(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
       it.appendChild(feld(t("editor.subtitle"), s.untertitel, v => { s.untertitel = v; render(d); }));
-      const b0 = ersterListenBlock(s);   /* Phase-B-Glue: Editor bearbeitet den ersten Listen-Block */
-      it.appendChild(feld(t("editor.listHeading"), b0.ueberschrift, v => { b0.ueberschrift = v; render(d); }));
-      it.appendChild(el("div", "ed-hint", t("editor.bulletPoints")));
-      it.appendChild(punkteEditor(b0));
+      it.appendChild(el("div", "ed-hint", t("editor.contentHint")));
+      it.appendChild(bloeckeEditor(s, si));
       body.appendChild(it);
     });
     body.appendChild(knopf(t("editor.addStep"), "add", () => {
@@ -2181,14 +2222,17 @@ function baueEditorUebersicht() {
         render(d);
       });
       row.appendChild(inp);
-      const pf = pfeilWerkzeuge(d.rollen, ri, nachStruktur);
-      Array.from(pf.children).forEach(c => row.appendChild(c));
-      row.appendChild(knopf("✕", "del", () => {
+      const tools = el("div", "ed-tools");
+      const gripR = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
+      tools.appendChild(gripR);
+      dragWire(gripR, row, "rollen", ri, function (from, to) { arrVerschieben(d.rollen, from, to); nachStruktur(); });
+      tools.appendChild(iconBtn("ic-trash", t("editor.removeRole"), function () {
         const name = d.rollen[ri];
         d.rollen.splice(ri, 1);
-        if (d.raci) Object.keys(d.raci).forEach(sid => { if (d.raci[sid]) delete d.raci[sid][name]; });
+        if (d.raci) Object.keys(d.raci).forEach(function (sid) { if (d.raci[sid]) delete d.raci[sid][name]; });
         nachStruktur();
-      }, t("editor.removeRole")));
+      }, { reveal: true }));
+      row.appendChild(tools);
       body.appendChild(row);
     });
     body.appendChild(knopf(t("editor.addRole"), "add", () => { d.rollen.push(t("content.newRole")); nachStruktur(); }));
@@ -2348,7 +2392,7 @@ function inhaltEditor(block, bi) {
     const body = el("div", "ed-block-body");
     if (istListe) {
       if (!teil.liste) teil.liste = [];
-      listenKoerper(body, teil, block, bi, ti);
+      listenKoerper(body, teil.liste, "d:" + bi + ":" + ti);
     } else {
       const ta = document.createElement("textarea");
       ta.className = "grow ed-grow"; ta.value = (typeof teil === "string" ? teil : ""); ta.rows = 2;
@@ -2383,37 +2427,40 @@ function inhaltEditor(block, bi) {
 
 /* List body: one single-line input per point, sub-points indented one level.
    Editing is keyboard-first (§5.5); a single ghost "+ point" sits at the end. */
-function listenKoerper(body, teil, block, bi, ti) {
-  teil.liste.forEach(function (li, lii) {
-    body.appendChild(punktRow(teil, bi, ti, lii, null));
+/* Shared point-list body — used by the detail page (a list block's items) AND
+   the overview (a step's bullet points). `liste` = the points array; `listid`
+   uniquely identifies the list ("d:<bi>:<ti>" | "o:<si>"). Keyboard-first
+   editing (§5.5); a single ghost "+ point" sits at the end. */
+function listenKoerper(body, liste, listid) {
+  liste.forEach(function (li, lii) {
+    body.appendChild(punktRow(liste, listid, lii, null));
     const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : [];
-    unter.forEach(function (u, ui) { body.appendChild(punktRow(teil, bi, ti, lii, ui)); });
+    unter.forEach(function (u, ui) { body.appendChild(punktRow(liste, listid, lii, ui)); });
   });
   const ghost = el("button", "ed-ghost"); ghost.type = "button";
   ghost.appendChild(ic("ic-plus")); ghost.appendChild(el("span", null, t("editor.addPoint")));
   ghost.appendChild(el("span", "kbd", "Enter"));
   ghost.addEventListener("click", function (e) {
     e.preventDefault();
-    teil.liste.push(""); nachFokus({ bi: bi, ti: ti, lii: teil.liste.length - 1, ui: "x", caret: 0 });
+    liste.push(""); nachFokus({ listid: listid, lii: liste.length - 1, ui: "x", caret: 0 });
   });
   body.appendChild(ghost);
 }
 
 /* One editable point row. ui == null → top-level item, else a sub-point. */
-function punktRow(teil, bi, ti, lii, ui) {
-  const liste = teil.liste;
+function punktRow(liste, listid, lii, ui) {
   const istSub = (ui != null);
   const row = el("div", "ed-row" + (istSub ? " ed-sub" : ""));
   const inp = document.createElement("input");
   inp.type = "text"; inp.className = "grow";
   inp.value = istSub ? (liste[lii].unterpunkte[ui] || "") : itemText(liste[lii]);
-  inp.dataset.bi = bi; inp.dataset.ti = ti; inp.dataset.lii = lii; inp.dataset.ui = (ui == null ? "x" : ui);
+  inp.dataset.listid = listid; inp.dataset.lii = lii; inp.dataset.ui = (ui == null ? "x" : ui);
   inp.addEventListener("input", function () {
     if (istSub) liste[lii].unterpunkte[ui] = inp.value;
     else { const cur = liste[lii]; if (typeof cur === "object" && cur) cur.text = inp.value; else liste[lii] = inp.value; }
     render(STATE.daten);
   });
-  inp.addEventListener("keydown", function (e) { punktTaste(e, inp, teil, bi, ti, lii, ui); });
+  inp.addEventListener("keydown", function (e) { punktTaste(e, inp, liste, listid, lii, ui); });
   row.appendChild(inp);
 
   const tools = el("div", "ed-tools");
@@ -2421,17 +2468,17 @@ function punktRow(teil, bi, ti, lii, ui) {
   tools.appendChild(grip);
   /* Drag among siblings only: top-level points share one group, a parent's
      sub-points share their own group (sub-points never cross parents, §5.4). */
-  dragWire(grip, row, istSub ? ("sub:" + bi + ":" + ti + ":" + lii) : ("pts:" + bi + ":" + ti), istSub ? ui : lii,
+  dragWire(grip, row, istSub ? ("sub:" + listid + ":" + lii) : ("pts:" + listid), istSub ? ui : lii,
     function (from, to) { arrVerschieben(istSub ? liste[lii].unterpunkte : liste, from, to); nachStruktur(); });
-  if (!istSub && lii > 0) tools.appendChild(iconBtn("ic-indent", t("editor.makeSubpoint"), function () { punktEinruecken(teil, bi, ti, lii); }, { reveal: true }));
-  tools.appendChild(iconBtn("ic-trash", t("editor.remove"), function () { punktLoeschen(teil, bi, ti, lii, ui, true); }, { reveal: true }));
+  if (!istSub && lii > 0) tools.appendChild(iconBtn("ic-indent", t("editor.makeSubpoint"), function () { punktEinruecken(liste, listid, lii); }, { reveal: true }));
+  tools.appendChild(iconBtn("ic-trash", t("editor.remove"), function () { punktLoeschen(liste, listid, lii, ui, true); }, { reveal: true }));
   const moreB = iconBtn("ic-dots-vertical", t("editor.more"), function () {
     oeffnePop(moreB, [
-      { icon: "ic-arrow-up", label: t("editor.moveUp"), onClick: function () { punktBewegen(teil, bi, ti, lii, ui, -1); } },
-      { icon: "ic-arrow-down", label: t("editor.moveDown"), onClick: function () { punktBewegen(teil, bi, ti, lii, ui, 1); } },
-      { icon: "ic-duplicate", label: t("editor.duplicate"), onClick: function () { punktDuplizieren(teil, bi, ti, lii, ui); } },
+      { icon: "ic-arrow-up", label: t("editor.moveUp"), onClick: function () { punktBewegen(liste, listid, lii, ui, -1); } },
+      { icon: "ic-arrow-down", label: t("editor.moveDown"), onClick: function () { punktBewegen(liste, listid, lii, ui, 1); } },
+      { icon: "ic-duplicate", label: t("editor.duplicate"), onClick: function () { punktDuplizieren(liste, listid, lii, ui); } },
       "-",
-      { icon: "ic-trash", label: t("editor.remove"), onClick: function () { punktLoeschen(teil, bi, ti, lii, ui, false); } }
+      { icon: "ic-trash", label: t("editor.remove"), onClick: function () { punktLoeschen(liste, listid, lii, ui, false); } }
     ]);
   }, { reveal: true });
   tools.appendChild(moreB);
@@ -2439,32 +2486,32 @@ function punktRow(teil, bi, ti, lii, ui) {
   return row;
 }
 
-/* ----- Point operations (keyboard model §5.5 + ⋯ menu). All mutate the array
+/* ----- Point operations (keyboard model §5.5 + ⋯ menu). All mutate `liste`
    and rebuild via nachFokus so focus lands on the intended cell. ----- */
-function punktBewegen(teil, bi, ti, lii, ui, dir) {
+function punktBewegen(liste, listid, lii, ui, dir) {
   if (ui == null) {
-    const a = teil.liste, j = lii + dir; if (j < 0 || j >= a.length) return;
-    const x = a[lii]; a[lii] = a[j]; a[j] = x; nachFokus({ bi: bi, ti: ti, lii: j, ui: "x", caret: null });
+    const j = lii + dir; if (j < 0 || j >= liste.length) return;
+    const x = liste[lii]; liste[lii] = liste[j]; liste[j] = x; nachFokus({ listid: listid, lii: j, ui: "x", caret: null });
   } else {
-    const a = teil.liste[lii].unterpunkte, j = ui + dir; if (j < 0 || j >= a.length) return;
-    const x = a[ui]; a[ui] = a[j]; a[j] = x; nachFokus({ bi: bi, ti: ti, lii: lii, ui: j, caret: null });
+    const a = liste[lii].unterpunkte, j = ui + dir; if (j < 0 || j >= a.length) return;
+    const x = a[ui]; a[ui] = a[j]; a[j] = x; nachFokus({ listid: listid, lii: lii, ui: j, caret: null });
   }
 }
-function punktLoeschen(teil, bi, ti, lii, ui, fokusVorig) {
-  const prev = fokusVorig ? vorigeZeile(teil, lii, ui) : null;
-  if (ui == null) teil.liste.splice(lii, 1);
-  else { teil.liste[lii].unterpunkte.splice(ui, 1); if (!teil.liste[lii].unterpunkte.length) delete teil.liste[lii].unterpunkte; }
-  if (prev) nachFokus({ bi: bi, ti: ti, lii: prev.lii, ui: prev.ui, caret: null });
+function punktLoeschen(liste, listid, lii, ui, fokusVorig) {
+  const prev = fokusVorig ? vorigeZeile(liste, lii, ui) : null;
+  if (ui == null) liste.splice(lii, 1);
+  else { liste[lii].unterpunkte.splice(ui, 1); if (!liste[lii].unterpunkte.length) delete liste[lii].unterpunkte; }
+  if (prev) nachFokus({ listid: listid, lii: prev.lii, ui: prev.ui, caret: null });
   else nachStruktur();
 }
-function punktDuplizieren(teil, bi, ti, lii, ui) {
-  if (ui == null) { teil.liste.splice(lii + 1, 0, klonTeil(teil.liste[lii])); nachFokus({ bi: bi, ti: ti, lii: lii + 1, ui: "x", caret: null }); }
-  else { const a = teil.liste[lii].unterpunkte; a.splice(ui + 1, 0, a[ui]); nachFokus({ bi: bi, ti: ti, lii: lii, ui: ui + 1, caret: null }); }
+function punktDuplizieren(liste, listid, lii, ui) {
+  if (ui == null) { liste.splice(lii + 1, 0, klonTeil(liste[lii])); nachFokus({ listid: listid, lii: lii + 1, ui: "x", caret: null }); }
+  else { const a = liste[lii].unterpunkte; a.splice(ui + 1, 0, a[ui]); nachFokus({ listid: listid, lii: lii, ui: ui + 1, caret: null }); }
 }
 /* Indent a top-level item to become sub-point(s) of the previous item (max 2 levels). */
-function punktEinruecken(teil, bi, ti, lii) {
+function punktEinruecken(liste, listid, lii) {
   if (lii <= 0) return;
-  const liste = teil.liste, cur = liste[lii], text = itemText(cur);
+  const cur = liste[lii], text = itemText(cur);
   const ownSubs = (typeof cur === "object" && cur && cur.unterpunkte) ? cur.unterpunkte.slice() : [];
   let prev = liste[lii - 1];
   if (typeof prev !== "object" || !prev) { prev = { text: prev || "" }; liste[lii - 1] = prev; }
@@ -2473,37 +2520,37 @@ function punktEinruecken(teil, bi, ti, lii) {
   prev.unterpunkte.push(text);
   ownSubs.forEach(function (u) { prev.unterpunkte.push(u); });
   liste.splice(lii, 1);
-  nachFokus({ bi: bi, ti: ti, lii: lii - 1, ui: at, caret: null });
+  nachFokus({ listid: listid, lii: lii - 1, ui: at, caret: null });
 }
 /* Outdent a sub-point back to a top-level item right after its parent. */
-function punktAusruecken(teil, bi, ti, lii, ui) {
-  const parent = teil.liste[lii];
+function punktAusruecken(liste, listid, lii, ui) {
+  const parent = liste[lii];
   if (typeof parent !== "object" || !parent || !parent.unterpunkte) return;
   const text = parent.unterpunkte[ui];
   parent.unterpunkte.splice(ui, 1);
   if (!parent.unterpunkte.length) delete parent.unterpunkte;
-  teil.liste.splice(lii + 1, 0, text);
-  nachFokus({ bi: bi, ti: ti, lii: lii + 1, ui: "x", caret: null });
+  liste.splice(lii + 1, 0, text);
+  nachFokus({ listid: listid, lii: lii + 1, ui: "x", caret: null });
 }
-function punktTaste(e, inp, teil, bi, ti, lii, ui) {
+function punktTaste(e, inp, liste, listid, lii, ui) {
   if (e.key === "Enter") {
     e.preventDefault();
-    if (ui == null) { teil.liste.splice(lii + 1, 0, ""); nachFokus({ bi: bi, ti: ti, lii: lii + 1, ui: "x", caret: 0 }); }
-    else { teil.liste[lii].unterpunkte.splice(ui + 1, 0, ""); nachFokus({ bi: bi, ti: ti, lii: lii, ui: ui + 1, caret: 0 }); }
+    if (ui == null) { liste.splice(lii + 1, 0, ""); nachFokus({ listid: listid, lii: lii + 1, ui: "x", caret: 0 }); }
+    else { liste[lii].unterpunkte.splice(ui + 1, 0, ""); nachFokus({ listid: listid, lii: lii, ui: ui + 1, caret: 0 }); }
   } else if (e.key === "Tab" && !e.shiftKey) {
-    if (ui == null && lii > 0) { e.preventDefault(); punktEinruecken(teil, bi, ti, lii); }
+    if (ui == null && lii > 0) { e.preventDefault(); punktEinruecken(liste, listid, lii); }
   } else if (e.key === "Tab" && e.shiftKey) {
-    if (ui != null) { e.preventDefault(); punktAusruecken(teil, bi, ti, lii, ui); }
+    if (ui != null) { e.preventDefault(); punktAusruecken(liste, listid, lii, ui); }
   } else if (e.key === "Backspace" && inp.value === "") {
     if (ui == null) {
-      const cur = teil.liste[lii];
+      const cur = liste[lii];
       if (typeof cur === "object" && cur && cur.unterpunkte && cur.unterpunkte.length) return;  /* keep a parent that still has sub-points */
     }
     e.preventDefault();
-    punktLoeschen(teil, bi, ti, lii, ui, true);
+    punktLoeschen(liste, listid, lii, ui, true);
   } else if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
     e.preventDefault();
-    punktBewegen(teil, bi, ti, lii, ui, e.key === "ArrowUp" ? -1 : 1);
+    punktBewegen(liste, listid, lii, ui, e.key === "ArrowUp" ? -1 : 1);
   }
 }
 

@@ -210,124 +210,70 @@
 .cfg-btn.primary:hover { filter: brightness(1.08); }
 
 /* ---------- Launcher (niju-ichi.html) ---------- */
-/* Komplett schwarzer Startbildschirm: Startgrafik oben, Sprachen frei in der
-   oberen Ecke, die drei Module im unteren Drittel. Look an die Grafik angelehnt
-   (Schwarz + Marken-Orange, scharfe Kanten). */
+/* Full-bleed start screen: the hero artwork (start-hero.png) fills the viewport
+   at its native 1672:941 ratio. The module cards + orange buttons are drawn into
+   the image; we overlay clickable "Open" links exactly on the orange buttons, the
+   language buttons on the dark top-right area, and two horizontal flow arrows
+   between the bottom modules. The image is never cropped or modified. Container-
+   query units (cqh/cqw) scale every overlay 1:1 with the hero. Desktop-only. */
 .launch-body {
   margin: 0; min-height: 100vh; background: #000;
-  font-family: var(--sans); color: #fff; display: flex; flex-direction: column;
+  font-family: var(--sans); color: #fff;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.launch-hero {
+  position: relative;
+  width: min(100vw, calc(100vh * 1672 / 941));
+  aspect-ratio: 1672 / 941;
+  container-type: size;
+}
+.launch-hero > img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  user-select: none; -webkit-user-drag: none;
 }
 
-/* Startgrafik — oben, mit Luft nach oben für die Sprach-Buttons.
-   padding-bottom 0, damit der erste Flow-Pfeil gleich weit von Grafik
-   und Brain entfernt sitzt (space-evenly in .launch-mid). */
-.launch-banner {
-  flex: 0 0 auto; padding: 64px 28px 0; display: flex; justify-content: center;
-}
-.launch-banner img {
-  display: block; width: 100%; max-width: 1180px; height: auto; max-height: 42vh; object-fit: contain;
-  border-radius: 6px; box-shadow: 0 14px 50px rgba(0,0,0,.6);
-}
-
-/* Sprachwahl oben rechts */
-.launch-lang { position: absolute; top: 22px; right: 26px; display: flex; gap: 8px; z-index: 5; }
+/* Language buttons — on the dark top-right area of the hero */
+.launch-lang { position: absolute; top: 2.4cqh; right: 1.4cqw; display: flex; gap: 0.7cqw; z-index: 6; }
 .launch-lang button {
-  appearance: none; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.22);
-  color: #e8eaed; border-radius: 4px; padding: 6px 14px; cursor: pointer;
-  font-size: 12.5px; font-weight: 600; letter-spacing: .02em; font-family: inherit;
+  appearance: none; background: rgba(10,12,16,.5); border: 1px solid rgba(255,255,255,.24);
+  color: #e8eaed; border-radius: 0.6cqh; padding: 0.9cqh 1.4cqh; cursor: pointer;
+  font-size: 1.7cqh; font-weight: 600; letter-spacing: .02em; font-family: inherit;
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   transition: border-color .15s, background .15s, color .15s;
 }
 .launch-lang button:hover { border-color: var(--ui-akzent); color: #fff; }
 .launch-lang button.aktiv {
   background: var(--ui-akzent); border-color: var(--ui-akzent); color: #fff;
-  box-shadow: 0 0 0 1px var(--ui-akzent), 0 4px 14px rgba(253,94,2,.35);
+  box-shadow: 0 0 0 1px var(--ui-akzent), 0 0.4cqh 1.4cqh rgba(253,94,2,.4);
 }
 
-/* Brain mittig zwischen Grafik und Modul-Reihe. Fester, gleicher Abstand
-   (--flow-gap) oben angedockt → der ganze Block sitzt nahe der Grafik
-   (Module weiter oben). Grafik↕Pfeil↕Brain↕Pfeil↕Reihe sind alle gleich:
-   Banner padding-bottom 0 + .launch-mid padding-top = gap = mid-gap =
-   row margin-top. */
-:root { --flow-gap: 20px; }
-/* Brain + die beiden ↑-Pfeile sitzen eine Pfeillänge höher: kein oberer Abstand
-   (rückt die Gruppe näher an die Grafik), dafür doppelter Abstand zur Modul-Reihe.
-   Die Modul-Reihe bleibt dadurch an ihrer Position. */
-.launch-mid {
-  flex: 0 0 auto; display: flex; flex-direction: column;
-  align-items: center; gap: var(--flow-gap);
-  width: 100%; padding: 0 28px 0; box-sizing: border-box;
+/* Clickable "Open" overlays sitting exactly on the drawn orange buttons */
+.hero-spots { position: absolute; inset: 0; z-index: 5; }
+.hero-spot {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  text-decoration: none; border-radius: 0.8cqh; cursor: pointer;
+  transition: box-shadow .14s, filter .14s;
 }
-.launch-mid .launch-card { width: 300px; max-width: 80vw; }
+.hero-spot .spot-open {
+  color: #fff; font-weight: 800; font-size: 1.95cqh; letter-spacing: .01em;
+  white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+.hero-spot:hover, .hero-spot:focus-visible {
+  outline: none; box-shadow: 0 0 0 0.35cqh rgba(255,255,255,.6); filter: brightness(1.07);
+}
+.hero-spot:hover .spot-open { transform: translateX(1px); }
+.hero-spot.disabled { pointer-events: none; }
+.hero-spot.disabled .spot-open {
+  font-weight: 700; font-size: 1.3cqh; letter-spacing: .08em; text-transform: uppercase;
+}
 
-/* Module — untere Reihe, alle drei nebeneinander, direkt unter Brain */
-.launch-row {
-  flex: 0 0 auto; display: flex; align-items: stretch; justify-content: center;
-  gap: 22px; width: 100%; max-width: 1100px; margin: calc(var(--flow-gap) * 2) auto 0;
-  padding: 0 28px 44px; box-sizing: border-box;
+/* Two horizontal flow arrows between the bottom modules (brand orange) */
+.hero-arrows { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.hero-arrow {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 3cqh; height: 3cqh; color: var(--ui-akzent);
 }
-.launch-row .launch-card { flex: 1 1 0; min-width: 200px; max-width: 300px; }
-
-/* Flow-Pfeile (Marken-Orange) */
-.lc-arrow { color: var(--ui-akzent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.lc-arrow svg { width: 22px; height: 22px; display: block; }
-.lc-arrow.up svg { width: 20px; height: 20px; }
-
-.launch-card {
-  position: relative; background: #121317; color: #fff;
-  border: 1px solid #26282f; border-top: 2px solid #3a3d46; border-radius: 8px;
-  /* gleiche horizontale + vertikale Polsterung → Text-zu-Kante == Button-zu-Kante */
-  padding: 16px 18px; display: flex; flex-direction: row; align-items: flex-end;
-  justify-content: space-between; gap: 14px;
-  text-decoration: none; overflow: visible;
-  transition: transform .16s ease, border-color .16s, box-shadow .16s, background .16s;
-}
-.launch-card .lc-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.launch-card:not(.disabled):hover {
-  transform: translateY(-4px); background: #16181d;
-  border-color: #3a3d46; border-top-color: var(--ui-akzent);
-  box-shadow: 0 12px 34px rgba(0,0,0,.55), 0 0 0 1px rgba(253,94,2,.25);
-}
-.launch-card.disabled { opacity: .42; }
-.launch-card .lc-eyebrow {
-  font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--ui-akzent);
-}
-.launch-card .lc-name { font-size: 19px; font-weight: 800; letter-spacing: .01em; color: #fff; }
-.launch-card .lc-go {
-  margin: 0; align-self: flex-end; flex: none; display: inline-flex; align-items: center; gap: 6px;
-  background: var(--ui-akzent); color: #fff; border: 0; border-radius: 5px;
-  padding: 8px 16px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit;
-}
-.launch-card:not(.disabled):hover .lc-go { filter: brightness(1.08); }
-.launch-card .lc-soon {
-  margin: 0; align-self: flex-end; flex: none; font-family: var(--mono); font-size: 9px;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
-  border: 1px solid #2c2f37; border-radius: 4px; padding: 4px 8px;
-}
-/* Beschreibung als Mouse-over-Tooltip (statt fester Text im Kasten) */
-.launch-card .lc-tip {
-  position: absolute; left: 18px; right: 18px; bottom: calc(100% + 10px); z-index: 10;
-  background: #1c1f26; color: #d9dde3; border: 1px solid var(--ui-akzent); border-radius: 7px;
-  padding: 10px 13px; font-size: 12.5px; line-height: 1.5; font-weight: 400;
-  box-shadow: 0 12px 30px rgba(0,0,0,.6);
-  opacity: 0; visibility: hidden; transform: translateY(4px);
-  transition: opacity .16s ease, transform .16s ease, visibility .16s;
-  pointer-events: none;
-}
-.launch-card .lc-tip::after {
-  content: ""; position: absolute; top: 100%; left: 26px; width: 10px; height: 10px;
-  background: #1c1f26; border-right: 1px solid var(--ui-akzent); border-bottom: 1px solid var(--ui-akzent);
-  transform: translateY(-5px) rotate(45deg);
-}
-.launch-card:hover .lc-tip { opacity: 1; visibility: visible; transform: translateY(0); }
-
-@media (max-width: 760px) {
-  .launch-row { flex-direction: column; max-width: 420px; }
-  .launch-row .launch-card, .launch-mid .launch-card { width: 100%; max-width: none; }
-  /* im einspaltigen Layout zeigen die Reihen-Pfeile nach unten (Flow von oben) */
-  .lc-arrow.right, .lc-arrow.left { transform: rotate(90deg); }
-  .launch-banner { padding-top: 72px; }
-}
+.hero-arrow svg { width: 100%; height: 100%; display: block; }
 
 /* ---------- Bühne / Platzhalter (Stubs) ---------- */
 .stage {

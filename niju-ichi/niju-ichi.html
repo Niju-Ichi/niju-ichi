@@ -12,87 +12,64 @@
 <script src="shared/js/modules.js"></script>
 </head>
 <body class="launch-body">
-  <div class="launch-lang" id="langWrap"></div>
-  <div class="launch-banner">
-    <img src="shared/img/start-banner.jpg" alt="NIJU ICHI — Company Brain · Sovereign Processes">
+  <!-- Full-bleed hero (start-hero.png). The module cards + orange buttons are part
+       of the artwork; we overlay the clickable "Open" links exactly on the orange
+       buttons, the language buttons on the dark top-right area, and two horizontal
+       flow arrows between the bottom modules. Image is never modified. -->
+  <div class="launch-hero" id="hero">
+    <img src="shared/img/start-hero.png" alt="NIJU ICHI — Company Brain · Sovereign Processes" draggable="false">
+    <div class="hero-arrows" id="heroArrows"></div>
+    <div class="hero-spots" id="heroSpots"></div>
+    <div class="launch-lang" id="langWrap"></div>
   </div>
-  <!-- Brain centred between the graphic and the module row, with flow arrows -->
-  <div class="launch-mid" id="flowMid"></div>
-  <!-- Builder · Manager · Viewer side by side at the bottom -->
-  <div class="launch-row" id="flowRow"></div>
 
 <script>
-var DESC = { builder: "launcher.builderDesc", management: "launcher.managementDesc", hub: "launcher.hubDesc", brain: "launcher.brainDesc" };
-
-/* Anzeigereihenfolge der Sprachen im Launcher: Japanisch, Deutsch, English. */
+/* Click targets over the orange buttons drawn into the hero. Position in % of the
+   hero (scales 1:1 with the image): x/y = top-left corner, w/h = size. */
+var SPOTS = {
+  brain:      { x: 54.31, y: 66.52, w: 6.22, h: 4.14 },
+  builder:    { x: 27.99, y: 84.38, w: 5.80, h: 3.93 },
+  management: { x: 54.19, y: 84.27, w: 5.74, h: 4.04 },
+  hub:        { x: 79.67, y: 84.27, w: 5.68, h: 4.04 }
+};
+/* Two horizontal flow arrows in the gaps of the bottom module row (% of hero). */
+var ARROWS = [ { x: 37.0, y: 86.3 }, { x: 64.0, y: 86.3 } ];
+/* Launcher language order: Japanese, German, English. */
 var LANG_ORDER = ["ja", "de", "en"];
 
 function modById(id) { return NIJU.MODS.list().filter(function (m) { return m.id === id; })[0] || null; }
 
-function makeCard(m) {
-  if (!m) return null;
-  var card = document.createElement(m.enabled ? "a" : "div");
-  card.className = "launch-card" + (m.enabled ? "" : " disabled");
-  if (m.enabled) card.href = NIJU.MODS.href(m, "root");
-
-  var text = document.createElement("span");
-  text.className = "lc-text";
-  var eyebrow = document.createElement("span");
-  eyebrow.className = "lc-eyebrow"; eyebrow.textContent = "NIJU ICHI";
-  text.appendChild(eyebrow);
-  var name = document.createElement("span");
-  name.className = "lc-name"; name.textContent = NIJU.I18N.t(m.key);
-  text.appendChild(name);
-  card.appendChild(text);
-
-  if (m.enabled) {
-    var go = document.createElement("span"); go.className = "lc-go";
-    go.textContent = NIJU.I18N.t("launcher.open") + " →";
-    card.appendChild(go);
-  } else {
-    var soon = document.createElement("span"); soon.className = "lc-soon";
-    soon.textContent = NIJU.I18N.t("launcher.comingSoon");
-    card.appendChild(soon);
-  }
-
-  /* Beschreibung nur als Mouse-over-Tooltip */
-  var tip = document.createElement("span");
-  tip.className = "lc-tip"; tip.textContent = NIJU.I18N.t(DESC[m.id] || "");
-  card.appendChild(tip);
-  return card;
+/* Clickable "Open" overlays on the drawn orange buttons. */
+function zeichneSpots() {
+  var host = document.getElementById("heroSpots");
+  host.innerHTML = "";
+  Object.keys(SPOTS).forEach(function (id) {
+    var m = modById(id); if (!m) return;
+    var p = SPOTS[id];
+    var a = document.createElement(m.enabled ? "a" : "span");
+    a.className = "hero-spot" + (m.enabled ? "" : " disabled");
+    if (m.enabled) a.href = NIJU.MODS.href(m, "root");
+    a.style.left = p.x + "%"; a.style.top = p.y + "%"; a.style.width = p.w + "%"; a.style.height = p.h + "%";
+    a.setAttribute("aria-label", NIJU.I18N.t(m.key) + " — " + NIJU.I18N.t("launcher.open"));
+    var lab = document.createElement("span");
+    lab.className = "spot-open";
+    lab.textContent = m.enabled ? (NIJU.I18N.t("launcher.open") + " →") : NIJU.I18N.t("launcher.comingSoon");
+    a.appendChild(lab);
+    host.appendChild(a);
+  });
 }
 
-/* kleine Orange-Pfeile, die den Logik-Flow andeuten */
-function arrow(dir) {
-  var a = document.createElement("div");
-  a.className = "lc-arrow " + dir;
-  a.setAttribute("aria-hidden", "true");
-  /* Schaft unverändert, Pfeilspitze um 40% kleiner (Barben *0.6 um die Spitze) */
-  var d = (dir === "up") ? "M12 19 V5 M8.4 8.6 L12 5 L15.6 8.6"
-        : (dir === "right") ? "M5 12 H19 M15.4 8.4 L19 12 L15.4 15.6"
-        : "M19 12 H5 M8.6 8.4 L5 12 L8.6 15.6";
-  a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></svg>';
-  return a;
-}
-
-function zeichneModule() {
-  var mid = document.getElementById("flowMid");
-  var row = document.getElementById("flowRow");
-  mid.innerHTML = ""; row.innerHTML = "";
-
-  var brain = modById("brain"), builder = modById("builder"), manager = modById("management"), viewer = modById("hub");
-
-  /* obere Spalte: Grafik ↑ Brain ↑ (Brain mittig über Manager) */
-  mid.appendChild(arrow("up"));            /* zwischen Brain und Grafik */
-  var bCard = makeCard(brain); if (bCard) mid.appendChild(bCard);
-  mid.appendChild(arrow("up"));            /* zwischen Manager und Brain */
-
-  /* untere Reihe: Builder ← Manager ← Viewer */
-  var c1 = makeCard(builder); if (c1) row.appendChild(c1);
-  row.appendChild(arrow("right"));         /* zwischen Builder und Manager */
-  var c2 = makeCard(manager); if (c2) row.appendChild(c2);
-  row.appendChild(arrow("right"));         /* zwischen Manager und Viewer */
-  var c3 = makeCard(viewer); if (c3) row.appendChild(c3);
+/* Two horizontal flow arrows (brand orange) between the bottom modules. */
+function zeichneArrows() {
+  var host = document.getElementById("heroArrows");
+  host.innerHTML = "";
+  ARROWS.forEach(function (p) {
+    var d = document.createElement("div");
+    d.className = "hero-arrow"; d.setAttribute("aria-hidden", "true");
+    d.style.left = p.x + "%"; d.style.top = p.y + "%";
+    d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12 H19 M15.4 8.4 L19 12 L15.4 15.6"/></svg>';
+    host.appendChild(d);
+  });
 }
 
 function zeichneSprachen() {
@@ -114,8 +91,9 @@ function zeichneSprachen() {
 }
 
 NIJU.I18N.init();
-NIJU.I18N.onChange(function () { zeichneModule(); zeichneSprachen(); });
-zeichneModule();
+NIJU.I18N.onChange(function () { zeichneSpots(); zeichneSprachen(); });
+zeichneArrows();
+zeichneSpots();
 zeichneSprachen();
 </script>
 </body>
