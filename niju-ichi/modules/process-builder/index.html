@@ -18,6 +18,7 @@
 <script src="../../shared/design/strategy-editorial.js"></script>
 <script src="../../shared/design/executive-dark.js"></script>
 <script src="../../shared/js/config.js"></script>
+<script src="../../shared/js/prozess.js"></script>
 <script src="../../shared/js/backup.js"></script>
 <script src="../../shared/js/org.js"></script>
 <style>
@@ -986,6 +987,11 @@ const RACI_REIHENFOLGE = ["R", "A", "C", "I"];   /* Legende-Reihenfolge */
 const SLOT_REIHENFOLGE = ["C", "R", "A", "I"];   /* feste Plätze im RACI-Feld */
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+/* Rollen-Helfer (Phase A2 — stabile IDs): tolerant für altes (String) und neues
+   ({id,name}) Rollen-Format. Anzeige = Name, RACI-Schlüssel = id. Siehe shared/js/prozess.js. */
+function rName(r) { return NIJU.PROZESS.rolleName(r); }
+function rId(r)   { return NIJU.PROZESS.rolleId(r); }
+
 /* Zentraler Zustand: die aktuell bearbeiteten Daten + Editor-Modus + Ansicht.
    ansicht: "uebersicht" | "detail"; detailIndex = angezeigter Schritt im Detail. */
 const STATE = { daten: null, bearbeiten: false, zuKlappen: {}, ansicht: "uebersicht", detailIndex: 0 };
@@ -1135,6 +1141,7 @@ function normalisiereRaci(daten) {
    ============================================================ */
 function render(daten) {
   normalisiereSchritte(daten);
+  NIJU.PROZESS.migriere(daten);   /* Rollen auf {id,name} + raci auf id-Schlüssel (idempotent) */
   normalisiereRaci(daten);
   const blatt = document.getElementById("blatt");
   if (window.NIJU.DESIGN) window.NIJU.DESIGN.applyForProcess(daten);
@@ -1278,10 +1285,10 @@ function renderUebersicht(daten) {
   /* ----- RACI: Matrix-Zeilen ----- */
   rollen.forEach((rolle, ri) => {
     const stripe = "rrow-" + (ri % 2);
-    raster.appendChild(el("div", "raci-rolle " + stripe, rolle));
+    raster.appendChild(el("div", "raci-rolle " + stripe, rName(rolle)));
     schritte.forEach(s => {
       const zelle = el("div", "raci-zelle " + stripe);
-      const eintrag = (daten.raci && daten.raci[s.id]) ? daten.raci[s.id][rolle] : null;
+      const eintrag = (daten.raci && daten.raci[s.id]) ? daten.raci[s.id][rId(rolle)] : null;
       if (eintrag && eintrag.length) {
         SLOT_REIHENFOLGE.forEach(b => {
           if (eintrag.includes(b)) {
@@ -1296,7 +1303,7 @@ function renderUebersicht(daten) {
       if (STATE.bearbeiten) {
         zelle.classList.add("editierbar");
         zelle.title = t("raci.clickHint");
-        zelle.addEventListener("click", (ev) => { ev.stopPropagation(); oeffneRaciMenu(zelle, s.id, rolle); });
+        zelle.addEventListener("click", (ev) => { ev.stopPropagation(); oeffneRaciMenu(zelle, s.id, rId(rolle)); });
       }
       raster.appendChild(zelle);
     });
@@ -1480,9 +1487,9 @@ function baueDetailLinks(daten, schritt, rollen, leg) {
   const eintragProRolle = (daten.raci && daten.raci[schritt.id]) ? daten.raci[schritt.id] : {};
   rollen.forEach((rolle, ri) => {
     const stripe = (ri % 2 === 0) ? " stripe" : "";
-    matrix.appendChild(el("div", "rm-rolle" + stripe, rolle));
+    matrix.appendChild(el("div", "rm-rolle" + stripe, rName(rolle)));
     const zelle = el("div", "rm-zelle" + stripe);
-    const eintrag = eintragProRolle[rolle];
+    const eintrag = eintragProRolle[rId(rolle)];
     if (eintrag && eintrag.length) {
       SLOT_REIHENFOLGE.forEach(b => {
         if (eintrag.includes(b)) {
@@ -1496,7 +1503,7 @@ function baueDetailLinks(daten, schritt, rollen, leg) {
     if (STATE.bearbeiten) {
       zelle.classList.add("editierbar");
       zelle.title = t("raci.clickHint");
-      zelle.addEventListener("click", (ev) => { ev.stopPropagation(); oeffneRaciMenu(zelle, schritt.id, rolle); });
+      zelle.addEventListener("click", (ev) => { ev.stopPropagation(); oeffneRaciMenu(zelle, schritt.id, rId(rolle)); });
     }
     matrix.appendChild(zelle);
   });
@@ -2208,17 +2215,14 @@ function baueEditorUebersicht() {
     d.rollen.forEach((r, ri) => {
       const row = el("div", "ed-row");
       const inp = document.createElement("input");
-      inp.type = "text"; inp.className = "grow"; inp.value = r;
+      inp.type = "text"; inp.className = "grow"; inp.value = rName(r);
       inp.setAttribute("list", "orgNamen");   /* Vorschläge aus Organisation + Prozess */
       inp.addEventListener("input", () => {
-        const alt = d.rollen[ri], neu = inp.value;
-        d.rollen[ri] = neu;
-        if (alt !== neu && d.raci) {
-          Object.keys(d.raci).forEach(sid => {
-            const zeile = d.raci[sid];
-            if (zeile && Object.prototype.hasOwnProperty.call(zeile, alt)) { zeile[neu] = zeile[alt]; delete zeile[alt]; }
-          });
-        }
+        /* Nur den Anzeigenamen ändern — die id (und damit alle RACI-Einträge) bleibt stabil.
+           Kein Mitziehen der raci-Schlüssel mehr nötig (das war der fehleranfällige Teil). */
+        const ziel = d.rollen[ri];
+        if (ziel && typeof ziel === "object") ziel.name = inp.value;
+        else d.rollen[ri] = { id: NIJU.PROZESS.neueRollenId(), name: inp.value };
         render(d);
       });
       row.appendChild(inp);
@@ -2227,15 +2231,15 @@ function baueEditorUebersicht() {
       tools.appendChild(gripR);
       dragWire(gripR, row, "rollen", ri, function (from, to) { arrVerschieben(d.rollen, from, to); nachStruktur(); });
       tools.appendChild(iconBtn("ic-trash", t("editor.removeRole"), function () {
-        const name = d.rollen[ri];
+        const id = rId(d.rollen[ri]);
         d.rollen.splice(ri, 1);
-        if (d.raci) Object.keys(d.raci).forEach(function (sid) { if (d.raci[sid]) delete d.raci[sid][name]; });
+        if (d.raci) Object.keys(d.raci).forEach(function (sid) { if (d.raci[sid]) delete d.raci[sid][id]; });
         nachStruktur();
       }, { reveal: true }));
       row.appendChild(tools);
       body.appendChild(row);
     });
-    body.appendChild(knopf(t("editor.addRole"), "add", () => { d.rollen.push(t("content.newRole")); nachStruktur(); }));
+    body.appendChild(knopf(t("editor.addRole"), "add", () => { d.rollen.push({ id: NIJU.PROZESS.neueRollenId(), name: t("content.newRole") }); nachStruktur(); }));
   }));
 
   /* RACI-Hinweis (Bearbeitung erfolgt direkt in der Vorschau) */
@@ -3299,7 +3303,7 @@ function mdRaciGruppen(daten, stepId) {
   const out = { R: [], A: [], C: [], I: [] };
   const row = (daten.raci && daten.raci[stepId]) || {};
   (daten.rollen || []).forEach(rolle => {
-    (row[rolle] || []).forEach(b => { if (out[b]) out[b].push(rolle); });
+    (row[rId(rolle)] || []).forEach(b => { if (out[b]) out[b].push(rName(rolle)); });
   });
   return out;
 }
@@ -3355,7 +3359,7 @@ function prozessNachMarkdown(daten, L, heute) {
   s += "stand: " + mdYaml(m.datum || "") + NL;
   if (m.firma) s += "firma: " + mdYaml(m.firma) + NL;
   s += "schritte: " + schritte.length + NL;
-  s += "rollen: [" + rollen.map(mdYaml).join(", ") + "]" + NL;
+  s += "rollen: [" + rollen.map(r => mdYaml(rName(r))).join(", ") + "]" + NL;
   s += "quelle: " + mdYaml("") + NL;
   s += "generator: " + mdYaml("NIJU ICHI Process Builder") + NL;
   s += "exportiert: " + mdYaml(heute) + NL;
@@ -3421,10 +3425,10 @@ function prozessNachMarkdown(daten, L, heute) {
     s += "| --- |" + schritte.map(() => " :-: |").join("") + NL;
     rollen.forEach(rolle => {
       const cells = schritte.map(sc => {
-        const b = (daten.raci && daten.raci[sc.id] && daten.raci[sc.id][rolle]) || [];
+        const b = (daten.raci && daten.raci[sc.id] && daten.raci[sc.id][rId(rolle)]) || [];
         return b.join(", ") || "–";
       });
-      s += "| " + mdCell(rolle) + " | " + cells.join(" | ") + " |" + NL;
+      s += "| " + mdCell(rName(rolle)) + " | " + cells.join(" | ") + " |" + NL;
     });
     s += NL;
     s += schritte.map((sc, i) => "S" + (i + 1) + " = " + String(sc.titel || sc.id || "")).join(" · ") + NL + NL;
@@ -3504,7 +3508,7 @@ function baueManifest(dateien, heute) {
         version: m.version || "",
         stand: m.datum || "",
         schritte: (d.daten.schritte || []).length,
-        rollen: d.daten.rollen || []
+        rollen: (d.daten.rollen || []).map(rName)
       };
     })
   }, null, 2);
@@ -3751,9 +3755,9 @@ function prozessNachConfluence(daten, L, heute) {
     schritte.forEach(sc => { s += "<th>" + cfEsc(String(sc.titel || sc.id || "").trim()) + "</th>"; });
     s += "</tr>";
     rollen.forEach(rolle => {
-      s += "<tr><th>" + cfEsc(rolle) + "</th>";
+      s += "<tr><th>" + cfEsc(rName(rolle)) + "</th>";
       schritte.forEach(sc => {
-        const b = (daten.raci && daten.raci[sc.id] && daten.raci[sc.id][rolle]) || [];
+        const b = (daten.raci && daten.raci[sc.id] && daten.raci[sc.id][rId(rolle)]) || [];
         s += "<td>" + cfEsc(b.join(", ") || "–") + "</td>";
       });
       s += "</tr>";
@@ -3833,7 +3837,7 @@ function baueCfManifest(dateien, heute) {
         version: m.version || "",
         stand: m.datum || "",
         schritte: (d.daten.schritte || []).length,
-        rollen: d.daten.rollen || []
+        rollen: (d.daten.rollen || []).map(rName)
       };
     })
   }, null, 2);
@@ -4149,7 +4153,7 @@ function baueDatenAusNodes(nodes) {
     return { id: "schritt_imp_" + i, titel: zeilen[0] || t("render.stepFallback", { n: i }), untertitel: zeilen.slice(1).join(" "), punkteUeberschrift: "", punkte: [], beschreibung: [] };
   });
   const rolleNodes = get("rolle").sort((a, b) => a.cy - b.cy);
-  const rollen = rolleNodes.map(einzeilig);
+  const rollen = rolleNodes.map(n => ({ id: NIJU.PROZESS.neueRollenId(), name: einzeilig(n) }));
 
   const raci = {};
   schritte.forEach(s => { raci[s.id] = {}; });
@@ -4161,7 +4165,7 @@ function baueDatenAusNodes(nodes) {
     rolleNodes.forEach((r, i) => { const d = Math.abs(r.cy - n.cy); if (d < best) { best = d; ri = i; } });
     const vorhanden = (n.text.toUpperCase().match(/[RACI]/g) || []);
     const buchstaben = ["R", "A", "C", "I"].filter(L => vorhanden.includes(L));
-    if (buchstaben.length) raci[schritte[si].id][rollen[ri]] = buchstaben;
+    if (buchstaben.length) raci[schritte[si].id][rollen[ri].id] = buchstaben;
   });
 
   const input = { label: "Input [Responsible]", punkte: get("input").sort((a, b) => a.cy - b.cy).map(einzeilig) };
@@ -4283,7 +4287,7 @@ function aktualisiereOrgNamen() {
   if (!liste) return;
   const set = {}, out = [];
   ORG_NAMEN.forEach((n) => { n = (n || "").trim(); if (n && !set[n]) { set[n] = 1; out.push(n); } });
-  ((STATE.daten && STATE.daten.rollen) || []).forEach((n) => { n = (n || "").trim(); if (n && !set[n]) { set[n] = 1; out.push(n); } });
+  ((STATE.daten && STATE.daten.rollen) || []).forEach((r) => { const n = rName(r).trim(); if (n && !set[n]) { set[n] = 1; out.push(n); } });
   out.sort((a, b) => a.localeCompare(b));
   liste.innerHTML = "";
   out.forEach((n) => { const o = document.createElement("option"); o.value = n; liste.appendChild(o); });

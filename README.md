@@ -1,10 +1,12 @@
 # NIJU ICHI — Process Builder Suite
 
-An **offline-capable web app** for creating, editing, visualising, and exporting **RACI process overviews** as PDF.  
+An **offline-capable web app** that documents company processes as **RACI matrices** and turns them into an **automatic risk & AI-readiness analysis**. You capture who is *Responsible / Accountable / Consulted / Informed*; the suite derives the risks for you — single points of failure, automation candidates, and compliance exposure.  
 Runs entirely in the browser — **no build step, no installation, no internet connection required.**  
 Just double-click the HTML file.
 
-The layout is a fixed table (not a freehand diagram): meta column on the left, process step columns across the top, RACI matrix below, legend in the footer.
+> **★ The standout — Process Brain.** Most tools stop at *drawing* processes. NIJU ICHI's **Brain** module reads the RACI data of the whole organisation and *derives* insights automatically: **Bus Factor** (a critical process resting on a single person), **White Spots** and **Quick Wins** for automation, shared tooling, and **EU AI Act / GDPR** compliance flags — plus an AI-readiness quadrant. That analysis, not the PDF export, is the reason to adopt it.
+
+The layout is a fixed table (not a freehand diagram): meta column on the left, process step columns across the top, RACI matrix below, legend in the footer. Exports cover **PDF** and **JPEG** for documents and **AI-ready Markdown & Confluence** for knowledge bases and Copilot / RAG.
 
 ---
 
@@ -142,7 +144,7 @@ niju-ichi/
 ## Data Model
 
 ### Process file (`*.json`)
-Fields: `meta` (title, company, processId, version, date, processOwner, footer), `input`, `output`, `schritte[]` (steps; content as an ordered sequence of **blocks** — lists with an optional heading and sub-points, or text paragraphs), `rollen[]` (roles), `raci` (step-id → role → `["R","A","C","I"]`), `legende`, `design` (snapshot).
+Fields: `meta` (title, company, processId, version, date, processOwner, footer), `input`, `output`, `schritte[]` (steps; content as an ordered sequence of **blocks** — lists with an optional heading and sub-points, or text paragraphs), `rollen[]` (roles, `[{id, name}]` — stable id plus display name), `raci` (step-id → role **id** → `["R","A","C","I"]`), `legende`, `design` (snapshot). Older files (`rollen` as plain name strings, `raci` keyed by name) are migrated on load and stay readable.
 
 ### Library file (`index.json`)
 Central directory file. Contains:

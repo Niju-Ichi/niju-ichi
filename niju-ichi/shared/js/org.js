@@ -67,7 +67,7 @@
     Object.keys(prozesse).forEach(function (datei) {
       var d = prozesse[datei] && prozesse[datei].data;
       var rollenListe = (d && Array.isArray(d.rollen)) ? d.rollen : [];
-      if (rollenListe.indexOf(name) >= 0) out.push(datei);
+      if (rollenListe.some(function (r) { return NIJU.PROZESS.rolleName(r) === name; })) out.push(datei);
     });
     return out;
   }
@@ -88,9 +88,16 @@
       var changed = false;
       if (Array.isArray(d.rollen)) {
         var hit = false;
-        d.rollen = d.rollen.map(function (r) { if (r === alt) { hit = true; return neu; } return r; });
-        if (hit) { d.rollen = dedupe(d.rollen); changed = true; }
+        d.rollen = d.rollen.map(function (r) {
+          if (r && typeof r === "object") { if (NIJU.PROZESS.rolleName(r) === alt) { hit = true; r.name = neu; } return r; }
+          if (r === alt) { hit = true; return neu; }   /* altes String-Format */
+          return r;
+        });
+        /* Objekte sind über ihre id eindeutig → nur altes String-Format dedupen */
+        if (hit) { if (d.rollen.every(function (r) { return typeof r !== "object"; })) d.rollen = dedupe(d.rollen); changed = true; }
       }
+      /* RACI-Schlüssel: im neuen Format = stabile Rollen-id → der Name-Treffer unten greift NICHT
+         (korrekt — die id bleibt). Nur alte, namensbasierte Dateien werden hier umgeschlüsselt. */
       if (d.raci && typeof d.raci === "object") {
         Object.keys(d.raci).forEach(function (sid) {
           var zeile = d.raci[sid];
@@ -128,8 +135,8 @@
       var d = prozesse[datei] && prozesse[datei].data;
       var rollenListe = (d && Array.isArray(d.rollen)) ? d.rollen : [];
       rollenListe.forEach(function (r) {
-        r = (r || "").trim();
-        if (r && !vorhanden[r]) { vorhanden[r] = 1; org.knoten.push({ id: newId(), name: r, parent: "", typ: "funktion" }); neu++; }
+        var nm = NIJU.PROZESS.rolleName(r).trim();
+        if (nm && !vorhanden[nm]) { vorhanden[nm] = 1; org.knoten.push({ id: newId(), name: nm, parent: "", typ: "funktion" }); neu++; }
       });
     });
     return neu;

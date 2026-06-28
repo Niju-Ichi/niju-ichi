@@ -114,17 +114,25 @@
     Object.keys(prozesse).forEach(function (file) {
       var pn = byId["p::" + file]; var d = pn && pn._data; if (!d) return;
       var withA = {}, withR = {};
+      /* RACI ist (neues Format) nach Rollen-id verschlüsselt → id->Name auflösen, damit die
+         Bindung an die Organisation weiter über den Namen läuft. Altes Format: Schlüssel = Name
+         (kein id-Treffer) → der Schlüssel ist bereits der Name. */
+      var idName = {};
+      (Array.isArray(d.rollen) ? d.rollen : []).forEach(function (r) {
+        if (r && typeof r === "object" && r.id) idName[r.id] = (r.name != null ? r.name : "");
+      });
+      var rNm = function (key) { return (idName[key] != null) ? idName[key] : key; };
       if (d.raci && typeof d.raci === "object") {
         Object.keys(d.raci).forEach(function (sid) {
           var row = d.raci[sid] || {};
           Object.keys(row).forEach(function (role) {
-            var letters = row[role] || [];
-            if (letters.indexOf("A") >= 0) withA[role] = 1;
-            if (letters.indexOf("R") >= 0) withR[role] = 1;
+            var letters = row[role] || [], nm = rNm(role);
+            if (letters.indexOf("A") >= 0) withA[nm] = 1;
+            if (letters.indexOf("R") >= 0) withR[nm] = 1;
           });
         });
       }
-      if (!Object.keys(withR).length && Array.isArray(d.rollen)) d.rollen.forEach(function (r) { withR[r] = 1; });
+      if (!Object.keys(withR).length && Array.isArray(d.rollen)) d.rollen.forEach(function (r) { var nm = NIJU.PROZESS.rolleName(r); if (nm) withR[nm] = 1; });
       Object.keys(withA).forEach(function (name) { link(nameNode(name), pn, "owns"); });
       Object.keys(withR).forEach(function (name) { link(nameNode(name), pn, "performs"); });
       if (d.meta && trim(d.meta.processOwner)) link(nameNode(d.meta.processOwner), pn, "owns");

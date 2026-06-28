@@ -177,10 +177,10 @@
 
     rollen.forEach(function (rolle, ri) {
       var stripe = "rrow-" + (ri % 2);
-      raster.appendChild(el("div", "raci-rolle " + stripe, rolle));
+      raster.appendChild(el("div", "raci-rolle " + stripe, NIJU.PROZESS.rolleName(rolle)));
       schritte.forEach(function (s) {
         var zelle = el("div", "raci-zelle " + stripe);
-        var eintrag = (daten.raci && daten.raci[s.id]) ? daten.raci[s.id][rolle] : null;
+        var eintrag = (daten.raci && daten.raci[s.id]) ? daten.raci[s.id][NIJU.PROZESS.rolleId(rolle)] : null;
         if (eintrag && eintrag.length) {
           SLOT_REIHENFOLGE.forEach(function (b) {
             if (eintrag.includes(b)) { var bel = badge(b); bel.classList.add("slot-" + b); bel.dataset.step = s.id; bel.dataset.letter = b; zelle.appendChild(bel); }
@@ -253,9 +253,9 @@
     var eintragProRolle = (daten.raci && daten.raci[schritt.id]) ? daten.raci[schritt.id] : {};
     rollen.forEach(function (rolle, ri) {
       var stripe = (ri % 2 === 0) ? " stripe" : "";
-      matrix.appendChild(el("div", "rm-rolle" + stripe, rolle));
+      matrix.appendChild(el("div", "rm-rolle" + stripe, NIJU.PROZESS.rolleName(rolle)));
       var zelle = el("div", "rm-zelle" + stripe);
-      var eintrag = eintragProRolle[rolle];
+      var eintrag = eintragProRolle[NIJU.PROZESS.rolleId(rolle)];
       if (eintrag && eintrag.length) {
         SLOT_REIHENFOLGE.forEach(function (b) { if (eintrag.includes(b)) { var bel = badge(b); bel.classList.add("slot-" + b); bel.dataset.letter = b; zelle.appendChild(bel); } });
       }
