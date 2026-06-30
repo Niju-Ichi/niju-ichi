@@ -266,6 +266,7 @@
   /* Block-Folge im Schritt (Phase B): Abstand zwischen Blöcken + freier Textabsatz */
   .si-block + .si-block { margin-top: 8px; }
   .si-absatz { font-size: 11px; color: var(--body); line-height: 1.32; }
+  .si-heading { font-size: 11.5px; font-weight: 700; color: var(--ink); line-height: 1.3; }
 
   /* ============================================================
      RACI-Bereich
@@ -479,7 +480,7 @@
 
   .ed-punkt { border-left: 2px solid #d6dbe1; padding-left: 8px; margin-bottom: 8px; }
   .ed-unter { margin: 4px 0 0 10px; }
-  .ed-unter .ed-row input { font-size: 12px; }
+  .ed-unter .ed-row input, .ed-unter .ed-row textarea { font-size: 12px; }
   .ed-hint { font-size: 11px; color: var(--muted); margin: 2px 0 8px; }
 
   /* ============================================================
@@ -549,6 +550,29 @@
   .ed-pop button:hover { background: var(--zebra); }
   .ed-pop hr { border: 0; border-top: 1px solid var(--rule); margin: 4px 2px; }
 
+  /* Phase 10 — inline {…} function-reference autocomplete popup */
+  .ref-pop {
+    position: fixed; z-index: 70; max-width: 360px; padding: 4px;
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15,23,42,.22);
+  }
+  .ref-pop-head {
+    font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); padding: 5px 8px 4px;
+  }
+  .ref-pop-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: 100%; text-align: left; appearance: none; border: 0; background: transparent;
+    color: var(--ink); font-family: inherit; font-size: 12.5px; padding: 6px 9px;
+    border-radius: 5px; cursor: pointer;
+  }
+  .ref-pop-item.an, .ref-pop-item:hover { background: var(--zebra); }
+  .ref-pop-name { font-weight: 600; }
+  .ref-pop-typ {
+    font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted); flex: none;
+  }
+
   /* Segment-Toggle (2 Spalten | 1) */
   .ed-seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; flex: none; }
   .ed-seg button {
@@ -568,11 +592,21 @@
   .ed-ghost:hover { color: var(--akzent); border-color: var(--akzent); }
   .ed-ghost .kbd { margin-left: auto; font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
 
-  /* Auto-grow Textarea (Absatz): Höhe = Inhalt */
-  textarea.ed-grow { overflow: hidden; resize: none; }
+  /* Auto-grow Textarea (Absatz + Listenpunkte, U1): Höhe = Inhalt, kein Resize-Griff.
+     Explizite Schrift/Rahmen, damit die Textareas wie die übrigen Editor-Felder
+     aussehen (Browser-Default für textarea wäre Monospace). */
+  textarea.ed-grow {
+    overflow: hidden; resize: none; width: 100%; display: block;
+    font-family: inherit; font-size: 13px; color: var(--ink);
+    border: 1px solid #c7ccd3; border-radius: 5px; background: #fff;
+    padding: 6px 8px; line-height: 1.35;
+  }
+  textarea.ed-grow:focus { outline: none; border-color: var(--akzent); }
 
-  /* Listenpunkt-Zeilen im Block-Body + eingerückte Unterpunkte (max. 2 Ebenen) */
-  .ed-row { align-items: center; }
+  /* Listenpunkt-Zeilen im Block-Body + eingerückte Unterpunkte (max. 2 Ebenen).
+     flex-start (U1): point fields are autoGrow textareas now and may wrap to several
+     lines — the hover tools sit at the top edge instead of vertically centred. */
+  .ed-row { align-items: flex-start; }
   .ed-sub { margin-left: 22px; }
   .ed-block-body .ed-row, .ed-item .ed-row { margin-bottom: 4px; }
   .ed-block-body .ed-ghost, .ed-item .ed-ghost { margin-top: 2px; }
@@ -685,6 +719,16 @@
   ul.bb-liste ul { list-style: none; margin: 2px 0 0; padding: 0; }
   ul.bb-liste ul li { position: relative; padding-left: 13px; margin-bottom: 2px; font-size: 10px; color: var(--body); line-height: 1.3; }
   ul.bb-liste ul li::before { content: ""; position: absolute; left: 0; top: .45em; width: 4px; height: 4px; border-radius: 50%; background: var(--ink); }
+  /* Phase 10 — inline function references {…} (bold, never grey) + paragraph spacing.
+     Mirror of shared/css/viewer.css; the Builder only loads base.css, so the sheet
+     styles live inline here. Keep both copies in sync. */
+  .ref-fn { font-weight: 700; color: var(--ink); }
+  .bb-p .ref-fn, ul.bb-liste .ref-fn { color: var(--akzent, var(--ink)); }
+  .ref-fn[data-ref-id] { cursor: pointer; }
+  .abs-gap { display: block; height: .5em; }
+  .bb-p + .bb-p { margin-top: .5em; }
+  .bb-heading { font-size: 13px; font-weight: 700; color: var(--ink); margin: 6px 0 4px; }
+  .bb-heading:first-child { margin-top: 0; }
 
   /* ============================================================
      Druck / PDF — Seitengröße wird per JS gesetzt (#druckGroesse):

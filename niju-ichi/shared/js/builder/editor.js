@@ -105,6 +105,115 @@ function oeffnePop(anchor, items) {
   }, 0);
 }
 
+/* ============================================================
+   Phase 10 — inline {…} function-reference autocomplete (description textareas).
+   Triggered by typing "{" in a paragraph textarea; shows a live-filtered floating
+   list of organisation functions/roles + the current process roles. Selecting one
+   inserts the full token {Name¦id} (id from the loaded org, or name-only). MVP
+   positions the popup just below the textarea (robust caret tracking deferred).
+   ============================================================ */
+let _refPop = null, _refTa = null, _refItems = [], _refSel = 0, _refStart = -1;
+function _refAussen(e) { if (_refPop && !_refPop.contains(e.target) && e.target !== _refTa) refSchliessen(); }
+function refSchliessen() {
+  if (_refPop) { _refPop.remove(); _refPop = null; }
+  _refTa = null; _refItems = []; _refStart = -1; _refSel = 0;
+  document.removeEventListener("mousedown", _refAussen, true);
+}
+/* Suggestion source: loaded organisation (carries node ids) + current process roles
+   (id only if the role name also exists in the org). -> [{name,id,typ}] deduped. */
+function refVorschlaege() {
+  const idx = window.NIJU._orgRefIndex || {};
+  const set = {}, out = [];
+  Object.keys(idx).forEach((n) => {
+    const nn = n.trim(); if (!nn || set[nn]) return;
+    set[nn] = 1; out.push({ name: nn, id: idx[n].id || "", typ: idx[n].typ || "" });
+  });
+  ((STATE.daten && STATE.daten.rollen) || []).forEach((r) => {
+    const nn = rName(r).trim(); if (!nn || set[nn]) return;
+    set[nn] = 1; out.push({ name: nn, id: (idx[nn] && idx[nn].id) || "", typ: "rolle" });
+  });
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out;
+}
+/* Open "{" token left of the caret (no "}" between it and the caret). */
+function offenesRefToken(ta) {
+  const pos = ta.selectionStart;
+  const vor = ta.value.slice(0, pos);
+  const auf = vor.lastIndexOf("{");
+  if (auf < 0 || vor.indexOf("}", auf) >= 0) return null;
+  const query = vor.slice(auf + 1);
+  if (/[\n{]/.test(query)) return null;
+  return { start: auf, query: query };
+}
+function refPosition(ta) {
+  const r = ta.getBoundingClientRect();
+  _refPop.style.position = "fixed";
+  _refPop.style.left = Math.round(r.left) + "px";
+  _refPop.style.minWidth = Math.round(Math.min(Math.max(r.width, 200), 340)) + "px";
+  let top = r.bottom + 2;
+  const h = _refPop.offsetHeight;
+  if (top + h > window.innerHeight - 6) top = Math.max(6, r.top - h - 2);
+  _refPop.style.top = Math.round(top) + "px";
+}
+function refListe() {
+  _refPop.innerHTML = "";
+  _refPop.appendChild(el("div", "ref-pop-head", t("editor.refInsert")));
+  _refItems.slice(0, 8).forEach((v, i) => {
+    const b = el("button", "ref-pop-item" + (i === _refSel ? " an" : ""));
+    b.type = "button";
+    b.appendChild(el("span", "ref-pop-name", v.name));
+    if (v.typ) b.appendChild(el("span", "ref-pop-typ", v.typ === "funktion" ? t("editor.refFunction") : t("editor.refRole")));
+    b.addEventListener("mousedown", (e) => { e.preventDefault(); refWaehlen(i); });
+    _refPop.appendChild(b);
+  });
+}
+function refOeffnen(ta) {
+  const tok = offenesRefToken(ta);
+  if (!tok) { refSchliessen(); return; }
+  const q = tok.query.trim().toLowerCase();
+  const alle = refVorschlaege();
+  const treffer = q ? alle.filter((v) => v.name.toLowerCase().indexOf(q) >= 0) : alle;
+  if (!treffer.length) { refSchliessen(); return; }
+  _refTa = ta; _refItems = treffer; _refStart = tok.start;
+  if (_refSel >= Math.min(treffer.length, 8)) _refSel = 0;
+  if (!_refPop) {
+    _refPop = el("div", "ref-pop");
+    document.body.appendChild(_refPop);
+    setTimeout(() => document.addEventListener("mousedown", _refAussen, true), 0);
+  }
+  refListe();
+  refPosition(ta);
+}
+function refWaehlen(i) {
+  if (!_refTa || !_refItems[i]) { refSchliessen(); return; }
+  const ta = _refTa, v = _refItems[i];
+  const tok = offenesRefToken(ta);
+  const start = tok ? tok.start : _refStart;
+  const pos = ta.selectionStart;
+  const token = NIJU.RICH.token(v.name, v.id);
+  ta.value = ta.value.slice(0, start) + token + ta.value.slice(pos);
+  const caret = start + token.length;
+  refSchliessen();
+  ta.focus();
+  try { ta.setSelectionRange(caret, caret); } catch (e) {}
+  /* commit via the textarea's own input handler (updates data, autoGrow, render) */
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+}
+/* Attach the autocomplete to a description paragraph textarea. */
+function refWire(ta) {
+  ta.addEventListener("input", () => refOeffnen(ta));
+  ta.addEventListener("click", () => refOeffnen(ta));
+  ta.addEventListener("keydown", (e) => {
+    if (!_refPop || _refTa !== ta) return;
+    const n = Math.min(_refItems.length, 8);
+    if (e.key === "ArrowDown") { e.preventDefault(); _refSel = (_refSel + 1) % n; refListe(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); _refSel = (_refSel - 1 + n) % n; refListe(); }
+    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); refWaehlen(_refSel); }
+    else if (e.key === "Escape") { e.preventDefault(); refSchliessen(); }
+  });
+  ta.addEventListener("blur", () => setTimeout(refSchliessen, 150));
+}
+
 /* ----- Collapse view-state — NEVER written to the JSON (§4). WeakMap keyed by
    the (stable) description-block object → Set of collapsed content-part indices.
    Toggling only flips a CSS class (no rebuild), so the index stays valid. ----- */
@@ -129,6 +238,10 @@ function blockKurz(teil) {
     const n = teil.liste.length;
     const f = n ? String(itemText(teil.liste[0])).trim().replace(/\s+/g, " ") : "";
     return f ? (f + (n > 1 ? "  ·  +" + (n - 1) : "")) : t("editor.list");
+  }
+  if (teil && typeof teil === "object" && teil.ueberschrift != null) {
+    const s = String(teil.ueberschrift || "").trim();
+    return s || t("editor.heading");
   }
   return "";
 }
@@ -163,8 +276,9 @@ function stelleFokusHer() {
   if (!_edFokus) return;
   const f = _edFokus; _edFokus = null;
   const ui = (f.ui == null) ? "x" : f.ui;
-  const inp = document.querySelector('#editor input[data-listid="' + f.listid + '"][data-lii="' + f.lii + '"][data-ui="' + ui + '"]');
-  if (inp) { inp.focus(); const p = (f.caret == null) ? inp.value.length : f.caret; try { inp.setSelectionRange(p, p); } catch (e) {} }
+  /* point rows are textareas now (U1) — match by data-* on any element */
+  const inp = document.querySelector('#editor [data-listid="' + f.listid + '"][data-lii="' + f.lii + '"][data-ui="' + ui + '"]');
+  if (inp) { inp.focus(); const p = (f.caret == null) ? inp.value.length : f.caret; try { inp.setSelectionRange(p, p); autoGrow(inp); } catch (e) {} }
 }
 /* The row visually above (lii,ui) — for Backspace focus handoff. */
 function vorigeZeile(liste, lii, ui) {
@@ -327,6 +441,10 @@ function bloeckeKurz(block) {
     const s = String(block.text || "").trim().replace(/\s+/g, " ");
     return s ? (s.length > 60 ? s.slice(0, 60) + "…" : s) : t("editor.paragraph");
   }
+  if (block.typ === "ueberschrift") {
+    const s = String(block.text || "").trim();
+    return s || t("editor.heading");
+  }
   const head = String(block.ueberschrift || "").trim();
   if (head) return head;
   const n = (block.punkte || []).length;
@@ -342,7 +460,8 @@ function bloeckeEditor(schritt, si) {
   const wrap = el("div");
   if (!Array.isArray(schritt.bloecke)) schritt.bloecke = schrittBloecke(schritt);
   schritt.bloecke.forEach(function (block, ti) {
-    const istListe = (block.typ !== "absatz");
+    const typ = (block.typ === "absatz" || block.typ === "ueberschrift") ? block.typ : "liste";
+    const istListe = (typ === "liste");
     const bl = el("div", "ed-block"); if (istZu(schritt, ti)) bl.classList.add("zu");
 
     const h = el("div", "ed-block-h");
@@ -353,7 +472,8 @@ function bloeckeEditor(schritt, si) {
       bl.classList.toggle("zu", zu); setZu(schritt, ti, zu); setIc(chev, zu ? "ic-chevron-right" : "ic-chevron-down");
     });
     h.appendChild(chev);
-    h.appendChild(el("span", "ed-typebadge", istListe ? t("editor.list") : t("editor.paragraph")));
+    const typLabel = istListe ? t("editor.list") : (typ === "ueberschrift" ? t("editor.heading") : t("editor.paragraph"));
+    h.appendChild(el("span", "ed-typebadge", typLabel));
     h.appendChild(el("span", "ed-block-sum", bloeckeKurz(block)));
     const gripB = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
     h.appendChild(gripB);
@@ -377,6 +497,16 @@ function bloeckeEditor(schritt, si) {
         block.ueberschrift = v; const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block); render(STATE.daten);
       }));
       listenKoerper(body, block.punkte, "o:" + si + ":" + ti);
+    } else if (typ === "ueberschrift") {
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "grow"; inp.value = block.text || "";
+      inp.placeholder = t("editor.heading");
+      inp.addEventListener("input", function () {
+        block.text = inp.value;
+        const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block);
+        render(STATE.daten);
+      });
+      body.appendChild(inp);
     } else {
       const ta = document.createElement("textarea");
       ta.className = "grow ed-grow"; ta.value = block.text || ""; ta.rows = 2;
@@ -385,6 +515,7 @@ function bloeckeEditor(schritt, si) {
         const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block);
         render(STATE.daten);
       });
+      refWire(ta);
       body.appendChild(ta);
       requestAnimationFrame(function () { autoGrow(ta); });
     }
@@ -401,7 +532,7 @@ function bloeckeEditor(schritt, si) {
     oeffnePop(add, [
       { icon: "ic-paragraph", label: t("editor.paragraph"), onClick: function () { schritt.bloecke.push({ typ: "absatz", text: "" }); nachStruktur(); } },
       { icon: "ic-list", label: t("editor.list"), onClick: function () { schritt.bloecke.push({ typ: "liste", stil: "eckig", ueberschrift: "", punkte: [""] }); nachStruktur(); } },
-      { icon: "ic-heading", label: t("editor.heading") + " (" + t("editor.blockSoon") + ")", disabled: true }
+      { icon: "ic-heading", label: t("editor.heading"), onClick: function () { schritt.bloecke.push({ typ: "ueberschrift", text: "" }); nachStruktur(); } }
     ]);
   });
   wrap.appendChild(add);
@@ -671,6 +802,7 @@ function inhaltEditor(block, bi) {
   if (!block.inhalt) block.inhalt = [];
   block.inhalt.forEach(function (teil, ti) {
     const istListe = (typeof teil === "object" && teil && teil.liste);
+    const istUeberschrift = (typeof teil === "object" && teil && !istListe && teil.ueberschrift != null);
     const bl = el("div", "ed-block"); if (istZu(block, ti)) bl.classList.add("zu");
 
     /* ---- header strip ---- */
@@ -682,7 +814,8 @@ function inhaltEditor(block, bi) {
       bl.classList.toggle("zu", zu); setZu(block, ti, zu); setIc(chev, zu ? "ic-chevron-right" : "ic-chevron-down");
     });
     h.appendChild(chev);
-    h.appendChild(el("span", "ed-typebadge", istListe ? t("editor.list") : t("editor.paragraph")));
+    const typLabel = istListe ? t("editor.list") : (istUeberschrift ? t("editor.heading") : t("editor.paragraph"));
+    h.appendChild(el("span", "ed-typebadge", typLabel));
     h.appendChild(el("span", "ed-block-sum", blockKurz(teil)));
     if (istListe) h.appendChild(segmentToggle(teil));
     const gripB = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
@@ -705,6 +838,16 @@ function inhaltEditor(block, bi) {
     if (istListe) {
       if (!teil.liste) teil.liste = [];
       listenKoerper(body, teil.liste, "d:" + bi + ":" + ti);
+    } else if (istUeberschrift) {
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "grow"; inp.value = teil.ueberschrift || "";
+      inp.placeholder = t("editor.heading");
+      inp.addEventListener("input", function () {
+        teil.ueberschrift = inp.value;
+        const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = blockKurz(teil);
+        render(STATE.daten);
+      });
+      body.appendChild(inp);
     } else {
       const ta = document.createElement("textarea");
       ta.className = "grow ed-grow"; ta.value = (typeof teil === "string" ? teil : ""); ta.rows = 2;
@@ -713,6 +856,7 @@ function inhaltEditor(block, bi) {
         const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = blockKurz(ta.value);
         render(STATE.daten);
       });
+      refWire(ta);
       body.appendChild(ta);
       requestAnimationFrame(function () { autoGrow(ta); });
     }
@@ -730,7 +874,7 @@ function inhaltEditor(block, bi) {
     oeffnePop(add, [
       { icon: "ic-paragraph", label: t("editor.paragraph"), onClick: function () { block.inhalt.push(""); nachStruktur(); } },
       { icon: "ic-list", label: t("editor.list"), onClick: function () { block.inhalt.push({ liste: [""], spalten: 1 }); nachStruktur(); } },
-      { icon: "ic-heading", label: t("editor.heading") + " (" + t("editor.blockSoon") + ")", disabled: true }
+      { icon: "ic-heading", label: t("editor.heading"), onClick: function () { block.inhalt.push({ ueberschrift: "" }); nachStruktur(); } }
     ]);
   });
   wrap.appendChild(add);
@@ -751,7 +895,12 @@ function listenKoerper(body, liste, listid) {
   });
   const ghost = el("button", "ed-ghost"); ghost.type = "button";
   ghost.appendChild(ic("ic-plus")); ghost.appendChild(el("span", null, t("editor.addPoint")));
+  /* Discoverability (U3): surface the keyboard model right on the +point button. */
   ghost.appendChild(el("span", "kbd", "Enter"));
+  ghost.appendChild(el("span", "kbd", "Tab"));
+  ghost.appendChild(el("span", "kbd", "⇧Tab"));
+  ghost.appendChild(el("span", "kbd", "Alt ↑↓"));
+  ghost.title = t("editor.pointKeysHint");
   ghost.addEventListener("click", function (e) {
     e.preventDefault();
     liste.push(""); nachFokus({ listid: listid, lii: liste.length - 1, ui: "x", caret: 0 });
@@ -763,17 +912,22 @@ function listenKoerper(body, liste, listid) {
 function punktRow(liste, listid, lii, ui) {
   const istSub = (ui != null);
   const row = el("div", "ed-row" + (istSub ? " ed-sub" : ""));
-  const inp = document.createElement("input");
-  inp.type = "text"; inp.className = "grow";
+  /* autoGrow textarea (U1): long bullet points stay fully visible and wrap instead
+     of being clipped horizontally. Enter is intercepted by punktTaste (preventDefault),
+     so no accidental newline — the field is single-logical-line, just wrapping. */
+  const inp = document.createElement("textarea");
+  inp.className = "grow ed-grow"; inp.rows = 1;
   inp.value = istSub ? (liste[lii].unterpunkte[ui] || "") : itemText(liste[lii]);
   inp.dataset.listid = listid; inp.dataset.lii = lii; inp.dataset.ui = (ui == null ? "x" : ui);
   inp.addEventListener("input", function () {
     if (istSub) liste[lii].unterpunkte[ui] = inp.value;
     else { const cur = liste[lii]; if (typeof cur === "object" && cur) cur.text = inp.value; else liste[lii] = inp.value; }
+    autoGrow(inp);
     render(STATE.daten);
   });
   inp.addEventListener("keydown", function (e) { punktTaste(e, inp, liste, listid, lii, ui); });
   row.appendChild(inp);
+  requestAnimationFrame(function () { autoGrow(inp); });
 
   const tools = el("div", "ed-tools");
   const grip = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });

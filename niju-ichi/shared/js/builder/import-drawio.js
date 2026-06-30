@@ -264,6 +264,17 @@ function aktualisiereOrgNamen() {
   liste.innerHTML = "";
   out.forEach((n) => { const o = document.createElement("option"); o.value = n; liste.appendChild(o); });
 }
+/* Phase 10 — name -> { id, typ } map of the loaded organisation, so the inline
+   {…}-reference autocomplete can stamp the stable org-node id into the token.
+   Kept separate from the plain ORG_NAMEN datalist (which only needs names). */
+function aktualisiereOrgRefIndex(org) {
+  const idx = {};
+  (org && Array.isArray(org.knoten) ? org.knoten : []).forEach((k) => {
+    const n = (k.name || "").trim();
+    if (n && !idx[n]) idx[n] = { id: k.id, typ: k.typ };   /* first wins on duplicate names */
+  });
+  window.NIJU._orgRefIndex = idx;
+}
 document.getElementById("btnLadeOrg").addEventListener("click", () => { schliesseMenu(); document.getElementById("orgInput").click(); });
 document.getElementById("orgInput").addEventListener("change", (ev) => {
   const datei = ev.target.files[0];
@@ -275,8 +286,10 @@ document.getElementById("orgInput").addEventListener("change", (ev) => {
     /* Datei kann das ganze index.json sein (.organisation) oder direkt eine organisation */
     const org = (obj && obj.organisation) ? obj.organisation : obj;
     if (!org || !Array.isArray(org.knoten)) { alert(t("org.loadInvalid")); return; }
-    ORG_NAMEN = NIJU.ORG.alleNamen(NIJU.ORG.normalize(org));
+    const normOrg = NIJU.ORG.normalize(org);
+    ORG_NAMEN = NIJU.ORG.alleNamen(normOrg);
     aktualisiereOrgNamen();
+    aktualisiereOrgRefIndex(normOrg);
     alert(t("org.loadedNames", { n: ORG_NAMEN.length }));
   };
   reader.readAsText(datei, "utf-8");

@@ -80,4 +80,62 @@
     rolleId: rolleId,
     migriere: migriere
   };
+
+  /* ============================================================
+     Phase 10 — Inline rich text for process descriptions.
+     SINGLE source of truth for BOTH render pipelines (shared/js/viewer.js and
+     shared/js/builder/core.js both delegate their richHTML to NIJU.RICH.html),
+     so the Builder live preview, Viewer, Manager preview and PDF stay identical.
+     Features:
+       - HTML escaping
+       - function references  {Display}  or  {Display¦id}  (org-node id optional),
+         rendered as a bold <span class="ref-fn" data-ref-id="…"> showing only the name
+       - **bold**
+       - line breaks: single \n -> <br>, blank line -> paragraph gap
+     The separator ¦ (U+00A6, also accepts |) is never typed by the user — the editor
+     inserts the full token on selection; display names get sanitized of it on save.
+     ============================================================ */
+  if (!window.NIJU.RICH) (function () {
+    var SEP = "¦";                                   /* broken bar ¦ */
+    /* Reference token: {Display} or {Display<sep>id}. Token content has no { } . */
+    var REF_RE = /\{([^{}|¦]+?)(?:[|¦]([^{}]+?))?\}/g;
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    /* Strip separator/brace chars so a display name can never break the token. */
+    function sanitizeName(n) { return String(n == null ? "" : n).replace(/[|¦{}]/g, "").trim(); }
+    /* Build a reference token; id optional. */
+    function token(name, id) {
+      var nm = sanitizeName(name);
+      id = (id == null ? "" : String(id)).trim();
+      return id ? ("{" + nm + SEP + id + "}") : ("{" + nm + "}");
+    }
+    /* Collect references from RAW (un-escaped) freetext -> [{id,name}] (deduped). */
+    function refs(s) {
+      var out = [], seen = {};
+      String(s == null ? "" : s).replace(REF_RE, function (_, name, id) {
+        var nm = (name || "").trim(), rid = (id || "").trim(), key = rid || nm;
+        if (nm && !seen[key]) { seen[key] = 1; out.push({ id: rid, name: nm }); }
+        return _;
+      });
+      return out;
+    }
+    /* Inline HTML: escape -> references -> bold -> line breaks. Used by BOTH pipelines. */
+    function html(s) {
+      var out = escapeHtml(s);
+      out = out.replace(REF_RE, function (_, name, id) {
+        return '<span class="ref-fn"' + (id ? ' data-ref-id="' + id.trim() + '"' : "") +
+          ">" + name.trim() + "</span>";
+      });
+      out = out.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      out = out.replace(/\r\n?/g, "\n")
+        .replace(/\n{2,}/g, '<br><span class="abs-gap"></span>')
+        .replace(/\n/g, "<br>");
+      return out;
+    }
+
+    window.NIJU.RICH = { SEP: SEP, html: html, refs: refs, token: token, sanitizeName: sanitizeName };
+  })();
 })();

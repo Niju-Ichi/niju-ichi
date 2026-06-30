@@ -114,6 +114,8 @@ function renderUebersicht(daten) {
       const bd = el("div", "si-block");
       if (block.typ === "absatz") {
         const p = el("div", "si-absatz"); p.innerHTML = richHTML(block.text || ""); bd.appendChild(p);
+      } else if (block.typ === "ueberschrift") {
+        const hd = el("div", "si-heading"); hd.innerHTML = richHTML(block.text || ""); bd.appendChild(hd);
       } else {
         if (block.ueberschrift) bd.appendChild(el("div", "si-lab", block.ueberschrift));
         bd.appendChild(punkteListe(block.punkte));
@@ -338,6 +340,10 @@ function baueDetailRechts(schritt, leg) {
         const p = el("p", "bb-p");
         p.innerHTML = richHTML(teil);
         inhalt.appendChild(p);
+      } else if (teil && typeof teil === "object" && teil.ueberschrift != null) {
+        const hd = el("div", "bb-heading");
+        hd.innerHTML = richHTML(teil.ueberschrift || "");
+        inhalt.appendChild(hd);
       } else if (teil && teil.liste) {
         const ul = el("ul", "bb-liste" + (teil.spalten === 2 ? " spalten2" : ""));
         teil.liste.forEach(li => {

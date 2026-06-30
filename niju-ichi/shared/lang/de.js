@@ -200,7 +200,7 @@ NIJU.I18N.register("de", {
   "editor.detailHint": "Detailseite dieses Prozessschritts. Den Schritt wechselst du über das Dropdown oben in der Kopfleiste.",
   "editor.subtitlePage": "Untertitel (= Seitentitel)",
   "editor.secDescription": "Beschreibung ({n})",
-  "editor.descHint": "Ein Block je Verantwortung (R/A/C/I). Im Text hebt **…** Begriffe fett hervor.",
+  "editor.descHint": "Ein Block je Verantwortung (R/A/C/I). Im Text hebt **…** Begriffe fett hervor, {…} verweist auf eine Funktion/Rolle, eine Leerzeile beginnt einen neuen Absatz.",
   "editor.addDescBlock": "+ Beschreibungs-Block",
   "editor.block": "Block {n} · {raci}",
   "editor.removeBlock": "Block entfernen",
@@ -217,9 +217,12 @@ NIJU.I18N.register("de", {
   "editor.more": "Weitere Aktionen",
   "editor.duplicate": "Duplizieren",
   "editor.dragMove": "Verschieben (ziehen)",
-  "editor.makeSubpoint": "Zu Unterpunkt einrücken",
+  "editor.makeSubpoint": "Zu Unterpunkt einrücken (Tab)",
+  "editor.pointKeysHint": "Enter: neuer Punkt · Tab: einrücken · ⇧Tab: ausrücken · Alt+↑/↓: verschieben",
+  "editor.refInsert": "Funktion / Rolle einfügen",
+  "editor.refFunction": "Funktion",
+  "editor.refRole": "Rolle",
   "editor.addContentBlock": "Block hinzufügen",
-  "editor.blockSoon": "bald",
   "editor.collapse": "Ein-/ausklappen",
 
   /* Inhalts-Vorgaben für neue Daten (Nutzer bearbeitet danach) */
@@ -341,6 +344,14 @@ NIJU.I18N.register("de", {
   "map.mapView": "Landkarte",
   "map.browse": "Durchsuchen",
   "map.addBox": "+ Kasten",
+
+  /* Funktions-Steckbrief („Nach Funktion"-Ansicht) */
+  "sb.byFunction": "Nach Funktion",
+  "sb.searchPh": "Funktion / Rolle suchen…",
+  "sb.noMatch": "Kein Treffer.",
+  "sb.noInvolvement": "Noch in keinem geladenen Prozess beteiligt.",
+  "sb.noData": "Lade ein Prozessverzeichnis, um Beteiligungen je Funktion zu sehen.",
+  "sb.mention": "Erwähnt",
   "map.uploadImage": "Grafik hochladen…",
   "map.removeImage": "Grafik entfernen",
   "map.mode": "Grafik-Modus",

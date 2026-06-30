@@ -200,7 +200,7 @@ NIJU.I18N.register("en", {
   "editor.detailHint": "Detail page of this process step. Switch step via the dropdown at the top of the header bar.",
   "editor.subtitlePage": "Subtitle (= page title)",
   "editor.secDescription": "Description ({n})",
-  "editor.descHint": "One block per responsibility (R/A/C/I). In the text **…** highlights terms in bold.",
+  "editor.descHint": "One block per responsibility (R/A/C/I). In the text **…** highlights terms in bold, {…} links a function/role, a blank line starts a new paragraph.",
   "editor.addDescBlock": "+ Description block",
   "editor.block": "Block {n} · {raci}",
   "editor.removeBlock": "Remove block",
@@ -217,9 +217,12 @@ NIJU.I18N.register("en", {
   "editor.more": "More actions",
   "editor.duplicate": "Duplicate",
   "editor.dragMove": "Move (drag)",
-  "editor.makeSubpoint": "Indent to sub-point",
+  "editor.makeSubpoint": "Indent to sub-point (Tab)",
+  "editor.pointKeysHint": "Enter: new point · Tab: indent · ⇧Tab: outdent · Alt+↑/↓: move",
+  "editor.refInsert": "Insert function / role",
+  "editor.refFunction": "Function",
+  "editor.refRole": "Role",
   "editor.addContentBlock": "Add block",
-  "editor.blockSoon": "soon",
   "editor.collapse": "Collapse / expand",
 
   /* content defaults inserted into new data (user edits afterwards) */
@@ -337,6 +340,14 @@ NIJU.I18N.register("en", {
   "map.mapView": "Map",
   "map.browse": "Browse",
   "map.addBox": "+ Add box",
+
+  /* function profile / Steckbrief ("by function" view) */
+  "sb.byFunction": "By function",
+  "sb.searchPh": "Search function / role…",
+  "sb.noMatch": "No match.",
+  "sb.noInvolvement": "Not involved in any loaded process yet.",
+  "sb.noData": "Load a process directory to see participation by function.",
+  "sb.mention": "Mention",
   "map.uploadImage": "Upload image…",
   "map.removeImage": "Remove image",
   "map.mode": "Image mode",

@@ -69,11 +69,10 @@ function prozessIdTeile(text) {
   if (m) return { num: m[1], name: m[2] };
   return { num: "", name: String(text || "") };
 }
-/* Sichere Rich-Text-Ausgabe (Detailseite): HTML escapen, **fett** zulassen */
-function richHTML(s) {
-  const esc = String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-}
+/* Safe rich-text output — delegates to the shared parser (NIJU.RICH.html) so the
+   Builder live preview matches Viewer/Manager/PDF 1:1: HTML escape, {…} function
+   references, **bold**, and line breaks. Single source of truth, see prozess.js. */
+function richHTML(s) { return NIJU.RICH.html(s); }
 
 /* Firma oben rechts in der Kopfzeile: als Text-Chip oder als Logo-Bild.
    meta.firmaModus = "text" | "logo"; meta.logo = Data-URL (PNG/JPEG). */

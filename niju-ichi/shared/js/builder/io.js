@@ -25,8 +25,33 @@ function dateiNameTemplate() {
 }
 
 /* JSON-Text der aktuellen Daten + Design-Snapshot (reist mit der Datei, Hub). */
+/* Phase 10 (optional, KI-friendly): collect every string value below a node. */
+function _sammleTexte(node, out) {
+  if (node == null) return;
+  if (typeof node === "string") { out.push(node); return; }
+  if (Array.isArray(node)) { node.forEach((x) => _sammleTexte(x, out)); return; }
+  if (typeof node === "object") { Object.keys(node).forEach((k) => _sammleTexte(node[k], out)); }
+}
+/* Re-derive each step's `referenzen:[{id,name}]` from its description/overview
+   freetext, so an AI consuming the JSON needn't parse {…} tokens itself. Always
+   recomputed from the text (never hand-edited); read-only modules ignore it. */
+function stempleReferenzen(daten) {
+  if (!window.NIJU.RICH) return;
+  ((daten && daten.schritte) || []).forEach((s) => {
+    const texte = [];
+    _sammleTexte(s.beschreibung, texte);
+    _sammleTexte(s.bloecke, texte);
+    const seen = {}, refs = [];
+    texte.forEach((tx) => NIJU.RICH.refs(tx).forEach((r) => {
+      const key = r.id || r.name;
+      if (!seen[key]) { seen[key] = 1; refs.push(r); }
+    }));
+    if (refs.length) s.referenzen = refs; else delete s.referenzen;
+  });
+}
 function baueJsonText() {
   if (window.NIJU.DESIGN) STATE.daten.design = STATE.daten.design || window.NIJU.DESIGN.effektiv();
+  stempleReferenzen(STATE.daten);
   return JSON.stringify(STATE.daten, null, 2);
 }
 

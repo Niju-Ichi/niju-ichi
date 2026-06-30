@@ -22,6 +22,7 @@
 <script src="../../shared/js/prozess.js"></script>
 <script src="../../shared/js/library.js"></script>
 <script src="../../shared/js/viewer.js"></script>
+<script src="../../shared/js/steckbrief.js"></script>
 <script src="../../shared/js/tree.js"></script>
 <script src="../../shared/js/map.js"></script>
 <script src="../../shared/js/demo-library.js"></script>
@@ -53,6 +54,7 @@
     <div class="tb-seg">
       <button class="btn seg aktiv" id="modeLandkarte" data-i18n="map.mapView">Map</button>
       <button class="btn seg" id="modeBrowse" data-i18n="map.browse">Browse</button>
+      <button class="btn seg" id="modeFunktion" data-i18n="sb.byFunction">By function</button>
     </div>
     <span class="spacer"></span>
     <div class="nav-wrap" id="navWrap"></div>
@@ -78,6 +80,9 @@
       </div>
       <div class="viewer-buehne" id="viewerHost"><div class="leer-hinweis" data-i18n="hub.selectHint"></div></div>
     </div>
+  </div>
+  <div class="mod-app" id="funcApp" hidden>
+    <div class="sb-host" id="funcHost"></div>
   </div>
   <div class="stage" id="cfgHost" hidden></div>
 
@@ -166,8 +171,9 @@ dirInput.addEventListener("change", function (ev) {
 
 /* ===== Landkarte (read-only Startansicht) ===== */
 var modApp = document.getElementById("modApp"), mapApp = document.getElementById("mapApp"), cfgHost = document.getElementById("cfgHost");
+var funcApp = document.getElementById("funcApp"), funcHost = document.getElementById("funcHost");
 var mapHost = document.getElementById("mapHost");
-var modeLandkarte = document.getElementById("modeLandkarte"), modeBrowse = document.getElementById("modeBrowse");
+var modeLandkarte = document.getElementById("modeLandkarte"), modeBrowse = document.getElementById("modeBrowse"), modeFunktion = document.getElementById("modeFunktion");
 
 function ersterProzessImCluster(id) {
   var found = null;
@@ -179,13 +185,28 @@ function setView(v) {
   ST.view = v;
   modeLandkarte.classList.toggle("aktiv", v === "landkarte");
   modeBrowse.classList.toggle("aktiv", v === "browse");
+  modeFunktion.classList.toggle("aktiv", v === "funktion");
   mapApp.hidden = (v !== "landkarte");
   modApp.hidden = (v !== "browse");
+  funcApp.hidden = (v !== "funktion");
   if (v === "landkarte") zeichneMap();
+  else if (v === "funktion") zeichneFunktion();
   else zeichneViewer();
 }
 modeLandkarte.addEventListener("click", function () { setView("landkarte"); });
 modeBrowse.addEventListener("click", function () { setView("browse"); });
+modeFunktion.addEventListener("click", function () { setView("funktion"); });
+
+/* ===== Function profile (Steckbrief) — read-only "by function" view ===== */
+function oeffneProzessSchritt(datei, idx) {
+  if (!ST.model.prozesse[datei]) return;
+  ST.selected = datei; ST.ansicht = "detail"; ST.detailIndex = idx || 0;
+  try { location.hash = "p=" + encodeURIComponent(datei) + "&step=" + (idx || 0); } catch (e) {}
+  aktualisiereKopf(); zeichneTree(); zeichneViewer(); setView("browse");
+}
+function zeichneFunktion() {
+  NIJU.STECKBRIEF.render(funcHost, ST.model, { onOpen: oeffneProzessSchritt });
+}
 
 function zeichneMap() {
   NIJU.MAP.render(mapHost, getCurrentLandkarte(), {
@@ -204,14 +225,14 @@ function zeichneMap() {
 /* About */
 document.getElementById("btnAbout").addEventListener("click", function () {
   schliesseMenu();
-  modApp.hidden = true; mapApp.hidden = true; cfgHost.hidden = false;
+  modApp.hidden = true; mapApp.hidden = true; funcApp.hidden = true; cfgHost.hidden = false;
   NIJU.CONFIG.open(cfgHost, { aboutOnly: true, onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; setView(ST.view); } });
 });
 
 /* Configuration */
 document.getElementById("btnConfig").addEventListener("click", function () {
   schliesseMenu();
-  modApp.hidden = true; mapApp.hidden = true; cfgHost.hidden = false;
+  modApp.hidden = true; mapApp.hidden = true; funcApp.hidden = true; cfgHost.hidden = false;
   NIJU.CONFIG.open(cfgHost, { onClose: function () { cfgHost.hidden = true; cfgHost.innerHTML = ""; setView(ST.view); } });
 });
 
@@ -225,7 +246,18 @@ NIJU.NAV.mount("navWrap", "hub");
   setView("landkarte");
 })();
 
-NIJU.I18N.onChange(function () { aktualisiereKopf(); zeichneTree(); zeichneViewer(); if (ST.view === "landkarte") zeichneMap(); document.getElementById("modHint").textContent = t("hub.dirHint"); });
+NIJU.I18N.onChange(function () { aktualisiereKopf(); zeichneTree(); zeichneViewer(); if (ST.view === "landkarte") zeichneMap(); if (ST.view === "funktion") zeichneFunktion(); document.getElementById("modHint").textContent = t("hub.dirHint"); });
+
+/* Deeplink (#p=<datei>&step=<i>) — open a process at a step (e.g. from Brain/Steckbrief). */
+(function () {
+  var h = (location.hash || "").replace(/^#/, "");
+  if (!h) return;
+  var q = {}; h.split("&").forEach(function (kv) { var p = kv.split("="); q[p[0]] = decodeURIComponent(p[1] || ""); });
+  if (q.p && ST.model.prozesse[q.p]) {
+    ST.selected = q.p; ST.ansicht = "detail"; ST.detailIndex = parseInt(q.step, 10) || 0;
+    aktualisiereKopf(); zeichneTree(); zeichneViewer(); setView("browse");
+  }
+})();
 var _rt = null;
 window.addEventListener("resize", function () { clearTimeout(_rt); _rt = setTimeout(function () { if (!modApp.hidden) NIJU.VIEWER.fit(viewerHost); }, 120); });
 </script>

@@ -27,10 +27,9 @@
   function tagSplit(s) { var m = String(s).match(/^(.*?)\s*\[([^\]]+)\]\s*$/); return m ? { text: m[1], tag: m[2] } : { text: String(s), tag: null }; }
   function legendeTeile(text) { var m = String(text).match(/^(.*?)\s*\(([^)]+)\)\s*$/); return m ? { sub: m[1], titel: m[2] } : { sub: text, titel: "" }; }
   function prozessIdTeile(text) { var m = String(text || "").match(/^\s*([\d.]+)\s+(.*)$/); return m ? { num: m[1], name: m[2] } : { num: "", name: String(text || "") }; }
-  function richHTML(s) {
-    var esc = String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  }
+  /* Inline rich text — delegates to the shared parser so Viewer/Manager/PDF match
+     the Builder preview exactly (escape + {…} references + **bold** + line breaks). */
+  function richHTML(s) { return NIJU.RICH.html(s); }
   function firmaElement(m) {
     if (m.firmaModus === "logo" && m.logo) { var img = el("img", "firma-logo"); img.src = m.logo; img.alt = m.firma || "Logo"; return img; }
     if (m.firma) return el("span", "chip", m.firma);
@@ -138,6 +137,8 @@
         var bd = el("div", "si-block");
         if (block.typ === "absatz") {
           var p = el("div", "si-absatz"); p.innerHTML = richHTML(block.text || ""); bd.appendChild(p);
+        } else if (block.typ === "ueberschrift") {
+          var hd = el("div", "si-heading"); hd.innerHTML = richHTML(block.text || ""); bd.appendChild(hd);
         } else {
           if (block.ueberschrift) bd.appendChild(el("div", "si-lab", block.ueberschrift));
           bd.appendChild(punkteListe(block.punkte));
@@ -303,6 +304,9 @@
       if (block.titel) inhalt.appendChild(el("div", "bb-titel", block.titel));
       (block.inhalt || []).forEach(function (teil) {
         if (typeof teil === "string") { var p = el("p", "bb-p"); p.innerHTML = richHTML(teil); inhalt.appendChild(p); }
+        else if (teil && typeof teil === "object" && teil.ueberschrift != null) {
+          var hd = el("div", "bb-heading"); hd.innerHTML = richHTML(teil.ueberschrift || ""); inhalt.appendChild(hd);
+        }
         else if (teil && teil.liste) {
           var ul = el("ul", "bb-liste" + (teil.spalten === 2 ? " spalten2" : ""));
           teil.liste.forEach(function (li) {
