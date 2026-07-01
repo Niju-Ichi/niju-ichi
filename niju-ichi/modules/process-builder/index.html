@@ -366,6 +366,15 @@
   .ed-section.zu .ed-body { display: none; }
   .ed-body { padding: 12px; }
 
+  /* Phase 11 — content language toggle bar */
+  .ed-lang-bar { display: flex; align-items: center; gap: 6px; padding: 6px 0 10px; border-bottom: 1px solid #e5e7ea; margin-bottom: 12px; }
+  .ed-lang-label { font-size: 11px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+  .ed-lang-btn { padding: 3px 10px; border-radius: 12px; border: 1px solid #c7ccd3; background: #fff; font-size: 12px; cursor: pointer; }
+  .ed-lang-btn.an { background: var(--akzent); color: #fff; border-color: var(--akzent); }
+  /* stale-translation indicator on field labels */
+  .ed-field.i18n-stale > label { color: #b45309; }
+  .stale-ind { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; background: #fef3c7; color: #92400e; border-radius: 3px; padding: 1px 4px; margin-left: 4px; vertical-align: middle; }
+
   .ed-field { margin-bottom: 10px; }
   .ed-field:last-child { margin-bottom: 0; }
   .ed-field > label {
@@ -806,6 +815,13 @@
           </div>
         </div>
         <div class="menu-sub">
+          <button class="menu-item has-sub" type="button" data-i18n="menu.translation">Translation</button>
+          <div class="submenu">
+            <button class="menu-item" id="btnWordlistExport" data-i18n="wordlist.export">Export word list…</button>
+            <button class="menu-item" id="btnWordlistImport" data-i18n="wordlist.import">Apply translations…</button>
+          </div>
+        </div>
+        <div class="menu-sub">
           <button class="menu-item has-sub" type="button" data-i18n="menu.export">Export</button>
           <div class="submenu">
             <button class="menu-item" id="btnDrucken" data-i18n="menu.exportPdf">PDF / Print</button>
@@ -816,6 +832,7 @@
               <div class="submenu">
                 <button class="menu-item" id="btnHtml" data-i18n="menu.exportHtmlPage">HTML page</button>
                 <button class="menu-item" id="btnHtmlBatch" data-i18n="menu.exportHtmlBatch">HTML batch</button>
+                <button class="menu-item" id="btnBilingual" data-i18n="export.bilingual">Bilingual HTML page</button>
               </div>
             </div>
             <div class="menu-sub">
@@ -834,6 +851,7 @@
             </div>
           </div>
         </div>
+        <hr>
         <button class="menu-item" id="btnConfig" data-i18n="menu.config">Configuration</button>
       </div>
     </div>
@@ -882,6 +900,9 @@
 <script src="../../shared/js/builder/export-html.js"></script>
 <script src="../../shared/js/builder/export-md.js"></script>
 <script src="../../shared/js/builder/export-confluence.js"></script>
+<script src="../../shared/js/builder/export-wordlist.js"></script>
+<script src="../../shared/js/builder/import-wordlist.js"></script>
+<script src="../../shared/js/builder/export-bilingual.js"></script>
 <script src="../../shared/js/builder/import-drawio.js"></script>
 <script src="../../shared/js/builder/app.js"></script>
 </body>

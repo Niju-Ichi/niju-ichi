@@ -13,7 +13,11 @@
   var SVG_NS = "http://www.w3.org/2000/svg";
   var RACI_REIHENFOLGE = ["R", "A", "C", "I"];
   var SLOT_REIHENFOLGE = ["C", "R", "A", "I"];
+  /* Active content language — set at the start of each render call so all helpers
+     can read it without needing an extra parameter threaded through every call. */
+  var _lang = "de";
   function t(k, v) { return window.NIJU.I18N ? window.NIJU.I18N.t(k, v) : k; }
+  function pt(v) { return NIJU.PROZESS.text(v, _lang); }
 
   function el(tag, klasse, text) {
     var e = document.createElement(tag);
@@ -38,7 +42,9 @@
   function metaListe(punkte) {
     var ul = el("ul", "mliste");
     (punkte || []).forEach(function (p) {
-      var s = tagSplit(typeof p === "string" ? p : (p.text || ""));
+      /* punkt can be a string, a bilingual {_i18n} leaf, or a {text,…} object. */
+      var raw = (typeof p === "string" || NIJU.PROZESS.isI18n(p)) ? p : (p.text || "");
+      var s = tagSplit(pt(raw));
       var li = el("li");
       li.appendChild(el("span", "mtext", s.text));
       if (s.tag) li.appendChild(el("span", "mtag", s.tag));
@@ -50,12 +56,12 @@
     var ul = el("ul", "liste");
     (punkte || []).forEach(function (p) {
       var li = el("li");
-      var text = (typeof p === "string") ? p : (p.text || "");
-      li.appendChild(el("span", "txt", text));
+      var raw = (typeof p === "string" || NIJU.PROZESS.isI18n(p)) ? p : (p.text || "");
+      li.appendChild(el("span", "txt", pt(raw)));
       var unter = (typeof p === "object" && p.unterpunkte) ? p.unterpunkte : null;
       if (unter && unter.length) {
         var subUl = el("ul");
-        unter.forEach(function (u) { subUl.appendChild(el("li", null, u)); });
+        unter.forEach(function (u) { subUl.appendChild(el("li", null, pt(u))); });
         li.appendChild(subUl);
       }
       ul.appendChild(li);
@@ -84,6 +90,7 @@
 
   function renderUebersicht(host, blatt, daten) {
     if (!daten || !daten.meta) { blatt.innerHTML = '<div class="leer-hinweis"></div>'; blatt.firstChild.textContent = t("msg.invalidData"); return; }
+    _lang = (window.NIJU.I18N && NIJU.I18N.get) ? NIJU.I18N.get() : NIJU.PROZESS.PRIMARY;
     var m = daten.meta, schritte = daten.schritte || [], rollen = daten.rollen || [], n = schritte.length;
 
     var topbar = el("div", "topbar");
@@ -98,7 +105,7 @@
 
     var titelWrap = el("div", "titel");
     var h1 = el("h1");
-    var teile = (m.titel || "").split(/\s[-–]\s/);
+    var teile = (pt(m.titel) || "").split(/\s[-–]\s/);
     h1.appendChild(el("span", "t1", teile[0] || ""));
     if (teile.length > 1) { h1.appendChild(document.createTextNode(" ")); h1.appendChild(el("span", "t2", teile.slice(1).join(" – "))); }
     titelWrap.appendChild(h1);
@@ -112,9 +119,9 @@
     var mgruppe = function (bauen) { var g = el("div", "mgroup"); bauen(g); meta.appendChild(g); };
     mgruppe(function (g) { g.appendChild(el("div", "mlabel", t("field.processId"))); g.appendChild(el("div", "mval-id", m.prozessId || "—")); });
     mgruppe(function (g) { g.appendChild(el("div", "mlabel", t("field.processOwner"))); g.appendChild(el("div", "mval", m.processOwner || "—")); });
-    if (daten.input) mgruppe(function (g) { g.appendChild(el("div", "mlabel", labelFormat(daten.input.label || t("field.input")))); g.appendChild(metaListe(daten.input.punkte)); });
+    if (daten.input) mgruppe(function (g) { g.appendChild(el("div", "mlabel", labelFormat(pt(daten.input.label) || t("field.input")))); g.appendChild(metaListe(daten.input.punkte)); });
     if (daten.output) mgruppe(function (g) {
-      g.appendChild(el("div", "mlabel", labelFormat(daten.output.label || t("field.output"))));
+      g.appendChild(el("div", "mlabel", labelFormat(pt(daten.output.label) || t("field.output"))));
       if (daten.output.verantwortlich) g.appendChild(el("div", "mval akzent", daten.output.verantwortlich));
       g.appendChild(metaListe(daten.output.punkte));
     });
@@ -125,9 +132,9 @@
       k.style.gridColumn = String(i + 2); k.style.gridRow = "1";
       var top = el("div", "sk-top");
       if (s.kopfId) top.appendChild(el("span", "sk-num", s.kopfId));
-      top.appendChild(el("span", "sk-lab", (s.titel || "").toUpperCase()));
+      top.appendChild(el("span", "sk-lab", (pt(s.titel) || "").toUpperCase()));
       k.appendChild(top);
-      if (s.untertitel) k.appendChild(el("div", "sk-sub", s.untertitel));
+      if (s.untertitel) k.appendChild(el("div", "sk-sub", pt(s.untertitel)));
       raster.appendChild(k);
     });
     schritte.forEach(function (s, i) {
@@ -136,11 +143,11 @@
       schrittBloecke(s).forEach(function (block) {
         var bd = el("div", "si-block");
         if (block.typ === "absatz") {
-          var p = el("div", "si-absatz"); p.innerHTML = richHTML(block.text || ""); bd.appendChild(p);
+          var p = el("div", "si-absatz"); p.innerHTML = richHTML(pt(block.text || "")); bd.appendChild(p);
         } else if (block.typ === "ueberschrift") {
-          var hd = el("div", "si-heading"); hd.innerHTML = richHTML(block.text || ""); bd.appendChild(hd);
+          var hd = el("div", "si-heading"); hd.innerHTML = richHTML(pt(block.text || "")); bd.appendChild(hd);
         } else {
-          if (block.ueberschrift) bd.appendChild(el("div", "si-lab", block.ueberschrift));
+          if (block.ueberschrift) bd.appendChild(el("div", "si-lab", pt(block.ueberschrift)));
           bd.appendChild(punkteListe(block.punkte));
         }
         c.appendChild(bd);
@@ -156,7 +163,7 @@
     var legende = el("div", "legende"), leg = daten.legende || {};
     RACI_REIHENFOLGE.forEach(function (b) {
       if (!leg[b]) return;
-      var te = legendeTeile(leg[b]);
+      var te = legendeTeile(pt(leg[b]));
       var item = el("div", "leg-item");
       item.appendChild(badge(b));
       var txt = el("div", "leg-txt");
@@ -172,7 +179,7 @@
     schritte.forEach(function (s, i) {
       var c = el("div", "raci-num");
       if (s.kopfId) c.appendChild(el("span", "rn-num", s.kopfId));
-      c.appendChild(el("span", "rn-lab", (s.titel || "").toUpperCase()));
+      c.appendChild(el("span", "rn-lab", (pt(s.titel) || "").toUpperCase()));
       raster.appendChild(c);
     });
 
@@ -193,7 +200,7 @@
     blatt.appendChild(raster);
 
     var footer = el("div", "footer");
-    footer.appendChild(el("div", "f-l", m.fusstext || ""));
+    footer.appendChild(el("div", "f-l", pt(m.fusstext || "")));
     var fr = el("div", "f-r");
     if (m.version) { fr.appendChild(document.createTextNode(t("render.version") + " ")); fr.appendChild(el("b", null, m.version)); }
     if (m.datum) fr.appendChild(document.createTextNode("  /  " + t("render.asOf") + " " + m.datum));
@@ -206,6 +213,7 @@
 
   function renderDetail(host, blatt, daten, index) {
     if (!daten || !daten.meta || !daten.schritte || !daten.schritte.length) { blatt.innerHTML = '<div class="leer-hinweis"></div>'; blatt.firstChild.textContent = t("msg.invalidData"); return; }
+    _lang = (window.NIJU.I18N && NIJU.I18N.get) ? NIJU.I18N.get() : NIJU.PROZESS.PRIMARY;
     index = Math.max(0, Math.min(index || 0, daten.schritte.length - 1));
     var m = daten.meta, schritt = daten.schritte[index], rollen = daten.rollen || [], leg = daten.legende || {};
     var pid = prozessIdTeile(m.prozessId), nr = String(index).padStart(2, "0");
@@ -221,7 +229,7 @@
     blatt.appendChild(topbar);
 
     var titelWrap = el("div", "titel");
-    titelWrap.appendChild(el("h1", null, schritt.untertitel || schritt.titel || t("render.stepFallback", { n: index })));
+    titelWrap.appendChild(el("h1", null, pt(schritt.untertitel) || pt(schritt.titel) || t("render.stepFallback", { n: index })));
     blatt.appendChild(titelWrap);
 
     var koerper = el("div", "koerper");
@@ -230,7 +238,7 @@
     blatt.appendChild(koerper);
 
     var footer = el("div", "footer");
-    footer.appendChild(el("div", "f-l", m.fusstext || ""));
+    footer.appendChild(el("div", "f-l", pt(m.fusstext || "")));
     var fr = el("div", "f-r");
     if (m.version) { fr.appendChild(document.createTextNode(t("render.version") + " ")); fr.appendChild(el("b", null, m.version)); }
     if (m.datum) fr.appendChild(document.createTextNode("  /  " + t("render.asOf") + " " + m.datum));
@@ -268,7 +276,7 @@
     var legende = el("div", "legende");
     RACI_REIHENFOLGE.forEach(function (b) {
       if (!leg[b]) return;
-      var te = legendeTeile(leg[b]);
+      var te = legendeTeile(pt(leg[b]));
       var item = el("div", "leg-item");
       item.appendChild(badge(b));
       var txt = el("div", "leg-txt");
@@ -301,22 +309,22 @@
       eyebrow.appendChild(document.createTextNode((te.titel || raciLabel(b)).toUpperCase() + " "));
       if (te.sub) eyebrow.appendChild(el("span", "dim", "· " + te.sub.toUpperCase()));
       inhalt.appendChild(eyebrow);
-      if (block.titel) inhalt.appendChild(el("div", "bb-titel", block.titel));
+      if (block.titel) inhalt.appendChild(el("div", "bb-titel", pt(block.titel)));
       (block.inhalt || []).forEach(function (teil) {
-        if (typeof teil === "string") { var p = el("p", "bb-p"); p.innerHTML = richHTML(teil); inhalt.appendChild(p); }
-        else if (teil && typeof teil === "object" && teil.ueberschrift != null) {
-          var hd = el("div", "bb-heading"); hd.innerHTML = richHTML(teil.ueberschrift || ""); inhalt.appendChild(hd);
-        }
-        else if (teil && teil.liste) {
+        if (NIJU.PROZESS.isI18n(teil) || typeof teil === "string") {
+          var p = el("p", "bb-p"); p.innerHTML = richHTML(pt(teil)); inhalt.appendChild(p);
+        } else if (teil && typeof teil === "object" && teil.ueberschrift != null) {
+          var hd = el("div", "bb-heading"); hd.innerHTML = richHTML(pt(teil.ueberschrift || "")); inhalt.appendChild(hd);
+        } else if (teil && teil.liste) {
           var ul = el("ul", "bb-liste" + (teil.spalten === 2 ? " spalten2" : ""));
           teil.liste.forEach(function (li) {
             var item = el("li");
-            var txt = (typeof li === "string") ? li : (li.text || "");
-            item.innerHTML = richHTML(txt);
+            var raw = (typeof li === "string") ? li : (li.text || "");
+            item.innerHTML = richHTML(pt(raw));
             var unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
             if (unter && unter.length) {
               var sub = el("ul");
-              unter.forEach(function (u) { var sl = el("li"); sl.innerHTML = richHTML(u); sub.appendChild(sl); });
+              unter.forEach(function (u) { var sl = el("li"); sl.innerHTML = richHTML(pt(u)); sub.appendChild(sl); });
               item.appendChild(sub);
             }
             ul.appendChild(item);

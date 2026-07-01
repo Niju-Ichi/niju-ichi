@@ -86,6 +86,10 @@ document.getElementById("btnCfBatch").addEventListener("click", () => { schliess
 /* Markdown-Export (Menü: Export → Markdown (AI)) */
 document.getElementById("btnMd").addEventListener("click", () => { schliesseMenu(); exportiereMarkdown(); });
 document.getElementById("btnMdBatch").addEventListener("click", () => { schliesseMenu(); mdBatchStart(); });
+/* Phase 11 — bilingual export + word-list round-trip */
+document.getElementById("btnBilingual").addEventListener("click", () => { schliesseMenu(); exportBilingual(); });
+document.getElementById("btnWordlistExport").addEventListener("click", () => { schliesseMenu(); exportWordlist(); });
+document.getElementById("btnWordlistImport").addEventListener("click", () => { schliesseMenu(); importWordlist(); });
 
 /* Ansicht-Navigation */
 document.getElementById("btnAnsichtUebersicht").addEventListener("click", () => setAnsicht("uebersicht"));

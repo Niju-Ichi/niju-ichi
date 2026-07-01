@@ -35,6 +35,12 @@ function renderUebersicht(daten) {
     return;
   }
 
+  const P = NIJU.PROZESS;
+  /* STATE.renderLang: temporary language override (used by the bilingual export to
+     render a page in a forced language without switching the UI language). */
+  const lang = STATE.renderLang || ((NIJU.I18N && NIJU.I18N.get) ? NIJU.I18N.get() : P.PRIMARY);
+  const pt = v => P.text(v, lang);
+
   const m = daten.meta;
   const schritte = daten.schritte || [];
   const rollen = daten.rollen || [];
@@ -56,7 +62,7 @@ function renderUebersicht(daten) {
   /* ----- Titel (zweifarbig: vor "-" fett, danach hell) ----- */
   const titelWrap = el("div", "titel");
   const h1 = el("h1");
-  const teile = (m.titel || "").split(/\s[-–]\s/);
+  const teile = (pt(m.titel) || "").split(/\s[-–]\s/);
   h1.appendChild(el("span", "t1", teile[0] || ""));
   if (teile.length > 1) { h1.appendChild(document.createTextNode(" ")); h1.appendChild(el("span", "t2", teile.slice(1).join(" – "))); }
   titelWrap.appendChild(h1);
@@ -81,13 +87,13 @@ function renderUebersicht(daten) {
     g.appendChild(el("div", "mval", m.processOwner || "—"));
   });
   if (daten.input) mgruppe(g => {
-    g.appendChild(el("div", "mlabel", labelFormat(daten.input.label || t("field.input"))));
-    g.appendChild(metaListe(daten.input.punkte));
+    g.appendChild(el("div", "mlabel", labelFormat(pt(daten.input.label) || t("field.input"))));
+    g.appendChild(metaListe(daten.input.punkte, lang));
   });
   if (daten.output) mgruppe(g => {
-    g.appendChild(el("div", "mlabel", labelFormat(daten.output.label || t("field.output"))));
+    g.appendChild(el("div", "mlabel", labelFormat(pt(daten.output.label) || t("field.output"))));
     if (daten.output.verantwortlich) g.appendChild(el("div", "mval akzent", daten.output.verantwortlich));
-    g.appendChild(metaListe(daten.output.punkte));
+    g.appendChild(metaListe(daten.output.punkte, lang));
   });
   raster.appendChild(meta);
 
@@ -99,9 +105,9 @@ function renderUebersicht(daten) {
     const top = el("div", "sk-top");
     /* Spaltenkopf-ID (frei wählbar). Ohne ID beginnt der Titel linksbündig. */
     if (s.kopfId) top.appendChild(el("span", "sk-num", s.kopfId));
-    top.appendChild(el("span", "sk-lab", (s.titel || "").toUpperCase()));
+    top.appendChild(el("span", "sk-lab", (pt(s.titel) || "").toUpperCase()));
     k.appendChild(top);
-    if (s.untertitel) k.appendChild(el("div", "sk-sub", s.untertitel));
+    if (s.untertitel) k.appendChild(el("div", "sk-sub", pt(s.untertitel)));
     raster.appendChild(k);
   });
 
@@ -113,12 +119,12 @@ function renderUebersicht(daten) {
     schrittBloecke(s).forEach(block => {
       const bd = el("div", "si-block");
       if (block.typ === "absatz") {
-        const p = el("div", "si-absatz"); p.innerHTML = richHTML(block.text || ""); bd.appendChild(p);
+        const p = el("div", "si-absatz"); p.innerHTML = richHTML(pt(block.text || "")); bd.appendChild(p);
       } else if (block.typ === "ueberschrift") {
-        const hd = el("div", "si-heading"); hd.innerHTML = richHTML(block.text || ""); bd.appendChild(hd);
+        const hd = el("div", "si-heading"); hd.innerHTML = richHTML(pt(block.text || "")); bd.appendChild(hd);
       } else {
-        if (block.ueberschrift) bd.appendChild(el("div", "si-lab", block.ueberschrift));
-        bd.appendChild(punkteListe(block.punkte));
+        if (block.ueberschrift) bd.appendChild(el("div", "si-lab", pt(block.ueberschrift)));
+        bd.appendChild(punkteListe(block.punkte, lang));
       }
       c.appendChild(bd);
     });
@@ -135,12 +141,12 @@ function renderUebersicht(daten) {
   const leg = daten.legende || {};
   RACI_REIHENFOLGE.forEach(b => {
     if (!leg[b]) return;
-    const t = legendeTeile(leg[b]);
+    const te = legendeTeile(pt(leg[b]));
     const item = el("div", "leg-item");
     item.appendChild(badge(b));
     const txt = el("div", "leg-txt");
-    txt.appendChild(el("b", null, t.titel || raciLabel(b)));
-    if (t.sub) txt.appendChild(el("i", null, t.sub));
+    txt.appendChild(el("b", null, te.titel || raciLabel(b)));
+    if (te.sub) txt.appendChild(el("i", null, te.sub));
     item.appendChild(txt);
     legende.appendChild(item);
   });
@@ -152,7 +158,7 @@ function renderUebersicht(daten) {
   schritte.forEach((s, i) => {
     const c = el("div", "raci-num");
     if (s.kopfId) c.appendChild(el("span", "rn-num", s.kopfId));
-    c.appendChild(el("span", "rn-lab", (s.titel || "").toUpperCase()));
+    c.appendChild(el("span", "rn-lab", (pt(s.titel) || "").toUpperCase()));
     raster.appendChild(c);
   });
 
@@ -187,7 +193,7 @@ function renderUebersicht(daten) {
 
   /* ----- Fuß ----- */
   const footer = el("div", "footer");
-  footer.appendChild(el("div", "f-l", m.fusstext || ""));
+  footer.appendChild(el("div", "f-l", pt(m.fusstext || "")));
   const fr = el("div", "f-r");
   if (m.version) { fr.appendChild(document.createTextNode(t("render.version") + " ")); fr.appendChild(el("b", null, m.version)); }
   if (m.datum)   fr.appendChild(document.createTextNode("  /  " + t("render.asOf") + " " + m.datum));
@@ -213,6 +219,10 @@ function renderDetail(daten) {
   const index = Math.max(0, Math.min(STATE.detailIndex || 0, daten.schritte.length - 1));
   STATE.detailIndex = index;
 
+  const P = NIJU.PROZESS;
+  const lang = STATE.renderLang || ((NIJU.I18N && NIJU.I18N.get) ? NIJU.I18N.get() : P.PRIMARY);
+  const pt = v => P.text(v, lang);
+
   const m = daten.meta;
   const schritt = daten.schritte[index];
   const rollen = daten.rollen || [];
@@ -234,18 +244,18 @@ function renderDetail(daten) {
 
   /* ----- Titel = Untertitel des Schritts ----- */
   const titelWrap = el("div", "titel");
-  titelWrap.appendChild(el("h1", null, schritt.untertitel || schritt.titel || t("render.stepFallback", { n: index })));
+  titelWrap.appendChild(el("h1", null, pt(schritt.untertitel) || pt(schritt.titel) || t("render.stepFallback", { n: index })));
   blatt.appendChild(titelWrap);
 
   /* ----- Körper: zwei Spalten ----- */
   const koerper = el("div", "koerper");
-  koerper.appendChild(baueDetailLinks(daten, schritt, rollen, leg));
-  koerper.appendChild(baueDetailRechts(schritt, leg));
+  koerper.appendChild(baueDetailLinks(daten, schritt, rollen, leg, lang));
+  koerper.appendChild(baueDetailRechts(schritt, leg, lang));
   blatt.appendChild(koerper);
 
   /* ----- Fuß ----- */
   const footer = el("div", "footer");
-  footer.appendChild(el("div", "f-l", m.fusstext || ""));
+  footer.appendChild(el("div", "f-l", pt(m.fusstext || "")));
   const fr = el("div", "f-r");
   if (m.version) { fr.appendChild(document.createTextNode(t("render.version") + " ")); fr.appendChild(el("b", null, m.version)); }
   if (m.datum)   fr.appendChild(document.createTextNode("  /  " + t("render.asOf") + " " + m.datum));
@@ -257,7 +267,8 @@ function renderDetail(daten) {
 }
 
 /* ---------- Detail: linke Spalte — RACI-Mini-Matrix + Legende ---------- */
-function baueDetailLinks(daten, schritt, rollen, leg) {
+function baueDetailLinks(daten, schritt, rollen, leg, lang) {
+  const pt = v => NIJU.PROZESS.text(v, lang || NIJU.PROZESS.PRIMARY);
   const sp = el("div", "spalte-links");
   const lab = el("div", "abschnitt-lab");
   lab.appendChild(document.createTextNode(t("detail.responsibilities") + " "));
@@ -297,12 +308,12 @@ function baueDetailLinks(daten, schritt, rollen, leg) {
   const legende = el("div", "legende");
   RACI_REIHENFOLGE.forEach(b => {
     if (!leg[b]) return;
-    const t = legendeTeile(leg[b]);
+    const te = legendeTeile(pt(leg[b]));
     const item = el("div", "leg-item");
     item.appendChild(badge(b));
     const txt = el("div", "leg-txt");
-    txt.appendChild(el("b", null, t.titel || raciLabel(b)));
-    if (t.sub) txt.appendChild(el("i", null, t.sub));
+    txt.appendChild(el("b", null, te.titel || raciLabel(b)));
+    if (te.sub) txt.appendChild(el("i", null, te.sub));
     item.appendChild(txt);
     legende.appendChild(item);
   });
@@ -311,7 +322,8 @@ function baueDetailLinks(daten, schritt, rollen, leg) {
 }
 
 /* ---------- Detail: rechte Spalte — Beschreibungs-Blöcke je RACI-Buchstabe ---------- */
-function baueDetailRechts(schritt, leg) {
+function baueDetailRechts(schritt, leg, lang) {
+  const pt = v => NIJU.PROZESS.text(v, lang || NIJU.PROZESS.PRIMARY);
   const sp = el("div", "spalte-rechts");
   const lab = el("div", "abschnitt-lab");
   lab.appendChild(document.createTextNode(t("detail.description") + " "));
@@ -329,31 +341,31 @@ function baueDetailRechts(schritt, leg) {
     const wrap = el("div", "beschr-block");
     wrap.appendChild(el("div", "bb-badge " + b, raciLabel(b)));
     const inhalt = el("div", "bb-inhalt");
-    const t = legendeTeile(leg[b] || "");
+    const te = legendeTeile(pt(leg[b] || ""));
     const eyebrow = el("div", "bb-eyebrow " + b);
-    eyebrow.appendChild(document.createTextNode((t.titel || raciLabel(b)).toUpperCase() + " "));
-    if (t.sub) eyebrow.appendChild(el("span", "dim", "· " + t.sub.toUpperCase()));
+    eyebrow.appendChild(document.createTextNode((te.titel || raciLabel(b)).toUpperCase() + " "));
+    if (te.sub) eyebrow.appendChild(el("span", "dim", "· " + te.sub.toUpperCase()));
     inhalt.appendChild(eyebrow);
-    if (block.titel) inhalt.appendChild(el("div", "bb-titel", block.titel));
+    if (block.titel) inhalt.appendChild(el("div", "bb-titel", pt(block.titel)));
     (block.inhalt || []).forEach(teil => {
-      if (typeof teil === "string") {
+      if (NIJU.PROZESS.isI18n(teil) || typeof teil === "string") {
         const p = el("p", "bb-p");
-        p.innerHTML = richHTML(teil);
+        p.innerHTML = richHTML(pt(teil));
         inhalt.appendChild(p);
       } else if (teil && typeof teil === "object" && teil.ueberschrift != null) {
         const hd = el("div", "bb-heading");
-        hd.innerHTML = richHTML(teil.ueberschrift || "");
+        hd.innerHTML = richHTML(pt(teil.ueberschrift || ""));
         inhalt.appendChild(hd);
       } else if (teil && teil.liste) {
         const ul = el("ul", "bb-liste" + (teil.spalten === 2 ? " spalten2" : ""));
         teil.liste.forEach(li => {
           const item = el("li");
-          const txt = (typeof li === "string") ? li : (li.text || "");
-          item.innerHTML = richHTML(txt);
+          const raw = (typeof li === "string") ? li : (li.text || "");
+          item.innerHTML = richHTML(pt(raw));
           const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
           if (unter && unter.length) {
             const sub = el("ul");
-            unter.forEach(u => { const sl = el("li"); sl.innerHTML = richHTML(u); sub.appendChild(sl); });
+            unter.forEach(u => { const sl = el("li"); sl.innerHTML = richHTML(pt(u)); sub.appendChild(sl); });
             item.appendChild(sub);
           }
           ul.appendChild(item);

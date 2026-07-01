@@ -18,6 +18,7 @@ NIJU.I18N.register("en", {
   "menu.templateSave": "Save as template…",
   "menu.import": "Import",
   "menu.importDrawio": "Draw.io",
+  "menu.translation": "Translation",
   "menu.export": "Export",
   "menu.exportPdf": "PDF / Print",
   "menu.exportJson": "JSON",
@@ -229,6 +230,17 @@ NIJU.I18N.register("en", {
   "content.newStep": "New step",
   "content.newRole": "New role",
   "content.thisIncludes": "This includes:",
+
+  /* Phase 11 — bilingual content editing */
+  "content.lang.de": "German",
+  "content.lang.en": "English",
+  "content.lang.switch": "Content language",
+  "content.stale": "needs translation",
+  "export.bilingual": "Bilingual HTML page",
+  "wordlist.export": "Export word list…",
+  "wordlist.import": "Apply translations…",
+  "wordlist.count": "{n} segments",
+  "wordlist.applied": "{n} translations applied across {p} processes",
 
   /* draw.io import dialog */
   "import.dialogTitle": "draw.io import — review mapping",

@@ -31,6 +31,52 @@ function feld(label, wert, onChange, opts) {
   f.appendChild(inp);
   return f;
 }
+
+/* Current content language for bilingual editing (Phase 11). */
+function cL() { return STATE.contentLang || "de"; }
+
+/* Like `feld` but reads/writes a bilingual leaf (string | i18n-map).
+   When cL() is the primary language, writes plain strings (backward compat).
+   When cL() is a secondary language, writes via setLeaf (upgrades to map).
+   Marks stale translations with a yellow indicator. */
+function feldI18n(label, leaf, onChange, opts) {
+  opts = opts || {};
+  const P = NIJU.PROZESS;
+  const lang = cL();
+  const stale = lang !== P.PRIMARY && P.isStale(leaf, lang);
+  const f = el("div", "ed-field" + (stale ? " i18n-stale" : ""));
+  if (label) {
+    const lbl = document.createElement("label");
+    lbl.textContent = label;
+    if (stale) lbl.appendChild(el("span", "stale-ind", " " + t("content.stale")));
+    f.appendChild(lbl);
+  }
+  const inp = opts.mehrzeilig ? document.createElement("textarea") : document.createElement("input");
+  if (!opts.mehrzeilig) inp.type = "text";
+  inp.value = P.text(leaf, lang);
+  if (opts.platzhalter) inp.placeholder = opts.platzhalter;
+  inp.addEventListener("input", () => {
+    if (lang === P.PRIMARY) onChange(P.isI18n(leaf) ? P.setLeaf(leaf, lang, inp.value) : inp.value);
+    else onChange(P.setLeaf(leaf, lang, inp.value));
+  });
+  f.appendChild(inp);
+  return f;
+}
+
+/* Content language toggle bar (Phase 11): DE | EN buttons. */
+function bautLangToggle() {
+  const bar = el("div", "ed-lang-bar");
+  const P = NIJU.PROZESS;
+  bar.appendChild(el("span", "ed-lang-label", t("content.lang.switch") + ":"));
+  [P.PRIMARY, "en"].forEach(function (lng) {
+    const b = el("button", "ed-lang-btn" + (cL() === lng ? " an" : ""));
+    b.type = "button";
+    b.textContent = t("content.lang." + lng);
+    b.addEventListener("click", function () { STATE.contentLang = lng; baueEditor(); });
+    bar.appendChild(b);
+  });
+  return bar;
+}
 function knopf(text, klasse, onClick, titel) {
   const b = el("button", "mini " + (klasse || ""), text);
   if (titel) b.title = titel;
@@ -228,19 +274,22 @@ function setZu(block, ti, zu) {
 /* Read a list item's text whether it is a plain string or { text, unterpunkte }. */
 function itemText(li) { return (typeof li === "object" && li) ? (li.text || "") : (li || ""); }
 function klonTeil(teil) { return (typeof teil === "object" && teil) ? JSON.parse(JSON.stringify(teil)) : teil; }
-/* Collapsed one-line summary of a content part (§5.1). */
+/* Collapsed one-line summary of a content part (§5.1). Uses srcText for i18n maps. */
 function blockKurz(teil) {
-  if (typeof teil === "string") {
-    const s = teil.trim().replace(/\s+/g, " ");
+  const P = window.NIJU && NIJU.PROZESS;
+  if (P && P.isI18n(teil) || typeof teil === "string") {
+    const s = (P ? P.srcText(teil) : String(teil || "")).trim().replace(/\s+/g, " ");
     return s ? (s.length > 60 ? s.slice(0, 60) + "…" : s) : t("editor.paragraph");
   }
   if (teil && teil.liste) {
     const n = teil.liste.length;
-    const f = n ? String(itemText(teil.liste[0])).trim().replace(/\s+/g, " ") : "";
+    const raw = n ? itemText(teil.liste[0]) : "";
+    const f = (P ? P.srcText(raw) : String(raw || "")).trim().replace(/\s+/g, " ");
     return f ? (f + (n > 1 ? "  ·  +" + (n - 1) : "")) : t("editor.list");
   }
   if (teil && typeof teil === "object" && teil.ueberschrift != null) {
-    const s = String(teil.ueberschrift || "").trim();
+    const ue = teil.ueberschrift;
+    const s = (P ? P.srcText(ue) : String(ue || "")).trim();
     return s || t("editor.heading");
   }
   return "";
@@ -403,18 +452,26 @@ function abschnittKopfzeile() {
 function abschnittFusszeile() {
   return abschnitt(t("editor.secFooter"), "fuss", body => {
     body.appendChild(el("div", "ed-hint", t("editor.footerHint")));
-    body.appendChild(feld(t("editor.footerText"), STATE.daten.meta.fusstext, v => { STATE.daten.meta.fusstext = v; render(STATE.daten); }));
+    const m = STATE.daten.meta;
+    body.appendChild(feldI18n(t("editor.footerText"), m.fusstext, v => { m.fusstext = v; render(STATE.daten); }));
   });
 }
 
 /* Editor für eine einfache String-Liste (Input-/Output-Punkte) */
 function stringListe(arr, addLabel, gruppe) {
+  const P = NIJU.PROZESS;
   const wrap = el("div");
   arr.forEach(function (s, i) {
+    const lang = cL();
     const row = el("div", "ed-row");
     const inp = document.createElement("input");
-    inp.type = "text"; inp.className = "grow"; inp.value = s || "";
-    inp.addEventListener("input", function () { arr[i] = inp.value; render(STATE.daten); });
+    inp.type = "text"; inp.className = "grow"; inp.value = P.text(s, lang);
+    inp.addEventListener("input", function () {
+      const cur = arr[i];
+      if (lang === P.PRIMARY) arr[i] = P.isI18n(cur) ? P.setLeaf(cur, lang, inp.value) : inp.value;
+      else arr[i] = P.setLeaf(cur, lang, inp.value);
+      render(STATE.daten);
+    });
     row.appendChild(inp);
     const tools = el("div", "ed-tools");
     const grip = iconBtn("ic-grip", t("editor.dragMove"), null, { reveal: true, grip: true });
@@ -437,18 +494,21 @@ function stringListe(arr, addLabel, gruppe) {
    Der volle Block-Editor (mehrere Blöcke, Drag&Drop) folgt in Phase C. */
 /* Collapsed one-line summary of an overview content block (list | paragraph). */
 function bloeckeKurz(block) {
+  const P = window.NIJU && NIJU.PROZESS;
+  const src = v => P ? P.srcText(v) : String(v == null ? "" : v);
   if (block.typ === "absatz") {
-    const s = String(block.text || "").trim().replace(/\s+/g, " ");
+    const s = src(block.text || "").trim().replace(/\s+/g, " ");
     return s ? (s.length > 60 ? s.slice(0, 60) + "…" : s) : t("editor.paragraph");
   }
   if (block.typ === "ueberschrift") {
-    const s = String(block.text || "").trim();
+    const s = src(block.text || "").trim();
     return s || t("editor.heading");
   }
-  const head = String(block.ueberschrift || "").trim();
+  const head = src(block.ueberschrift || "").trim();
   if (head) return head;
   const n = (block.punkte || []).length;
-  const f = n ? String(itemText(block.punkte[0])).trim().replace(/\s+/g, " ") : "";
+  const raw = n ? itemText(block.punkte[0]) : "";
+  const f = src(raw).trim().replace(/\s+/g, " ");
   return f ? (f + (n > 1 ? "  ·  +" + (n - 1) : "")) : t("editor.list");
 }
 
@@ -493,25 +553,31 @@ function bloeckeEditor(schritt, si) {
     const body = el("div", "ed-block-body");
     if (istListe) {
       if (!Array.isArray(block.punkte)) block.punkte = [];
-      body.appendChild(feld(t("editor.listHeading"), block.ueberschrift, function (v) {
+      const P = NIJU.PROZESS, lang = cL();
+      body.appendChild(feldI18n(t("editor.listHeading"), block.ueberschrift, function (v) {
         block.ueberschrift = v; const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block); render(STATE.daten);
       }));
       listenKoerper(body, block.punkte, "o:" + si + ":" + ti);
     } else if (typ === "ueberschrift") {
+      const P = NIJU.PROZESS, lang = cL();
       const inp = document.createElement("input");
-      inp.type = "text"; inp.className = "grow"; inp.value = block.text || "";
+      inp.type = "text"; inp.className = "grow"; inp.value = P.text(block.text, lang);
       inp.placeholder = t("editor.heading");
       inp.addEventListener("input", function () {
-        block.text = inp.value;
+        if (lang === P.PRIMARY) block.text = P.isI18n(block.text) ? P.setLeaf(block.text, lang, inp.value) : inp.value;
+        else block.text = P.setLeaf(block.text, lang, inp.value);
         const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block);
         render(STATE.daten);
       });
       body.appendChild(inp);
     } else {
+      const P = NIJU.PROZESS, lang = cL();
       const ta = document.createElement("textarea");
-      ta.className = "grow ed-grow"; ta.value = block.text || ""; ta.rows = 2;
+      ta.className = "grow ed-grow"; ta.value = P.text(block.text, lang); ta.rows = 2;
       ta.addEventListener("input", function () {
-        block.text = ta.value; autoGrow(ta);
+        if (lang === P.PRIMARY) block.text = P.isI18n(block.text) ? P.setLeaf(block.text, lang, ta.value) : ta.value;
+        else block.text = P.setLeaf(block.text, lang, ta.value);
+        autoGrow(ta);
         const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = bloeckeKurz(block);
         render(STATE.daten);
       });
@@ -568,9 +634,11 @@ function baueEditorUebersicht() {
   const m = d.meta;
   const inner = el("div", "ed-inner");
 
+  inner.appendChild(bautLangToggle());
+
   /* Allgemein / Metadaten */
   inner.appendChild(abschnitt(t("editor.secGeneral"), "meta", body => {
-    body.appendChild(feld(t("editor.title"), m.titel, v => { m.titel = v; render(d); }, { platzhalter: t("editor.titlePh") }));
+    body.appendChild(feldI18n(t("editor.title"), m.titel, v => { m.titel = v; render(d); }, { platzhalter: t("editor.titlePh") }));
     body.appendChild(el("div", "ed-hint", t("editor.titleHint")));
     const z1 = el("div", "ed-2col");
     z1.appendChild(feld(t("editor.company"), m.firma, v => { m.firma = v; render(d); }));
@@ -589,7 +657,7 @@ function baueEditorUebersicht() {
   /* Input */
   inner.appendChild(abschnitt(t("editor.secInput"), "input", body => {
     if (!d.input) d.input = { label: "Input [Responsible]", punkte: [] };
-    body.appendChild(feld(t("editor.label"), d.input.label, v => { d.input.label = v; render(d); }));
+    body.appendChild(feldI18n(t("editor.label"), d.input.label, v => { d.input.label = v; render(d); }));
     body.appendChild(el("div", "ed-hint", t("editor.inputHint")));
     if (!d.input.punkte) d.input.punkte = [];
     body.appendChild(stringListe(d.input.punkte, t("editor.inputPoint"), "input"));
@@ -598,7 +666,7 @@ function baueEditorUebersicht() {
   /* Output */
   inner.appendChild(abschnitt(t("editor.secOutput"), "output", body => {
     if (!d.output) d.output = { label: "Output [Responsible]", verantwortlich: "", punkte: [] };
-    body.appendChild(feld(t("editor.label"), d.output.label, v => { d.output.label = v; render(d); }));
+    body.appendChild(feldI18n(t("editor.label"), d.output.label, v => { d.output.label = v; render(d); }));
     body.appendChild(feld(t("editor.responsible"), d.output.verantwortlich, v => { d.output.verantwortlich = v; render(d); }));
     if (!d.output.punkte) d.output.punkte = [];
     body.appendChild(stringListe(d.output.punkte, t("editor.outputPoint"), "output"));
@@ -632,8 +700,8 @@ function baueEditorUebersicht() {
       kopf.appendChild(werkz);
       it.appendChild(kopf);
       it.appendChild(feld(t("editor.colId"), s.kopfId || "", v => { s.kopfId = v; render(d); }, { platzhalter: t("editor.colIdPh") }));
-      it.appendChild(feld(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
-      it.appendChild(feld(t("editor.subtitle"), s.untertitel, v => { s.untertitel = v; render(d); }));
+      it.appendChild(feldI18n(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
+      it.appendChild(feldI18n(t("editor.subtitle"), s.untertitel, v => { s.untertitel = v; render(d); }));
       it.appendChild(el("div", "ed-hint", t("editor.contentHint")));
       it.appendChild(bloeckeEditor(s, si));
       body.appendChild(it);
@@ -690,7 +758,7 @@ function baueEditorUebersicht() {
   inner.appendChild(abschnitt(t("editor.secLegend"), "legende", body => {
     if (!d.legende) d.legende = {};
     RACI_REIHENFOLGE.forEach(b => {
-      body.appendChild(feld(t("editor.legendMeaning", { b: b }), d.legende[b] || "", v => { d.legende[b] = v; render(d); }, { platzhalter: t("editor.legendPh") }));
+      body.appendChild(feldI18n(t("editor.legendMeaning", { b: b }), d.legende[b] || "", v => { d.legende[b] = v; render(d); }, { platzhalter: t("editor.legendPh") }));
     });
   }));
 
@@ -724,12 +792,14 @@ function baueEditorDetail() {
   const s = schritte[index];
   const inner = el("div", "ed-inner");
 
+  inner.appendChild(bautLangToggle());
+
   /* Schritt-Kopf */
   inner.appendChild(abschnitt(t("editor.stepSection", { n: index + 1 }), "d-schritt", body => {
     body.appendChild(el("div", "ed-hint", t("editor.detailHint")));
     body.appendChild(feld(t("editor.colId"), s.kopfId || "", v => { s.kopfId = v; render(d); }, { platzhalter: t("editor.colIdPh") }));
-    body.appendChild(feld(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
-    body.appendChild(feld(t("editor.subtitlePage"), s.untertitel, v => { s.untertitel = v; render(d); }));
+    body.appendChild(feldI18n(t("editor.colTitle"), s.titel, v => { s.titel = v; render(d); }));
+    body.appendChild(feldI18n(t("editor.subtitlePage"), s.untertitel, v => { s.untertitel = v; render(d); }));
   }));
 
   /* Kopfzeile (Firma als Text/Logo) */
@@ -788,7 +858,7 @@ function beschreibungBlockEditor(schritt, block, bi) {
     return [b, b + " — " + (teile.titel || b)];
   });
   it.appendChild(auswahl(t("editor.responsibilityRaci"), opt, block.raci, v => { block.raci = v; render(d); }));
-  it.appendChild(feld(t("editor.heading"), block.titel, v => { block.titel = v; render(d); }));
+  it.appendChild(feldI18n(t("editor.heading"), block.titel, v => { block.titel = v; render(d); }));
   it.appendChild(inhaltEditor(block, bi));
   return it;
 }
@@ -839,21 +909,28 @@ function inhaltEditor(block, bi) {
       if (!teil.liste) teil.liste = [];
       listenKoerper(body, teil.liste, "d:" + bi + ":" + ti);
     } else if (istUeberschrift) {
+      const P = NIJU.PROZESS, lang = cL();
       const inp = document.createElement("input");
-      inp.type = "text"; inp.className = "grow"; inp.value = teil.ueberschrift || "";
+      inp.type = "text"; inp.className = "grow"; inp.value = P.text(teil.ueberschrift, lang);
       inp.placeholder = t("editor.heading");
       inp.addEventListener("input", function () {
-        teil.ueberschrift = inp.value;
+        if (lang === P.PRIMARY) teil.ueberschrift = P.isI18n(teil.ueberschrift) ? P.setLeaf(teil.ueberschrift, lang, inp.value) : inp.value;
+        else teil.ueberschrift = P.setLeaf(teil.ueberschrift, lang, inp.value);
         const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = blockKurz(teil);
         render(STATE.daten);
       });
       body.appendChild(inp);
     } else {
+      const P = NIJU.PROZESS, lang = cL();
+      const cur = block.inhalt[ti];
       const ta = document.createElement("textarea");
-      ta.className = "grow ed-grow"; ta.value = (typeof teil === "string" ? teil : ""); ta.rows = 2;
+      ta.className = "grow ed-grow"; ta.value = P.text(cur, lang); ta.rows = 2;
       ta.addEventListener("input", function () {
-        block.inhalt[ti] = ta.value; autoGrow(ta);
-        const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = blockKurz(ta.value);
+        const prev = block.inhalt[ti];
+        if (lang === P.PRIMARY) block.inhalt[ti] = P.isI18n(prev) ? P.setLeaf(prev, lang, ta.value) : ta.value;
+        else block.inhalt[ti] = P.setLeaf(prev, lang, ta.value);
+        autoGrow(ta);
+        const sum = h.querySelector(".ed-block-sum"); if (sum) sum.textContent = blockKurz(block.inhalt[ti]);
         render(STATE.daten);
       });
       refWire(ta);
@@ -910,6 +987,7 @@ function listenKoerper(body, liste, listid) {
 
 /* One editable point row. ui == null → top-level item, else a sub-point. */
 function punktRow(liste, listid, lii, ui) {
+  const P = NIJU.PROZESS, lang = cL();
   const istSub = (ui != null);
   const row = el("div", "ed-row" + (istSub ? " ed-sub" : ""));
   /* autoGrow textarea (U1): long bullet points stay fully visible and wrap instead
@@ -917,11 +995,23 @@ function punktRow(liste, listid, lii, ui) {
      so no accidental newline — the field is single-logical-line, just wrapping. */
   const inp = document.createElement("textarea");
   inp.className = "grow ed-grow"; inp.rows = 1;
-  inp.value = istSub ? (liste[lii].unterpunkte[ui] || "") : itemText(liste[lii]);
+  /* Read bilingual leaf: for top-level items, the leaf may be a string, {text,unterpunkte}, or i18n map. */
+  const _rawLi = istSub ? liste[lii].unterpunkte[ui] : liste[lii];
+  const _leaf = (!istSub && typeof _rawLi === "object" && _rawLi && !P.isI18n(_rawLi)) ? (_rawLi.text || "") : _rawLi;
+  inp.value = P.text(_leaf, lang);
   inp.dataset.listid = listid; inp.dataset.lii = lii; inp.dataset.ui = (ui == null ? "x" : ui);
   inp.addEventListener("input", function () {
-    if (istSub) liste[lii].unterpunkte[ui] = inp.value;
-    else { const cur = liste[lii]; if (typeof cur === "object" && cur) cur.text = inp.value; else liste[lii] = inp.value; }
+    if (istSub) {
+      const cur = liste[lii].unterpunkte[ui];
+      liste[lii].unterpunkte[ui] = (lang === P.PRIMARY && !P.isI18n(cur)) ? inp.value : P.setLeaf(cur, lang, inp.value);
+    } else {
+      const cur = liste[lii];
+      if (typeof cur === "object" && cur && !P.isI18n(cur)) {
+        cur.text = (lang === P.PRIMARY && !P.isI18n(cur.text)) ? inp.value : P.setLeaf(cur.text || "", lang, inp.value);
+      } else {
+        liste[lii] = (lang === P.PRIMARY && !P.isI18n(cur)) ? inp.value : P.setLeaf(cur, lang, inp.value);
+      }
+    }
     autoGrow(inp);
     render(STATE.daten);
   });

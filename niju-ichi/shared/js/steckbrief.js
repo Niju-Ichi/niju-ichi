@@ -22,10 +22,14 @@
     if (text !== undefined && text !== null) e.textContent = text;
     return e;
   }
-  /* collect every string value below a node (description/overview freetext) */
+  /* collect every string value below a node (description/overview freetext).
+     Language maps ({_i18n:1, de:…}) yield only the primary (DE) text so that
+     {…¦id} reference tokens are extracted from the source language and the
+     meta keys (_from, _i18n) are never traversed as plain strings. */
   function sammleTexte(node, out) {
     if (node == null) return;
     if (typeof node === "string") { out.push(node); return; }
+    if (window.NIJU && NIJU.PROZESS && NIJU.PROZESS.isI18n(node)) { out.push(NIJU.PROZESS.srcText(node)); return; }
     if (Array.isArray(node)) { node.forEach(function (x) { sammleTexte(x, out); }); return; }
     if (typeof node === "object") { Object.keys(node).forEach(function (k) { sammleTexte(node[k], out); }); }
   }
@@ -53,12 +57,14 @@
     Object.keys(prozesse).forEach(function (datei) {
       var d = prozesse[datei] && prozesse[datei].data;
       if (!d) return;
-      var titel = (d.meta && d.meta.titel) || datei;
+      var P = window.NIJU && NIJU.PROZESS;
+      var titel = (P ? P.srcText((d.meta && d.meta.titel) || "") : ((d.meta && d.meta.titel) || "")) || datei;
       var schritte = d.schritte || [];
       var idToIdx = {}, idxTitel = [];
       schritte.forEach(function (s, i) {
         idToIdx[(s && s.id != null) ? s.id : i] = i;
-        idxTitel[i] = (s && (s.untertitel || s.titel)) || "";
+        var P2 = window.NIJU && NIJU.PROZESS;
+        idxTitel[i] = P2 ? (P2.srcText((s && s.untertitel) || "") || P2.srcText((s && s.titel) || "")) : ((s && (s.untertitel || s.titel)) || "");
       });
       /* role id -> display name (tolerant: old string roles and new {id,name}) */
       var idToName = {};

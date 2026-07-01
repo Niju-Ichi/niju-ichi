@@ -18,6 +18,7 @@ NIJU.I18N.register("de", {
   "menu.templateSave": "Als Vorlage speichern…",
   "menu.import": "Import",
   "menu.importDrawio": "Draw.io",
+  "menu.translation": "Übersetzung",
   "menu.export": "Export",
   "menu.exportPdf": "PDF / Druck",
   "menu.exportJson": "JSON",
@@ -229,6 +230,17 @@ NIJU.I18N.register("de", {
   "content.newStep": "Neuer Schritt",
   "content.newRole": "Neue Rolle",
   "content.thisIncludes": "Dies umfasst:",
+
+  /* Phase 11 — zweisprachige Inhaltsbearbeitung */
+  "content.lang.de": "Deutsch",
+  "content.lang.en": "Englisch",
+  "content.lang.switch": "Inhaltssprache",
+  "content.stale": "übersetzen",
+  "export.bilingual": "Zweisprachige HTML-Seite",
+  "wordlist.export": "Wortliste exportieren…",
+  "wordlist.import": "Übersetzung übernehmen…",
+  "wordlist.count": "{n} Segmente",
+  "wordlist.applied": "{n} Übersetzungen in {p} Prozessen übernommen",
 
   /* draw.io-Import-Dialog */
   "import.dialogTitle": "draw.io-Import — Zuordnung prüfen",

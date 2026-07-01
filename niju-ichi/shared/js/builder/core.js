@@ -24,7 +24,7 @@ function rId(r)   { return NIJU.PROZESS.rolleId(r); }
 
 /* Zentraler Zustand: die aktuell bearbeiteten Daten + Editor-Modus + Ansicht.
    ansicht: "uebersicht" | "detail"; detailIndex = angezeigter Schritt im Detail. */
-const STATE = { daten: null, bearbeiten: false, zuKlappen: {}, ansicht: "uebersicht", detailIndex: 0 };
+const STATE = { daten: null, bearbeiten: false, zuKlappen: {}, ansicht: "uebersicht", detailIndex: 0, contentLang: "de" };
 
 function tiefKopie(obj) { return JSON.parse(JSON.stringify(obj)); }
 
@@ -87,11 +87,16 @@ function firmaElement(m) {
   return null;
 }
 
-/* Aufzählung für die dunkle Meta-Seitenleiste (mit [Tag]-Unterzeile) */
-function metaListe(punkte) {
+/* Aufzählung für die dunkle Meta-Seitenleiste (mit [Tag]-Unterzeile).
+   lang = content language; delegates to NIJU.PROZESS.text for bilingual leaves. */
+function metaListe(punkte, lang) {
+  const P = NIJU.PROZESS;
   const ul = el("ul", "mliste");
   (punkte || []).forEach(p => {
-    const { text, tag } = tagSplit(typeof p === "string" ? p : (p.text || ""));
+    /* a punkt may be a plain string, a bilingual {_i18n} leaf (input/output
+       punkte become these after a word-list import), or a {text,…} object. */
+    const raw = (typeof p === "string" || P.isI18n(p)) ? p : (p.text || "");
+    const { text, tag } = tagSplit(P.text(raw, lang));
     const li = el("li");
     li.appendChild(el("span", "mtext", text));
     if (tag) li.appendChild(el("span", "mtag", tag));
@@ -101,16 +106,17 @@ function metaListe(punkte) {
 }
 
 /* Aufzählung für Schritt-Inhalt (mit optionalen Unterpunkten) */
-function punkteListe(punkte) {
+function punkteListe(punkte, lang) {
+  const P = NIJU.PROZESS;
   const ul = el("ul", "liste");
   (punkte || []).forEach(p => {
     const li = el("li");
-    const text = (typeof p === "string") ? p : (p.text || "");
-    li.appendChild(el("span", "txt", text));
+    const raw = (typeof p === "string" || P.isI18n(p)) ? p : (p.text || "");
+    li.appendChild(el("span", "txt", P.text(raw, lang)));
     const unter = (typeof p === "object" && p.unterpunkte) ? p.unterpunkte : null;
     if (unter && unter.length) {
       const subUl = el("ul");
-      unter.forEach(u => subUl.appendChild(el("li", null, u)));
+      unter.forEach(u => subUl.appendChild(el("li", null, P.text(u, lang))));
       li.appendChild(subUl);
     }
     ul.appendChild(li);

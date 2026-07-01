@@ -16,6 +16,7 @@ NIJU.I18N.register("ja", {
   "menu.templateSave": "テンプレートとして保存…",
   "menu.import": "インポート",
   "menu.importDrawio": "Draw.io",
+  "menu.translation": "翻訳",
   "menu.export": "エクスポート",
   "menu.exportPdf": "PDF / 印刷",
   "menu.exportJson": "JSON",

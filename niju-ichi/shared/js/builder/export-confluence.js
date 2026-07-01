@@ -37,35 +37,40 @@ function cfAnchor(name) {
 }
 function confluenceName(daten) {
   const m = ((daten || STATE.daten) || {}).meta || {};
-  return (mdSlug(m.prozessId || m.titel) || "prozess") + ".confluence.xml";
+  const P = NIJU.PROZESS;
+  return (mdSlug(m.prozessId || (P ? P.srcText(m.titel) : m.titel)) || "prozess") + ".confluence.xml";
 }
-/* Aufzählung (mit optionalen Unterpunkten) → <ul>. */
-function cfPunkte(punkte) {
+/* Aufzählung (mit optionalen Unterpunkten) → <ul>. pt = language accessor:
+   a punkt may be a plain string, a bilingual {_i18n} leaf, or a {text,…} object. */
+function cfPunkte(punkte, pt) {
+  const P = NIJU.PROZESS;
   let s = "";
   (punkte || []).forEach(p => {
-    const text = (typeof p === "string") ? p : (p.text || "");
-    const unter = (typeof p === "object" && p && p.unterpunkte) ? p.unterpunkte : null;
-    s += "<li>" + cfRich(String(text).trim());
-    if (unter && unter.length) { s += "<ul>"; unter.forEach(u => { s += "<li>" + cfRich(String(u).trim()) + "</li>"; }); s += "</ul>"; }
+    const raw = (typeof p === "string" || P.isI18n(p)) ? p : (p.text || "");
+    const unter = (typeof p === "object" && p && !P.isI18n(p) && p.unterpunkte) ? p.unterpunkte : null;
+    s += "<li>" + cfRich(pt(raw).trim());
+    if (unter && unter.length) { s += "<ul>"; unter.forEach(u => { s += "<li>" + cfRich(pt(u).trim()) + "</li>"; }); s += "</ul>"; }
     s += "</li>";
   });
   return s ? ("<ul>" + s + "</ul>") : "";
 }
-/* Optionale RACI-gruppierte Narrative („beschreibung") → Absätze/Listen. */
-function cfBeschreibung(beschr, L) {
+/* Optionale RACI-gruppierte Narrative („beschreibung") → Absätze/Listen. pt = accessor. */
+function cfBeschreibung(beschr, L, pt) {
+  const P = NIJU.PROZESS;
   let s = "";
   (beschr || []).forEach(b => {
     const tag = L[b.raci] || b.raci || "";
-    s += "<p><strong>" + cfEsc((tag ? tag + " · " : "") + String(b.titel || "").replace(/\n/g, " ")) + "</strong></p>";
+    s += "<p><strong>" + cfEsc((tag ? tag + " · " : "") + pt(b.titel).replace(/\n/g, " ")) + "</strong></p>";
     (b.inhalt || []).forEach(it => {
-      if (typeof it === "string") { s += "<p>" + cfRich(String(it).trim()) + "</p>"; }
+      if (typeof it === "string" || P.isI18n(it)) { s += "<p>" + cfRich(pt(it).trim()) + "</p>"; }
+      else if (it && it.ueberschrift != null) { s += "<p><strong>" + cfEsc(pt(it.ueberschrift).trim()) + "</strong></p>"; }
       else if (it && it.liste) {
         s += "<ul>";
         it.liste.forEach(li => {
-          const text = (typeof li === "string") ? li : (li.text || "");
-          const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
-          s += "<li>" + cfRich(String(text).trim());
-          if (unter && unter.length) { s += "<ul>"; unter.forEach(u => { s += "<li>" + cfRich(String(u).trim()) + "</li>"; }); s += "</ul>"; }
+          const raw = (typeof li === "string" || P.isI18n(li)) ? li : (li.text || "");
+          const unter = (typeof li === "object" && li && !P.isI18n(li) && li.unterpunkte) ? li.unterpunkte : null;
+          s += "<li>" + cfRich(pt(raw).trim());
+          if (unter && unter.length) { s += "<ul>"; unter.forEach(u => { s += "<li>" + cfRich(pt(u).trim()) + "</li>"; }); s += "</ul>"; }
           s += "</li>";
         });
         s += "</ul>";
@@ -75,9 +80,14 @@ function cfBeschreibung(beschr, L) {
   return s;
 }
 
-/* KERN: ein Prozess-Objekt → Confluence-Storage-XHTML (rein, ohne Seiteneffekte). */
-function prozessNachConfluence(daten, L, heute) {
+/* KERN: ein Prozess-Objekt → Confluence-Storage-XHTML (rein, ohne Seiteneffekte).
+   Monolingual: content leaves are resolved to `lang` (default = current UI
+   language, fallback primary). Roles stay untranslated (binding key). */
+function prozessNachConfluence(daten, L, heute, lang) {
   if (!daten) return "";
+  const P = NIJU.PROZESS;
+  lang = lang || (window.NIJU && NIJU.I18N && NIJU.I18N.get && NIJU.I18N.get()) || (P && P.PRIMARY) || "de";
+  const pt = v => (P ? P.text(v, lang) : String(v == null ? "" : v));
   const m = daten.meta || {};
   const schritte = daten.schritte || [];
   const rollen = daten.rollen || [];
@@ -98,20 +108,20 @@ function prozessNachConfluence(daten, L, heute) {
 
   /* Input */
   const inp = (daten.input && daten.input.punkte) || [];
-  if (inp.length) s += "<h2>" + cfEsc(L.input) + "</h2>" + cfPunkte(inp);
+  if (inp.length) s += "<h2>" + cfEsc((daten.input && pt(daten.input.label)) || L.input) + "</h2>" + cfPunkte(inp, pt);
 
   /* Schritte: Anker + Überschrift + Punkte + ausgeschriebenes RACI + Narrative */
   schritte.forEach((sch, i) => {
     const anker = "schritt-" + (sch.id ? mdSlug(sch.id) : (i + 1));
     s += cfAnchor(anker);
-    s += "<h2>" + cfEsc(L.step + " " + (i + 1) + ": " + String(sch.titel || "").trim()) + "</h2>";
-    if (sch.untertitel) s += "<p><em>" + cfEsc(String(sch.untertitel).trim()) + "</em></p>";
+    s += "<h2>" + cfEsc(L.step + " " + (i + 1) + ": " + pt(sch.titel).trim()) + "</h2>";
+    if (sch.untertitel) s += "<p><em>" + cfEsc(pt(sch.untertitel).trim()) + "</em></p>";
     schrittBloecke(sch).forEach(block => {
       if (block.typ === "absatz") {
-        if (block.text && String(block.text).trim()) s += "<p>" + cfRich(String(block.text).trim()) + "</p>";
+        if (block.text && pt(block.text).trim()) s += "<p>" + cfRich(pt(block.text).trim()) + "</p>";
       } else {
-        if (block.ueberschrift) s += "<p><strong>" + cfEsc(String(block.ueberschrift).trim()) + "</strong></p>";
-        s += cfPunkte(block.punkte);
+        if (block.ueberschrift) s += "<p><strong>" + cfEsc(pt(block.ueberschrift).trim()) + "</strong></p>";
+        s += cfPunkte(block.punkte, pt);
       }
     });
     const g = mdRaciGruppen(daten, sch.id);
@@ -121,21 +131,21 @@ function prozessNachConfluence(daten, L, heute) {
       zeilen.forEach(k => { s += "<li><strong>" + cfEsc(L[k]) + ":</strong> " + cfEsc(g[k].join(", ")) + "</li>"; });
       s += "</ul>";
     }
-    if (sch.beschreibung && sch.beschreibung.length) s += cfBeschreibung(sch.beschreibung, L);
+    if (sch.beschreibung && sch.beschreibung.length) s += cfBeschreibung(sch.beschreibung, L, pt);
   });
 
   /* Output */
   const outp = (daten.output && daten.output.punkte) || [];
   if (outp.length) {
-    s += "<h2>" + cfEsc(L.output) + "</h2>";
+    s += "<h2>" + cfEsc((daten.output && pt(daten.output.label)) || L.output) + "</h2>";
     if (daten.output.verantwortlich) s += "<p><strong>" + cfEsc(L.responsible) + ":</strong> " + cfEsc(daten.output.verantwortlich) + "</p>";
-    s += cfPunkte(outp);
+    s += cfPunkte(outp, pt);
   }
 
   /* Konsolidierte RACI-Matrix als echte Confluence-Tabelle (mit Kopfzellen). */
   if (rollen.length && schritte.length) {
     s += "<h2>" + cfEsc(L.matrix) + "</h2><table><tbody><tr><th>" + cfEsc(L.role) + "</th>";
-    schritte.forEach(sc => { s += "<th>" + cfEsc(String(sc.titel || sc.id || "").trim()) + "</th>"; });
+    schritte.forEach(sc => { s += "<th>" + cfEsc((pt(sc.titel) || sc.id || "").trim()) + "</th>"; });
     s += "</tr>";
     rollen.forEach(rolle => {
       s += "<tr><th>" + cfEsc(rName(rolle)) + "</th>";
@@ -150,10 +160,10 @@ function prozessNachConfluence(daten, L, heute) {
 
   /* Glossar aus der prozess-eigenen Legende (sonst Default). */
   s += "<h2>" + cfEsc(L.glossary) + "</h2><ul>";
-  ["R", "A", "C", "I"].forEach(k => { s += "<li><strong>" + cfEsc(k) + "</strong> — " + cfEsc(leg[k] || (L.legend && L.legend[k]) || "") + "</li>"; });
+  ["R", "A", "C", "I"].forEach(k => { s += "<li><strong>" + cfEsc(k) + "</strong> — " + cfEsc(pt(leg[k]) || (L.legend && L.legend[k]) || "") + "</li>"; });
   s += "</ul>";
 
-  if (m.fusstext) s += "<hr/><p><em>" + cfEsc(m.fusstext) + "</em></p>";
+  if (m.fusstext) s += "<hr/><p><em>" + cfEsc(pt(m.fusstext)) + "</em></p>";
   return s;
 }
 
@@ -214,7 +224,7 @@ function baueCfManifest(dateien, heute) {
       const m = d.daten.meta || {};
       return {
         datei: d.name,
-        titel: m.titel || "",
+        titel: (NIJU.PROZESS ? NIJU.PROZESS.srcText(m.titel) : (m.titel || "")),
         prozessId: m.prozessId || "",
         owner: m.processOwner || "",
         version: m.version || "",

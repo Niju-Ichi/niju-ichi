@@ -74,11 +74,61 @@
     return daten;
   }
 
+  /* ============================================================
+     Phase 11 — bilingual content leaves.
+     A translatable leaf is EITHER a plain string (legacy / monolingual)
+     OR a language map { _i18n:1, de:"…", en:"…", _from:{ en:"…" } }.
+     text() is the tolerant reader (mirrors rolleName/rolleId): understands
+     both, so read-only modules only swap their field reads — no migration.
+     Only the Builder writes maps (via setLeaf / makeMap).
+     ============================================================ */
+  var PRIMARY = "de";   /* primary content language (never empty) */
+
+  function isI18n(v) { return !!(v && typeof v === "object" && v._i18n); }
+
+  /* Tolerant reader: pick the text for `lang`, with fallback. Accepts string or map. */
+  function text(v, lang) {
+    if (!isI18n(v)) return String(v == null ? "" : v);
+    lang = lang || (window.NIJU.I18N && NIJU.I18N.get && NIJU.I18N.get()) || PRIMARY;
+    if (v[lang] != null && v[lang] !== "") return String(v[lang]);
+    if (v[PRIMARY] != null && v[PRIMARY] !== "") return String(v[PRIMARY]);
+    for (var k in v) { if (k !== "_i18n" && k !== "_from" && v[k]) return String(v[k]); }
+    return "";
+  }
+
+  /* Primary (DE) source text of a leaf — used by the word-list extractor. */
+  function srcText(v) { return isI18n(v) ? String(v[PRIMARY] || "") : String(v == null ? "" : v); }
+
+  /* Ensure a leaf is a language map (idempotent). Keeps existing translations. */
+  function makeMap(v) {
+    if (isI18n(v)) return v;
+    var m = { _i18n: 1 }; m[PRIMARY] = String(v == null ? "" : v); return m;
+  }
+
+  /* Write one language leaf. lang===PRIMARY updates the source; others update a target
+     and stamp _from so staleness can be detected. Returns the (possibly new) map. */
+  function setLeaf(v, lang, value) {
+    var m = makeMap(v); value = String(value == null ? "" : value);
+    m[lang] = value;
+    if (lang !== PRIMARY) { m._from = m._from || {}; m._from[lang] = String(m[PRIMARY] || ""); }
+    return m;
+  }
+
+  /* True if target `lang` is missing or stale (source changed since translation). */
+  function isStale(v, lang) {
+    if (!isI18n(v)) return true;
+    if (v[lang] == null || v[lang] === "") return true;
+    return !v._from || v._from[lang] !== (v[PRIMARY] || "");
+  }
+
   window.NIJU.PROZESS = {
     neueRollenId: neueRollenId,
     rolleName: rolleName,
     rolleId: rolleId,
-    migriere: migriere
+    migriere: migriere,
+    /* Phase 11 */
+    isI18n: isI18n, text: text, srcText: srcText,
+    makeMap: makeMap, setLeaf: setLeaf, isStale: isStale, PRIMARY: PRIMARY
   };
 
   /* ============================================================

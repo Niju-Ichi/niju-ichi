@@ -68,7 +68,9 @@ function mdSlug(s) {
 }
 function mdName(daten) {
   const m = ((daten || STATE.daten) || {}).meta || {};
-  return (mdSlug(m.prozessId || m.titel) || "prozess") + ".md";
+  const P = window.NIJU && NIJU.PROZESS;
+  const tid = P ? P.srcText(m.prozessId || m.titel) : (m.prozessId || m.titel || "");
+  return (mdSlug(tid) || "prozess") + ".md";
 }
 /* YAML-Wert sicher quoten. */
 function mdYaml(v) {
@@ -88,31 +90,31 @@ function mdRaciGruppen(daten, stepId) {
   });
   return out;
 }
-/* Aufzählungspunkte eines Schritts (mit optionalen Unterpunkten). */
-function mdPunkte(punkte) {
+/* Aufzählungspunkte eines Schritts (mit optionalen Unterpunkten). pt = text accessor. */
+function mdPunkte(punkte, pt) {
   let s = "";
   (punkte || []).forEach(p => {
-    const text = (typeof p === "string") ? p : (p.text || "");
-    s += "- " + String(text).trim() + "\n";
+    const raw = (typeof p === "string" || NIJU.PROZESS.isI18n(p)) ? p : (p.text || "");
+    s += "- " + pt(raw).trim() + "\n";
     const unter = (typeof p === "object" && p && p.unterpunkte) ? p.unterpunkte : null;
-    if (unter && unter.length) unter.forEach(u => { s += "  - " + String(u).trim() + "\n"; });
+    if (unter && unter.length) unter.forEach(u => { s += "  - " + pt(u).trim() + "\n"; });
   });
   return s;
 }
 /* Optionale RACI-gruppierte Narrative („beschreibung"). **fett** bleibt erhalten. */
-function mdBeschreibung(beschr, L) {
+function mdBeschreibung(beschr, L, pt) {
   let s = "";
   (beschr || []).forEach(b => {
     const tag = L[b.raci] || b.raci || "";
-    s += "\n**" + (tag ? tag + " · " : "") + String(b.titel || "").replace(/\n/g, " ") + "**\n\n";
+    s += "\n**" + (tag ? tag + " · " : "") + pt(b.titel || "").replace(/\n/g, " ") + "**\n\n";
     (b.inhalt || []).forEach(it => {
-      if (typeof it === "string") { s += String(it).trim() + "\n\n"; }
+      if (NIJU.PROZESS.isI18n(it) || typeof it === "string") { s += pt(it).trim() + "\n\n"; }
       else if (it && it.liste) {
         it.liste.forEach(li => {
-          const text = (typeof li === "string") ? li : (li.text || "");
-          s += "- " + String(text).trim() + "\n";
+          const raw = (typeof li === "string") ? li : (li.text || "");
+          s += "- " + pt(raw).trim() + "\n";
           const unter = (typeof li === "object" && li && li.unterpunkte) ? li.unterpunkte : null;
-          if (unter && unter.length) unter.forEach(u => { s += "  - " + String(u).trim() + "\n"; });
+          if (unter && unter.length) unter.forEach(u => { s += "  - " + pt(u).trim() + "\n"; });
         });
         s += "\n";
       }
@@ -124,6 +126,9 @@ function mdBeschreibung(beschr, L) {
 /* KERN: ein Prozess-Objekt → vollständiges Markdown (rein, ohne Seiteneffekte). */
 function prozessNachMarkdown(daten, L, heute) {
   if (!daten) return "";
+  const P = NIJU.PROZESS;
+  const lang = (window.NIJU && NIJU.I18N && NIJU.I18N.get) ? NIJU.I18N.get() : P.PRIMARY;
+  const pt = v => P.text(v, lang);
   const m = daten.meta || {};
   const schritte = daten.schritte || [];
   const rollen = daten.rollen || [];
@@ -147,7 +152,7 @@ function prozessNachMarkdown(daten, L, heute) {
   s += "---" + NL + NL;
 
   /* --- Titel + Steckbrief --- */
-  s += "# " + (m.titel || "Prozess") + NL + NL;
+  s += "# " + (pt(m.titel) || "Prozess") + NL + NL;
   const steck = [];
   if (m.prozessId) steck.push(L.id + ": " + m.prozessId);
   if (m.processOwner) steck.push(L.owner + ": " + m.processOwner);
@@ -158,24 +163,25 @@ function prozessNachMarkdown(daten, L, heute) {
   /* --- Input --- */
   const inp = (daten.input && daten.input.punkte) || [];
   if (inp.length) {
-    s += "## " + L.input + NL + NL;
-    inp.forEach(p => { s += "- " + String(typeof p === "string" ? p : (p.text || "")).trim() + NL; });
+    s += "## " + (pt(daten.input.label) || L.input) + NL + NL;
+    inp.forEach(p => { s += "- " + pt((typeof p === "string" || NIJU.PROZESS.isI18n(p)) ? p : (p.text || "")).trim() + NL; });
     s += NL;
   }
 
   /* --- Schritte: Klartext + ausgeschriebenes RACI + stabiler Anker --- */
   schritte.forEach((sch, i) => {
     const anker = "schritt-" + (sch.id ? mdSlug(sch.id) : (i + 1));
-    s += "## " + L.step + " " + (i + 1) + ": " + String(sch.titel || "").trim() + NL;
-    if (sch.untertitel) s += "*" + String(sch.untertitel).trim() + "*" + NL;
+    s += "## " + L.step + " " + (i + 1) + ": " + pt(sch.titel).trim() + NL;
+    if (sch.untertitel) s += "*" + pt(sch.untertitel).trim() + "*" + NL;
     s += NL + "`" + L.anchor + ": #" + anker + "`" + NL + NL;
 
     schrittBloecke(sch).forEach(block => {
       if (block.typ === "absatz") {
-        if (block.text && String(block.text).trim()) s += String(block.text).trim() + NL + NL;
+        const bt = pt(block.text || "").trim();
+        if (bt) s += bt + NL + NL;
       } else {
-        if (block.ueberschrift) s += "**" + String(block.ueberschrift).trim() + "**" + NL + NL;
-        const pk = mdPunkte(block.punkte);
+        if (block.ueberschrift) s += "**" + pt(block.ueberschrift).trim() + "**" + NL + NL;
+        const pk = mdPunkte(block.punkte, pt);
         if (pk) s += pk + NL;
       }
     });
@@ -187,15 +193,15 @@ function prozessNachMarkdown(daten, L, heute) {
       zeilen.forEach(k => { s += "- **" + L[k] + ":** " + g[k].join(", ") + NL; });
       s += NL;
     }
-    if (sch.beschreibung && sch.beschreibung.length) s += mdBeschreibung(sch.beschreibung, L);
+    if (sch.beschreibung && sch.beschreibung.length) s += mdBeschreibung(sch.beschreibung, L, pt);
   });
 
   /* --- Output --- */
   const outp = (daten.output && daten.output.punkte) || [];
   if (outp.length) {
-    s += "## " + L.output + NL + NL;
+    s += "## " + (pt(daten.output.label) || L.output) + NL + NL;
     if (daten.output.verantwortlich) s += "**" + L.responsible + ":** " + daten.output.verantwortlich + NL + NL;
-    outp.forEach(p => { s += "- " + String(typeof p === "string" ? p : (p.text || "")).trim() + NL; });
+    outp.forEach(p => { s += "- " + pt((typeof p === "string" || NIJU.PROZESS.isI18n(p)) ? p : (p.text || "")).trim() + NL; });
     s += NL;
   }
 
@@ -212,18 +218,18 @@ function prozessNachMarkdown(daten, L, heute) {
       s += "| " + mdCell(rName(rolle)) + " | " + cells.join(" | ") + " |" + NL;
     });
     s += NL;
-    s += schritte.map((sc, i) => "S" + (i + 1) + " = " + String(sc.titel || sc.id || "")).join(" · ") + NL + NL;
+    s += schritte.map((sc, i) => "S" + (i + 1) + " = " + (pt(sc.titel) || sc.id || "")).join(" · ") + NL + NL;
   }
 
   /* --- Glossar: prozess-eigene Legende (sonst Default) → gibt der KI den Rahmen --- */
   s += "## " + L.glossary + NL + NL;
   ["R", "A", "C", "I"].forEach(k => {
-    const def = leg[k] || (L.legend && L.legend[k]) || "";
+    const def = leg[k] ? pt(leg[k]) : ((L.legend && L.legend[k]) || "");
     s += "- **" + k + "** — " + def + NL;
   });
   s += NL;
 
-  if (m.fusstext) s += "---" + NL + NL + "*" + m.fusstext + "*" + NL;
+  if (m.fusstext) s += "---" + NL + NL + "*" + pt(m.fusstext) + "*" + NL;
   return s;
 }
 
